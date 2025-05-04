@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "hello": "Hello",
+  "welcome": "Welcome",
+  "goodbye": "Goodbye",
+  "thank_you": "Thank you",
+  "please": "Please",
+  "yes": "Yes",
+  "no": "No",
+  "error": "Error",
+  "loading": "Loading",
+  "success": "Success",
+  "languageEnglish": "English",
+  "languageSpanish": "Spanish",
+  "languagePortuguese": "Portuguese",
+  "languageFrench": "French"
+}

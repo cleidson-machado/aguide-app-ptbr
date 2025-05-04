@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "br.com.aguideptbr.portugal_guide"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // Changed from flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
