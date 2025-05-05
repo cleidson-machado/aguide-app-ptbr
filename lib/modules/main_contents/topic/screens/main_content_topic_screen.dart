@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:country_flags/country_flags.dart';
 
 /// 📝 Main Screen - This will Be a List of register contents or any stuff shared by a User...
 /// NOTE: REMEMBER!! REBUILD THIS SCREEN TO MATCH YOUR RESPECTIVE MODEL CLASS................ lib/modules/main_contents/topic/main_content_topic_model.dart
@@ -23,45 +24,94 @@ class MainContentTopicScreen extends StatelessWidget {
           onTap: () {
             showCupertinoModalPopup(
               context: context,
-              builder: (BuildContext context) => CupertinoActionSheet(
-                title: const Text('Select Language'),
-                actions: <CupertinoActionSheetAction>[
-                  CupertinoActionSheetAction(
-                    onPressed: () {
-                      // Change language to English
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Português'),
+              builder:
+                  (BuildContext context) => CupertinoActionSheet(
+                    title: const Text('Select Language'),
+                    actions: <CupertinoActionSheetAction>[
+                      CupertinoActionSheetAction(
+                        onPressed: () {
+                          // Change language to Portuguese
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CountryFlag.fromCountryCode(
+                              'BR',
+                              height: 16,
+                              width: 24,
+                              shape: const RoundedRectangle(4),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Português'),
+                          ],
+                        ),
+                      ),
+                      CupertinoActionSheetAction(
+                        onPressed: () {
+                          // Change language to English
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CountryFlag.fromCountryCode(
+                              'US',
+                              height: 16,
+                              width: 24,
+                              shape: const RoundedRectangle(4),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('English'),
+                          ],
+                        ),
+                      ),
+                      CupertinoActionSheetAction(
+                        onPressed: () {
+                          // Change language to Spanish
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CountryFlag.fromCountryCode(
+                              'ES',
+                              height: 16,
+                              width: 24,
+                              shape: const RoundedRectangle(4),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Español'),
+                          ],
+                        ),
+                      ),
+                      CupertinoActionSheetAction(
+                        onPressed: () {
+                          // Change language to French
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CountryFlag.fromCountryCode(
+                              'FR',
+                              height: 16,
+                              width: 24,
+                              shape: const RoundedRectangle(4),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Français'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    cancelButton: CupertinoActionSheetAction(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel'),
+                    ),
                   ),
-                  CupertinoActionSheetAction(
-                    onPressed: () {
-                      // Change language to Portuguese
-                      Navigator.pop(context);
-                    },
-                    child: const Text('English'),
-                  ),
-                  CupertinoActionSheetAction(
-                    onPressed: () {
-                      // Change language to Portuguese
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Español'),
-                  ),
-                  CupertinoActionSheetAction(
-                    onPressed: () {
-                      // Change language to Portuguese
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Français'),
-                  ),
-                ],
-                cancelButton: CupertinoActionSheetAction(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-              ),
             );
           },
           child: const Icon(CupertinoIcons.globe, size: 24),
@@ -105,13 +155,19 @@ class MainContentTopicScreen extends StatelessWidget {
               children: [
                 Text(
                   post["title"]!,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   post["subtitle"]!,
-                  style: const TextStyle(fontSize: 14, color: CupertinoColors.systemGrey),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: CupertinoColors.systemGrey,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -130,7 +186,10 @@ class MainContentTopicScreen extends StatelessWidget {
                   width: 80,
                   height: 80,
                   color: CupertinoColors.systemGrey5,
-                  child: const Icon(CupertinoIcons.photo, color: CupertinoColors.white),
+                  child: const Icon(
+                    CupertinoIcons.photo,
+                    color: CupertinoColors.white,
+                  ),
                 );
               },
             ),
