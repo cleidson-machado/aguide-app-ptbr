@@ -17,7 +17,56 @@ class MainContentTopicScreen extends StatelessWidget {
     });
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text(">> Perfil de Consumidor - Default <<")),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text(">> Perfil de Consumidor - Default <<"),
+        trailing: GestureDetector(
+          onTap: () {
+            showCupertinoModalPopup(
+              context: context,
+              builder: (BuildContext context) => CupertinoActionSheet(
+                title: const Text('Select Language'),
+                actions: <CupertinoActionSheetAction>[
+                  CupertinoActionSheetAction(
+                    onPressed: () {
+                      // Change language to English
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Português'),
+                  ),
+                  CupertinoActionSheetAction(
+                    onPressed: () {
+                      // Change language to Portuguese
+                      Navigator.pop(context);
+                    },
+                    child: const Text('English'),
+                  ),
+                  CupertinoActionSheetAction(
+                    onPressed: () {
+                      // Change language to Portuguese
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Español'),
+                  ),
+                  CupertinoActionSheetAction(
+                    onPressed: () {
+                      // Change language to Portuguese
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Français'),
+                  ),
+                ],
+                cancelButton: CupertinoActionSheetAction(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ),
+            );
+          },
+          child: const Icon(CupertinoIcons.globe, size: 24),
+        ),
+      ),
       child: Column(
         children: [
           const Padding(
