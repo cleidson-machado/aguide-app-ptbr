@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:portugal_guide/app/routes/app_routes_handler.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
-import 'package:portugal_guide/main.dart';
+import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +26,7 @@ class _AppMainWidgetState extends State<AppMainWidget> {
               onGenerateRoute: AppRoutesHandler.generateRoute,
               initialRoute: AppRoutesHandler.home,
               debugShowCheckedModeBanner: false,
+              
               // Adicionando suporte a internacionalização
               locale: localeProvider.currentLocale,
               localizationsDelegates: const [
@@ -40,6 +41,7 @@ class _AppMainWidgetState extends State<AppMainWidget> {
                 Locale('pt', ''), // Portuguese
                 Locale('fr', ''), // French
               ],
+              
             );
           },
         );

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
-import 'package:portugal_guide/main.dart';
+import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
 
