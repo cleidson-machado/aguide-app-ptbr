@@ -96,7 +96,7 @@ output-class: AppLocalizations
 
 ...
 ...
-##### Modify The ( main.dart )
+##### Modify The ( main.dart ) Example!
 > Use this code below as reference to add the Internationalization to you code.
 
 ```dart
@@ -124,6 +124,44 @@ class MyApp extends StatelessWidget {
       home: const HomePage(),
     );
   }
+}
+
+```
+
+...
+...
+##### The LocaleProvider Class File Location and Basic Code Bkp
+> Use this code below as a basic how to for new Projects..... 
+> lib/resources/locale_provider.dart
+
+```dart
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+
+class LocaleProvider extends ChangeNotifier {
+  Locale _currentLocale;
+  LocaleProvider() : _currentLocale = _getDeviceLocale();
+  Locale get currentLocale => _currentLocale;
+
+  static Locale _getDeviceLocale() {
+    Locale deviceLocale = PlatformDispatcher.instance.locale;
+    const supportedLocales = [
+      Locale('en', ''),
+      Locale('es', ''),
+      Locale('pt', ''),
+      Locale('fr', ''),
+    ];
+
+    return supportedLocales.contains(Locale(deviceLocale.languageCode))
+        ? Locale(deviceLocale.languageCode)
+        : const Locale('en', '');
+  }
+
+  void changeLocale(Locale newLocale) {
+    _currentLocale = newLocale;
+    notifyListeners();
+  }
+  
 }
 
 ```
