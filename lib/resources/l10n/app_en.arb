@@ -13,5 +13,7 @@
   "languageEnglish": "English",
   "languageSpanish": "Spanish",
   "languagePortuguese": "Portuguese",
-  "languageFrench": "French"
+  "languageFrench": "French",
+  "selectLanguage": "Select the language you want!",
+  "cancel": "Cancel"
 }

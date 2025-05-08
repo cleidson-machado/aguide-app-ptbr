@@ -49,4 +49,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get languageFrench => 'Francês';
+
+  @override
+  String get selectLanguage => 'Selecione o Idioma que Deseja!';
+
+  @override
+  String get cancel => 'Cancelar';
 }

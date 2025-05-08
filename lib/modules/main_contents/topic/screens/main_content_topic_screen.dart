@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
+import 'package:portugal_guide/main.dart';
+import 'package:portugal_guide/resources/translation/app_localizations.dart';
+import 'package:provider/provider.dart';
 
 /// 📝 Main Screen - This will Be a List of register contents or any stuff shared by a User...
 /// NOTE: REMEMBER!! REBUILD THIS SCREEN TO MATCH YOUR RESPECTIVE MODEL CLASS................ lib/modules/main_contents/topic/main_content_topic_model.dart
@@ -21,16 +24,23 @@ class MainContentTopicScreen extends StatelessWidget {
       navigationBar: CupertinoNavigationBar(
         middle: const Text(">> Perfil de Consumidor - Default <<"),
         trailing: GestureDetector(
+          // Na classe MainContentTopicScreen, atualize o método onTap
           onTap: () {
             showCupertinoModalPopup(
               context: context,
               builder:
                   (BuildContext context) => CupertinoActionSheet(
-                    title: const Text('Select Language'),
+                    title: Text(
+                      AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+                    ),
                     actions: <CupertinoActionSheetAction>[
                       CupertinoActionSheetAction(
                         onPressed: () {
-                          // Change language to Portuguese
+                          // ###################################################### Mudar para Português 
+                          Provider.of<LocaleProvider>(
+                            context,
+                            listen: false,
+                          ).changeLocale(const Locale('pt', ''));
                           Navigator.pop(context);
                         },
                         child: Row(
@@ -43,13 +53,17 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Português'),
+                            Text(AppLocalizations.of(context)?.languagePortuguese ?? 'Portuguese'),
                           ],
                         ),
                       ),
                       CupertinoActionSheetAction(
                         onPressed: () {
-                          // Change language to English
+                          // ###################################################### Mudar para Inglês
+                          Provider.of<LocaleProvider>(
+                            context,
+                            listen: false,
+                          ).changeLocale(const Locale('en', ''));
                           Navigator.pop(context);
                         },
                         child: Row(
@@ -62,13 +76,17 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            const Text('English'),
+                            Text(AppLocalizations.of(context)?.languagePortuguese ?? 'English'),
                           ],
                         ),
                       ),
                       CupertinoActionSheetAction(
                         onPressed: () {
-                          // Change language to Spanish
+                          // ###################################################### Mudar para Espanhol
+                          Provider.of<LocaleProvider>(
+                            context,
+                            listen: false,
+                          ).changeLocale(const Locale('es', ''));
                           Navigator.pop(context);
                         },
                         child: Row(
@@ -81,13 +99,17 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Español'),
+                            Text(AppLocalizations.of(context)?.languagePortuguese ?? 'Spanish'),
                           ],
                         ),
                       ),
                       CupertinoActionSheetAction(
                         onPressed: () {
-                          // Change language to French
+                          // ###################################################### Mudar para Francês
+                          Provider.of<LocaleProvider>(
+                            context,
+                            listen: false,
+                          ).changeLocale(const Locale('fr', ''));
                           Navigator.pop(context);
                         },
                         child: Row(
@@ -100,7 +122,7 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Français'),
+                            Text(AppLocalizations.of(context)?.languagePortuguese ?? 'French'),
                           ],
                         ),
                       ),
@@ -109,7 +131,9 @@ class MainContentTopicScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text('Cancel'),
+                      child: Text(
+                        AppLocalizations.of(context)?.cancel ?? 'Cancel',
+                      ),
                     ),
                   ),
             );
