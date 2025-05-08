@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:portugal_guide/modules/user/user_controller.dart';
-import 'package:portugal_guide/modules/user/user_service.dart';
+import 'package:portugal_guide/features/user/user_controller.dart';
+import 'package:portugal_guide/features/user/user_service.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/widgets/custom_cupertino_dialog_widget.dart';
 import 'package:provider/provider.dart';

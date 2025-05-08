@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
-import 'package:portugal_guide/modules/user/user_model.dart';
+import 'package:portugal_guide/features/user/user_model.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/util/service_data_exception.dart';
 

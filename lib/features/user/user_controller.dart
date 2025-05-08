@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:portugal_guide/modules/user/user_model.dart';
-import 'package:portugal_guide/modules/user/user_service.dart';
+import 'package:portugal_guide/features/user/user_model.dart';
+import 'package:portugal_guide/features/user/user_service.dart';
 
 class UserController extends ChangeNotifier {
   final UserService _service;

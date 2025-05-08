@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:portugal_guide/modules/core_auth/screens/core_auth_forgot_pass_screen.dart';
-import 'package:portugal_guide/modules/core_auth/screens/core_auth_register_screen.dart';
+import 'package:portugal_guide/features/core_auth/screens/core_auth_forgot_pass_screen.dart';
+import 'package:portugal_guide/features/core_auth/screens/core_auth_register_screen.dart';
 
 class CoreAuthLoginScreen extends StatelessWidget {
   const CoreAuthLoginScreen({super.key});

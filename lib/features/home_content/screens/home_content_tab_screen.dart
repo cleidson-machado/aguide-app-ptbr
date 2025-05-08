@@ -2,9 +2,9 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:portugal_guide/modules/main_contents/profile/screens/main_content_profile_screen.dart';
-import 'package:portugal_guide/modules/main_contents/relation/screens/main_content_relation_screen.dart';
-import 'package:portugal_guide/modules/main_contents/topic/screens/main_content_topic_screen.dart';
+import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
+import 'package:portugal_guide/features/main_contents/relation/screens/main_content_relation_screen.dart';
+import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
 
 //RE-APROVEITA OS CÓDIGOGOS E VOLTA O NOME HomeScreen SE NECESSÁRIO...
 

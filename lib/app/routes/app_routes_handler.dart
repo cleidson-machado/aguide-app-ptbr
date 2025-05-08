@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:portugal_guide/modules/core_auth/screens/core_auth_login_screen.dart';
-import 'package:portugal_guide/modules/core_auth_google/screens/core_google_login_screen.dart';
-import 'package:portugal_guide/modules/home_content/screens/home_content_tab_screen.dart';
-import 'package:portugal_guide/modules/user/screens/user_list_screen.dart';
+import 'package:portugal_guide/features/core_auth/screens/core_auth_login_screen.dart';
+import 'package:portugal_guide/features/core_auth_google/screens/core_google_login_screen.dart';
+import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
+import 'package:portugal_guide/features/user/screens/user_list_screen.dart';
 
 //######################################################################################
 //NOTE: DEFAULT FLUTTER NAVIGATOR STUFF FROM: *.*/flutter/packages/flutter/lib/src/widgets/navigator.dart
