@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:portugal_guide/app/rouute_main_stuff/app_routes.dart';
 import 'package:portugal_guide/features/core_auth/screens/core_auth_forgot_pass_screen.dart';
 import 'package:portugal_guide/features/core_auth/screens/core_auth_register_screen.dart';
 
@@ -87,6 +89,7 @@ class CoreAuthLoginScreen extends StatelessWidget {
                           fontSize: 14,
                         ),
                       ),
+                      //#######>>>> SIMPLE LINK TO OTHER PAGE.....
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -130,12 +133,18 @@ class CoreAuthLoginScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        //#######>>>> SIMPLE LINK TO OTHER PAGE.....
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                                builder: (context) => const CoreAuthRegisterScreen()),
-                          );
+                          Modular.to.pushNamed(AppRoutes.register); // Go to REGISTER Page (free route!??)
+
+                          //#######>>>> THIS IS THE OLD WAY TO NAVIGATE! START
+                          // Navigator.push(
+                          //   context,
+                          //   CupertinoPageRoute(
+                          //       builder: (context) => const CoreAuthRegisterScreen()),
+                          // );
+                          //#######>>>> THIS IS THE OLD WAY TO NAVIGATE! END!
+
                         },
                       ),
                     ],

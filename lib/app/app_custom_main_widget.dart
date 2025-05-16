@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:portugal_guide/app/routes/app_routes_handler.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+// import 'package:portugal_guide/app/routes/app_routes_handler.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
@@ -20,11 +21,12 @@ class _AppMainWidgetState extends State<AppMainWidget> {
       builder: (context, appTheme, child) {
         return Consumer<LocaleProvider>(
           builder: (context, localeProvider, _) {
-            return CupertinoApp(
+            return CupertinoApp.router(
               title: 'Meu App Cupertino',
               theme: appTheme.themeData,
-              onGenerateRoute: AppRoutesHandler.generateRoute,
-              initialRoute: AppRoutesHandler.home,
+              routerConfig: Modular.routerConfig,
+              // onGenerateRoute: AppRoutesHandler.generateRoute,
+              // initialRoute: AppRoutesHandler.home,
               debugShowCheckedModeBanner: false,
               
               // Adicionando suporte a internacionalização
