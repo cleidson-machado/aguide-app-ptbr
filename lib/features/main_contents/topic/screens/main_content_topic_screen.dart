@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +17,7 @@ class MainContentTopicScreen extends StatelessWidget {
       return {
         "title": "Blog Post ${index + 1}",
         "subtitle": "Short description of the blog post.",
-        "image": "https://picsum.photos/200/300?random=$index",
+        "image": "${EnvKeyHelperConfig.imageMocTemp1}?random=$index", //ORIGINAL WAY: "image": "https://picsum.photos/200/300?random=$index",
       };
     });
 
@@ -31,12 +32,13 @@ class MainContentTopicScreen extends StatelessWidget {
               builder:
                   (BuildContext context) => CupertinoActionSheet(
                     title: Text(
-                      AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+                      AppLocalizations.of(context)?.selectLanguage ??
+                          'Select Language',
                     ),
                     actions: <CupertinoActionSheetAction>[
                       CupertinoActionSheetAction(
                         onPressed: () {
-                          // ###################################################### Mudar para Português 
+                          // ###################################################### Mudar para Português
                           Provider.of<LocaleProvider>(
                             context,
                             listen: false,
@@ -53,7 +55,12 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)?.languagePortuguese ?? 'Portuguese'),
+                            Text(
+                              AppLocalizations.of(
+                                    context,
+                                  )?.languagePortuguese ??
+                                  'Portuguese',
+                            ),
                           ],
                         ),
                       ),
@@ -76,7 +83,10 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)?.languageEnglish ?? 'English'),
+                            Text(
+                              AppLocalizations.of(context)?.languageEnglish ??
+                                  'English',
+                            ),
                           ],
                         ),
                       ),
@@ -99,7 +109,10 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)?.languageSpanish ?? 'Spanish'),
+                            Text(
+                              AppLocalizations.of(context)?.languageSpanish ??
+                                  'Spanish',
+                            ),
                           ],
                         ),
                       ),
@@ -122,7 +135,10 @@ class MainContentTopicScreen extends StatelessWidget {
                               shape: const RoundedRectangle(4),
                             ),
                             const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)?.languageFrench ?? 'French'),
+                            Text(
+                              AppLocalizations.of(context)?.languageFrench ??
+                                  'French',
+                            ),
                           ],
                         ),
                       ),

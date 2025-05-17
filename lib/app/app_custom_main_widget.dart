@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 // import 'package:portugal_guide/app/routes/app_routes_handler.dart'; //#######>>>> USED to CREATE A SIMPLE LINK TO OTHER PAGE.....
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
@@ -15,6 +16,9 @@ class AppMainWidget extends StatefulWidget {
 }
 
 class _AppMainWidgetState extends State<AppMainWidget> {
+
+  final isDev = EnvKeyHelperConfig.label.toUpperCase() == 'DEV'; // TEST_env
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppTheme>(
@@ -27,7 +31,7 @@ class _AppMainWidgetState extends State<AppMainWidget> {
               routerConfig: Modular.routerConfig,
               // onGenerateRoute: AppRoutesHandler.generateRoute,
               // initialRoute: AppRoutesHandler.home,
-              debugShowCheckedModeBanner: false,
+              debugShowCheckedModeBanner: isDev ? true : false,
               
               // Adicionando suporte a internacionalização
               locale: localeProvider.currentLocale,

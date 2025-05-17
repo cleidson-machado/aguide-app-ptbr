@@ -1,7 +1,8 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // Only for using ImagePicker
+import 'package:flutter/material.dart';
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 
 class MainContentProfileScreen extends StatefulWidget {
   const MainContentProfileScreen({super.key});
@@ -14,6 +15,8 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
   final TextEditingController _nameController = TextEditingController(text: "Suzane Jobs");
   final TextEditingController _emailController = TextEditingController(text: "abc@gmail.com");
   final TextEditingController _phoneController = TextEditingController(text: "+91 123456890");
+
+  final isDev = EnvKeyHelperConfig.label.toUpperCase() == 'DEV'; // TEST
 
   @override
   Widget build(BuildContext context) {
