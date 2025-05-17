@@ -1,4 +1,4 @@
-import 'package:portugal_guide/app/rouute_main_stuff/auth_guard.dart';
+import 'package:portugal_guide/app/routing_guards/auth_guard.dart';
 
 abstract class AppRoutes {
   
@@ -22,9 +22,14 @@ abstract class AppRoutes {
   // Helper methods
   static String getSalesProfilePath(String userId) => '$salesProfile/$userId';
   
-  // Route Guards mapping
-  static final guardedRoutes = {
+  // Basic Test for Route Guards mapping
+  static final basicAuthGuardGroupsTest = {
     admin: [AuthGuard()],
     salesProfile: [AuthGuard()],
   };
+
+  static final ownerGuardGroups = {
+    //TODO --> CREATE NEW GROUPS AND THE SPECIFIC GUARD CODE FOR THEY
+  };
+
 }

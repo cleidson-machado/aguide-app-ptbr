@@ -2,9 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:portugal_guide/app/rouute_main_stuff/app_routes.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/core_auth/screens/core_auth_forgot_pass_screen.dart';
-import 'package:portugal_guide/features/core_auth/screens/core_auth_register_screen.dart';
+//import 'package:portugal_guide/features/core_auth/screens/core_auth_register_screen.dart'; //#######>>>> USED to CREATE A SIMPLE LINK TO OTHER PAGE.....
 
 class CoreAuthLoginScreen extends StatelessWidget {
   const CoreAuthLoginScreen({super.key});

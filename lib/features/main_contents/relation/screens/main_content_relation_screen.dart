@@ -68,7 +68,7 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
                   subtitle: Text(_getSubtitle(entry.key), style: const TextStyle(fontSize: 14, color: CupertinoColors.systemGrey)),
                   trailing: CupertinoSwitch(
                     value: entry.value,
-                    activeColor: CupertinoColors.activeBlue,
+                    activeTrackColor: CupertinoColors.activeBlue,
                     onChanged: (bool value) {
                       setState(() {
                         _settings[entry.key] = value;

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-// import 'package:portugal_guide/app/routes/app_routes_handler.dart';
+// import 'package:portugal_guide/app/routes/app_routes_handler.dart'; //#######>>>> USED to CREATE A SIMPLE LINK TO OTHER PAGE.....
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';

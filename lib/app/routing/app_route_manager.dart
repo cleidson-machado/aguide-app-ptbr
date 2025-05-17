@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:portugal_guide/app/rouute_main_stuff/app_routes.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 
 class CustomRouteManager {
   static void setupRoutes({

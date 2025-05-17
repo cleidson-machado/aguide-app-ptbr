@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 //import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:portugal_guide/app/app_custom_main_widget.dart';
-import 'package:portugal_guide/app/rouute_main_stuff/app_module.dart';
+import 'package:portugal_guide/app/routing/app_route_module.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +17,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => AppTheme()),
         ChangeNotifierProvider(create: (context) => LocaleProvider()),
       ],
-      child: ModularApp(module: AppModule(), child: const AppMainWidget())
+      child: ModularApp(module: AppRouteModule(), child: const AppMainWidget())
     ),
   );
 }
