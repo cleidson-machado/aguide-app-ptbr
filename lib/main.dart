@@ -1,25 +1,45 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:portugal_guide/app/app_custom_main_widget.dart';
+import 'package:portugal_guide/app/helpers/env_error_warning.dart';
 import 'package:portugal_guide/app/routing/app_route_module.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 
-void main() async {
+final logger = Logger(); // Instância global do Logger
+const String envFileName = ".env.dev";
 
-WidgetsFlutterBinding.ensureInitialized(); //############# Function to ensure Flutter is initialized before loading the .ENV file!!...
+void main() {
+  WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO?
+  _initializeApp().then((app) => runApp(app));
+}
 
-  await dotenv.load(fileName: ".env.dev"); //TEST_env
+Future<Widget> _initializeApp() async {
+  try {
+    await dotenv.load(fileName: envFileName).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw TimeoutException('Timeout while loading $envFileName'),
+    );
 
-  runApp(
-    MultiProvider(
+    return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => AppTheme()),
-        ChangeNotifierProvider(create: (context) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AppTheme()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
-      child: ModularApp(module: AppRouteModule(), child: const AppMainWidget())
-    ),
-  );
+      child: ModularApp(
+        module: AppRouteModule(),
+        child: const AppMainWidget(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    logger.e('Env loading error', error: e, stackTrace: stackTrace);
+    return EnvErrorWarning(
+      errorMessage: e.toString(),
+      onRetry: () => main(),
+    );
+  }
 }
