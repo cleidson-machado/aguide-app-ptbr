@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:portugal_guide/app/app_custom_main_widget.dart';
-import 'package:portugal_guide/app/helpers/env_error_warning.dart';
+import 'package:portugal_guide/app/helpers/env_error_warning_widget.dart';
 import 'package:portugal_guide/app/routing/app_route_module.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
@@ -14,7 +14,7 @@ final logger = Logger(); // Instância global do Logger
 const String envFileName = ".env.dev";
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO?
+  WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO? YES!!!!!
   _initializeApp().then((app) => runApp(app));
 }
 
@@ -35,10 +35,10 @@ Future<Widget> _initializeApp() async {
         child: const AppMainWidget(),
       ),
     );
-  } catch (e, stackTrace) {
-    logger.e('Env loading error', error: e, stackTrace: stackTrace);
-    return EnvErrorWarning(
-      errorMessage: e.toString(),
+  } catch (err, stackTrace) {
+    logger.e('Env loading error', error: err, stackTrace: stackTrace);
+    return EnvErrorWarningWidget(
+      errorMessage: err.toString(),
       onRetry: () => main(),
     );
   }

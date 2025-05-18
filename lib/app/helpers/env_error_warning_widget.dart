@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 
-class EnvErrorWarning extends StatelessWidget {
+class EnvErrorWarningWidget extends StatelessWidget {
   final String errorMessage;
   final VoidCallback onRetry;
 
-  const EnvErrorWarning({
+  const EnvErrorWarningWidget({
     super.key,
     required this.errorMessage,
     required this.onRetry,

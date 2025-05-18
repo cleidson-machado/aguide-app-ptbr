@@ -1,19 +1,18 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/util/service_data_exception.dart';
 
-final String? apiUrl = dotenv.env['MOC_API_A'];
+
+final String apiUrl = EnvKeyHelperConfig.mocApi1;
 
 class UserService {
   final Logger _logger = Logger();
 
   Future<List<UserModel>> fetchUsersBasicWay() async {
-    if (apiUrl == null) {
-      throw ServiceDataException.handler(ErrorMessages.API_URL_NOT_SET_MESSAGE);
-    }
+
     final result = await Dio().get('$apiUrl/user/');
 
     if (result.statusCode == 200) {
@@ -21,18 +20,14 @@ class UserService {
       return data.map((user) => UserModel.fromMap(user)).toList();
     } else {
       throw ServiceDataException.handler(ErrorMessages.FAILED_TO_LOAD_USERS_MESSAGE);
-    }
+    } 
+
   }
 
   Future<List<UserModel>> fetchUsers() async {
-    await Future.delayed(
-        const Duration(seconds: 5)); // Simulate a 5-second delay
+    await Future.delayed(const Duration(seconds: 5)); // Simulate a 5-second delay
 
     try {
-      if (apiUrl == null) {
-        throw ServiceDataException.handler(ErrorMessages.API_URL_NOT_SET_MESSAGE);
-      }
-
       final result = await Dio().get('$apiUrl/user/');
       if (result.statusCode == 200) {
         List<dynamic> data = result.data;
