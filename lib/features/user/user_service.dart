@@ -5,6 +5,9 @@ import 'package:portugal_guide/features/user/user_model.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/util/service_data_exception.dart';
 
+//######################################################################################
+//### NOTE: MVC - CLASSIC STYLE EXAMPLE
+//######################################################################################
 
 final String apiUrl = EnvKeyHelperConfig.mocApi1;
 

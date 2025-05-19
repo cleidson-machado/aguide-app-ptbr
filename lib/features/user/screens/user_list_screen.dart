@@ -9,6 +9,10 @@ import 'package:provider/provider.dart';
 //### NOTE: TO DO NEXT... ADD SOME KIND NAVIGATOR USING HORIZONTAL NAV CARDS FOR GET THE USER STUFF..
 //######################################################################################
 
+//######################################################################################
+//### NOTE: MVC - CLASSIC STYLE EXAMPLE
+//######################################################################################
+
 class UserListScreen extends StatelessWidget {
   const UserListScreen({super.key});
 
