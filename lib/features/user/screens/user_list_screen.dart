@@ -1,26 +1,20 @@
 import 'package:flutter/cupertino.dart';
+import 'package:portugal_guide/app/core/rest_api_provider.dart';
 import 'package:portugal_guide/features/user/user_controller.dart';
-import 'package:portugal_guide/features/user/user_service.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/widgets/custom_cupertino_dialog_widget.dart';
 import 'package:provider/provider.dart';
-
-//######################################################################################
-//### NOTE: TO DO NEXT... ADD SOME KIND NAVIGATOR USING HORIZONTAL NAV CARDS FOR GET THE USER STUFF..
-//######################################################################################
-
-//######################################################################################
-//### NOTE: MVC - CLASSIC STYLE EXAMPLE
-//######################################################################################
 
 class UserListScreen extends StatelessWidget {
   const UserListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final appConfig = Provider.of<RestApiProvider>(context);
+    final String apiUrl = appConfig.apiUrl;
+
     return ChangeNotifierProvider(
-      create: (_) => UserController(UserService())
-        ..getUsers(), // Load users on init
+      create: (_) => UserController(endpoint: apiUrl)..getUsers(),
       child: Consumer<UserController>(
         builder: (context, controller, child) {
           if (controller.error.isNotEmpty) {
@@ -34,9 +28,7 @@ class UserListScreen extends StatelessWidget {
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 child: const Icon(CupertinoIcons.arrow_down_doc_fill),
-                onPressed: () {
-                  Provider.of<UserController>(context, listen: false)
-                      .getUsers();
+                onPressed: () {Provider.of<UserController>(context, listen: false).getUsers();
                 },
               ),
             ),
@@ -76,7 +68,6 @@ class UserListScreen extends StatelessWidget {
   }
 }
 
-
 void _showErrorDialog(BuildContext context, String message) {
-    customCupertinoDialog(context, message);
+  customCupertinoDialog(context, message);
 }

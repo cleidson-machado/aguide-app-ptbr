@@ -1,17 +1,21 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:portugal_guide/app/core/base/base_model.dart';
+
 //######################################################################################
 //### NOTE: TO DO NEXT... MAKE THIS GUY WORKS ON THE GOOGLE FIRE BASE STUFF...
 //######################################################################################
 
 //######################################################################################
-//### NOTE: MVC - CLASSIC STYLE EXAMPLE
+//### NOTE: MVC - CLASSIC STYLE EXAMPLE Plus Repository Uses
 //######################################################################################
 
-class UserModel {
+class UserModel implements BaseModel {
 
+  @override
   final String id;
+  
   final String username;
   final String email;
   final String passwordHash;
@@ -45,6 +49,7 @@ class UserModel {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,

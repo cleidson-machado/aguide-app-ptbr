@@ -1,36 +1,53 @@
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/repositories/api_repository.dart';
+import 'package:portugal_guide/app/core/repositories/base_repository.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
-import 'package:portugal_guide/features/user/user_service.dart';
-
-//######################################################################################
-//### NOTE: MVC - CLASSIC STYLE EXAMPLE
-//######################################################################################
 
 class UserController extends ChangeNotifier {
-  final UserService _service;
+  final BaseRepository<UserModel> _repository;
 
-  UserController(this._service);
+  // Aceita o endpoint como parâmetro
+  UserController({String? endpoint, BaseRepository<UserModel>? repository})
+      : _repository = repository ?? ApiRepository<UserModel>(
+          endpoint: endpoint ?? '/users', // Usa o endpoint fornecido ou '/users' como padrão
+          fromMap: UserModel.fromMap,
+        );
 
-  var isLoading = false;
-  var error = '';
-  var usersModel = <UserModel>[];
+  bool _isLoading = false;
+  String _error = '';
+  List<UserModel> _users = [];
 
-  Future<List<UserModel>> getUsers() async {
+  // Getters para a view
+  bool get isLoading => _isLoading;
+  String get error => _error;
+  List<UserModel> get usersModel => _users;
+
+  Future<void> getUsers() async {
     try {
-      isLoading = true;
-      notifyListeners(); // Notify UI about loading state
+      _isLoading = true;
+      notifyListeners();
 
-      final users = await _service.fetchUsers();
-      usersModel = users;
-      error = ''; // Clear any previous errors
-    } catch (err) {
-      error = err.toString();
-      usersModel = []; // Ensure a list is always returned
+      _users = await _repository.getAll();
+      _error = '';
+    } catch (e) {
+      _error = e.toString();
+      _users = [];
     } finally {
-      isLoading = false;
-      notifyListeners(); // Notify UI about state change
+      _isLoading = false;
+      notifyListeners();
     }
+  }
 
-    return usersModel; // Always return a list
+  Future<void> createUser(UserModel user) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _repository.create(user);
+      await getUsers(); // Refresh list
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 }
