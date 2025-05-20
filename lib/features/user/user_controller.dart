@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/repositories/api_repository.dart';
 import 'package:portugal_guide/app/core/repositories/base_repository.dart';
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 
 class UserController extends ChangeNotifier {
@@ -9,7 +10,7 @@ class UserController extends ChangeNotifier {
   // Aceita o endpoint como parâmetro
   UserController({String? endpoint, BaseRepository<UserModel>? repository})
       : _repository = repository ?? ApiRepository<UserModel>(
-          endpoint: endpoint ?? '/users', // Usa o endpoint fornecido ou '/users' como padrão
+          endpoint: endpoint ?? '${EnvKeyHelperConfig.mocApi1}/user/', // Usa o endpoint fornecido ou aquele QUE ESTÁ NO HELPER como padrão! Posso Trabalhar aqui com mais de um? Veiricar!!
           fromMap: UserModel.fromMap,
         );
 
