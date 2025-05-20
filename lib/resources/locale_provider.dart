@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 
-class LocaleProvider extends ChangeNotifier {
+class AppLocaleProvider extends ChangeNotifier {
   Locale _currentLocale;
-  LocaleProvider() : _currentLocale = _getDeviceLocale();
+  AppLocaleProvider() : _currentLocale = _getDeviceLocale();
   Locale get currentLocale => _currentLocale;
 
   static Locale _getDeviceLocale() {

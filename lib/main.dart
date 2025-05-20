@@ -28,9 +28,9 @@ Future<Widget> _initializeApp() async {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppTheme()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppThemeProvider ))
-        ChangeNotifierProvider(create: (_) => LocaleProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppLocaleProvider ))
-        ChangeNotifierProvider(create: (_) => RestApiProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppRestApiProvider ))
+        ChangeNotifierProvider(create: (_) => AppThemeProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppThemeProvider ))
+        ChangeNotifierProvider(create: (_) => AppLocaleProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppLocaleProvider ))
+        ChangeNotifierProvider(create: (_) => AppRestApiProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppRestApiProvider ))
       ],
       child: ModularApp(
         module: AppRouteModule(),

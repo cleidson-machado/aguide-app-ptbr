@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-class AppTheme with ChangeNotifier {
+class AppThemeProvider with ChangeNotifier {
   bool _isDarkMode = false;
 
   bool get isDarkMode => _isDarkMode;

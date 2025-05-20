@@ -13,6 +13,7 @@ class MainContentTopicScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     final List<Map<String, String>> blogPosts = List.generate(25, (index) {
       return {
         "title": "Blog Post ${index + 1}",
@@ -32,14 +33,13 @@ class MainContentTopicScreen extends StatelessWidget {
               builder:
                   (BuildContext context) => CupertinoActionSheet(
                     title: Text(
-                      AppLocalizations.of(context)?.selectLanguage ??
-                          'Select Language',
+                      AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
                     ),
                     actions: <CupertinoActionSheetAction>[
                       CupertinoActionSheetAction(
                         onPressed: () {
                           // ###################################################### Mudar para Português
-                          Provider.of<LocaleProvider>(
+                          Provider.of<AppLocaleProvider>(
                             context,
                             listen: false,
                           ).changeLocale(const Locale('pt', ''));
@@ -67,7 +67,7 @@ class MainContentTopicScreen extends StatelessWidget {
                       CupertinoActionSheetAction(
                         onPressed: () {
                           // ###################################################### Mudar para Inglês
-                          Provider.of<LocaleProvider>(
+                          Provider.of<AppLocaleProvider>(
                             context,
                             listen: false,
                           ).changeLocale(const Locale('en', ''));
@@ -93,7 +93,7 @@ class MainContentTopicScreen extends StatelessWidget {
                       CupertinoActionSheetAction(
                         onPressed: () {
                           // ###################################################### Mudar para Espanhol
-                          Provider.of<LocaleProvider>(
+                          Provider.of<AppLocaleProvider>(
                             context,
                             listen: false,
                           ).changeLocale(const Locale('es', ''));
@@ -119,7 +119,7 @@ class MainContentTopicScreen extends StatelessWidget {
                       CupertinoActionSheetAction(
                         onPressed: () {
                           // ###################################################### Mudar para Francês
-                          Provider.of<LocaleProvider>(
+                          Provider.of<AppLocaleProvider>(
                             context,
                             listen: false,
                           ).changeLocale(const Locale('fr', ''));

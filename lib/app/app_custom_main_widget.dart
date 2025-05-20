@@ -21,20 +21,20 @@ class _AppMainWidgetState extends State<AppMainWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppTheme>(
-      builder: (context, appTheme, child) {
-        return Consumer<LocaleProvider>(
-          builder: (context, localeProvider, _) {
+    return Consumer<AppThemeProvider>(
+      builder: (context, appThemeProvider, child) {
+        return Consumer<AppLocaleProvider>(
+          builder: (context, applocaleProvider, _) {
             return CupertinoApp.router(
               title: 'Meu App Cupertino',
-              theme: appTheme.themeData,
+              theme: appThemeProvider.themeData,
               routerConfig: Modular.routerConfig,
               // onGenerateRoute: AppRoutesHandler.generateRoute,
               // initialRoute: AppRoutesHandler.home,
               debugShowCheckedModeBanner: isDev ? true : false,
               
               // Adicionando suporte a internacionalização
-              locale: localeProvider.currentLocale,
+              locale: applocaleProvider.currentLocale,
               localizationsDelegates: const [
                 AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,

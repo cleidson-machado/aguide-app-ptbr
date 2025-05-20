@@ -10,8 +10,9 @@ class UserListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appConfig = Provider.of<RestApiProvider>(context);
-    final String apiUrl = appConfig.apiUrl;
+
+    final appRestApiProvider = Provider.of<AppRestApiProvider>(context);
+    final String apiUrl = appRestApiProvider.apiUrl;
 
     return ChangeNotifierProvider(
       create: (_) => UserController(endpoint: apiUrl)..getUsers(),
