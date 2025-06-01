@@ -1,20 +1,34 @@
-# portugal_guide
+# Portugal Guide - Guia para Brasileiros 🇧🇷🇵🇹
 
-A new Flutter project.
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 
-## Getting Started
+Um aplicativo para auxiliar brasileiros que planejam morar, trabalhar ou viajar em Portugal.
 
-This project is a starting point for a Flutter application.
+## ✨ Temas Principais
 
-A few resources to get you started if this is your first Flutter project:
+- 📚 Guia sobre como viver em Portugal
+- 🏡 Informações sobre moradia e custo de vida
+- 💼 Dicas para trabalho e visto de residência
+- 🏥 Orientação sobre saúde e sistema público
+- 🚍 Transporte e mobilidade em Portugal
+- � Costumes e cultura portuguesa
+- 🆘 Informações úteis de emergência
+- 📅 Atualizações sobre leis e regulamentos
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🚀 Começando
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Este projeto utiliza Flutter para criar uma experiência multiplataforma.
 
+### Pré-requisitos
+- Flutter SDK (versão 3.32 ou superior)
+- Dart (versão 3.8.0 ou superior)
+- Dispositivo ou emulador para teste
+
+### Instalação
+1. Clone este repositório
+   ```sh
+   git clone https://github.com/cleidson-machado/aguide-app-ptbr.git
 
 ### Key Concepts of The language and The Project Itself:
 # A Widget in Dart is just a class.

@@ -1,4 +1,3 @@
-// lib/core/repositories/api_repository.dart
 import 'package:dio/dio.dart';
 import 'package:portugal_guide/app/core/base/base_model.dart';
 import 'package:portugal_guide/app/core/repositories/base_repository.dart';
