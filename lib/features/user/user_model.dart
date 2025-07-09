@@ -1,51 +1,34 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
 import 'package:portugal_guide/app/core/base/base_model.dart';
-
-//######################################################################################
-//### NOTE: TO DO NEXT... MAKE THIS GUY WORKS ON THE GOOGLE FIRE BASE STUFF...
-//######################################################################################
-
-//######################################################################################
-//### NOTE: MVC - CLASSIC STYLE EXAMPLE Plus Repository Uses
-//######################################################################################
 
 class UserModel implements BaseModel {
 
   @override
   final String id;
   
-  final String username;
-  final String email;
-  final String passwordHash;
-  final String firstName;
-  final String lastName;
+  String name;
+  String surname;
+  String email;
 
   UserModel({
     required this.id,
-    required this.username,
+    required this.name,
+    required this.surname,
     required this.email,
-    required this.passwordHash,
-    required this.firstName,
-    required this.lastName,
   });
 
   UserModel copyWith({
     String? id,
-    String? username,
+    String? name,
+    String? surname,
     String? email,
-    String? passwordHash,
-    String? firstName,
-    String? lastName,
   }) {
     return UserModel(
       id: id ?? this.id,
-      username: username ?? this.username,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
       email: email ?? this.email,
-      passwordHash: passwordHash ?? this.passwordHash,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
     );
   }
 
@@ -53,22 +36,18 @@ class UserModel implements BaseModel {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
-      'username': username,
+      'name': name,
+      'surname': surname,
       'email': email,
-      'passwordHash': passwordHash,
-      'firstName': firstName,
-      'lastName': lastName,
     };
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: map['id'] as String,
-      username: map['username'] as String,
-      email: map['email'] as String,
-      passwordHash: map['passwordHash'] as String,
-      firstName: map['firstName'] as String,
-      lastName: map['lastName'] as String,
+      id: map['id'] ?? '',
+      name: map['name'] ?? 'No Name',
+      surname: map['surname'] ?? 'No Surname',
+      email: map['email'] ?? 'no.email@provider.com',
     );
   }
 
@@ -78,7 +57,7 @@ class UserModel implements BaseModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, username: $username, email: $email, passwordHash: $passwordHash, firstName: $firstName, lastName: $lastName)';
+    return 'UserModel(id: $id, name: $name, surname: $surname, email: $email)';
   }
 
   @override
@@ -87,20 +66,16 @@ class UserModel implements BaseModel {
   
     return 
       other.id == id &&
-      other.username == username &&
-      other.email == email &&
-      other.passwordHash == passwordHash &&
-      other.firstName == firstName &&
-      other.lastName == lastName;
+      other.name == name &&
+      other.surname == surname &&
+      other.email == email;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      username.hashCode ^
-      email.hashCode ^
-      passwordHash.hashCode ^
-      firstName.hashCode ^
-      lastName.hashCode;
+      name.hashCode ^
+      surname.hashCode ^
+      email.hashCode;
   }
 }

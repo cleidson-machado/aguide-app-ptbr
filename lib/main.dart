@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -14,7 +15,18 @@ import 'package:logger/logger.dart';
 final logger = Logger(); // Instância global do Logger
 const String envFileName = ".env.dev";
 
+// ########### Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção! --- INICO
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
+// ########### Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção! --- FIM
+
 void main() {
+  HttpOverrides.global = MyHttpOverrides(); // Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção!
   WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO? YES!!!!!
   _initializeApp().then((app) => runApp(app));
 }

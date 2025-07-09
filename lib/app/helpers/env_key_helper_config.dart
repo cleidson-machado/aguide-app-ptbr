@@ -14,6 +14,7 @@ class EnvKeyHelperConfig {
   static String get chatbotUrl => dotenv.env['CHATBOT_URL'] ?? '';
   static String get imageMocTemp1 => dotenv.env['IMAGES_TEMP_GENERATOR'] ?? '';
   static String get mocApi1 => dotenv.env['MOC_API_A'] ?? '';
+  static String get mocApi2 => dotenv.env['MOC_API_B'] ?? '';
 
   // Auth / Security
   static String get apiKey => dotenv.env['API_KEY'] ?? '';

@@ -10,8 +10,8 @@ class AppRouteModule extends Module {
   @override
   void routes(RouteManager r) {
     final routes = {
-      //AppRoutes.initial: const UserListScreen(), // SPLACH SCREEN???
-      AppRoutes.initial: const HomeContentTabScreen(), // SPLACH SCREEN???
+      AppRoutes.initial: const UserListScreen(), // SPLACH SCREEN???
+      //AppRoutes.initial: const HomeContentTabScreen(), // SPLACH SCREEN???
       //AppRoutes.initial: const CoreAuthLoginScreen(), // SPLACH SCREEN???
       AppRoutes.login: const CoreAuthLoginScreen(),
       AppRoutes.register: const CoreAuthRegisterScreen(),
