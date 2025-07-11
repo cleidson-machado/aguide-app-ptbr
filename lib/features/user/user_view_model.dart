@@ -28,8 +28,8 @@ class UserViewModel extends ChangeNotifier {
   Future<void> loadUsers() async {
     _setLoading(true);
     try {
-      error = null;
-      await Future.delayed(const Duration(seconds: 2)); // Simula um atraso de 2 segundos
+      error = null; // ######################################### Clear the error message before loading users
+      await Future.delayed(const Duration(seconds: 2)); // ##### Simulates a 2-second delay
       _users = await _userRepository.getAll();
     } catch (err, stackTrace) {
       _logError('loadUsers METHOD', err, stackTrace);
