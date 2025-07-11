@@ -33,7 +33,7 @@ class UserViewModel extends ChangeNotifier {
       _users = await _userRepository.getAll();
     } catch (err, stackTrace) {
       _logError('loadUsers METHOD', err, stackTrace);
-      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_LOAD_DATA;
+      error = ErrorMessages.defaultMsnFailedToLoadData;
       _users = [];
     }
     _setLoading(false);
@@ -57,7 +57,7 @@ class UserViewModel extends ChangeNotifier {
       await loadUsers();
     } catch (err, stackTrace) {
       _logError('addUser METHOD', err, stackTrace);
-      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_SAVE_DATA;
+      error = ErrorMessages.defaultMsnFailedToSaveData;
       _setLoading(false);
     }
   }
@@ -80,7 +80,7 @@ class UserViewModel extends ChangeNotifier {
       await loadUsers();
     } catch (err, stackTrace) {
       _logError('updateUser METHOD', err, stackTrace);
-      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_UPDATE_DATA;
+      error = ErrorMessages.defaultMsnFailedToUpdateData;
       _setLoading(false);
     }
   }
@@ -92,7 +92,7 @@ class UserViewModel extends ChangeNotifier {
       await loadUsers();
     } catch (err, stackTrace) {
       _logError('deleteUser METHOD', err, stackTrace);
-      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_DESTROY_DATA;
+      error = ErrorMessages.defaultMsnFailedToDestroyData;
       _setLoading(false);
     }
   }

@@ -54,5 +54,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get selectLanguage => '¡Seleccione el idioma que desea!';
 
   @override
+  String get userSimpleListViewTitle => 'Simples - Listado de Usuarios';
+
+  @override
   String get cancel => 'Cancelar';
 }

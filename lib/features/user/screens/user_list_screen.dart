@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
+import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 import 'package:portugal_guide/widgets/custom_cupertino_dialog_widget.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +26,9 @@ class UserListScreen extends StatelessWidget {
           
           return CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
-              middle: const Text('Simple - List of Users'),
+              middle: Text(
+                      AppLocalizations.of(context)!.userSimpleListViewTitle,
+                    ),
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 child: const Icon(CupertinoIcons.arrow_down_doc_fill),
@@ -44,7 +47,7 @@ class UserListScreen extends StatelessWidget {
                   : viewModel.users.isEmpty
                       ? const Center(
                           child: Text(
-                            ErrorMessages.DEFAULT_MSN_FAILED_TO_LOAD_DATA,
+                            ErrorMessages.defaultMsnFailedToLoadData,
                             style: TextStyle(
                                 fontSize: 18,
                                 color: CupertinoColors.systemGrey),

@@ -192,6 +192,12 @@ abstract class AppLocalizations {
   /// **'Select the language you want!'**
   String get selectLanguage;
 
+  /// No description provided for @userSimpleListViewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple - List of Users'**
+  String get userSimpleListViewTitle;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
