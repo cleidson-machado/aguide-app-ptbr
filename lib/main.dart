@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:portugal_guide/app/app_custom_main_widget.dart';
-import 'package:portugal_guide/app/core/rest_api_provider.dart';
 import 'package:portugal_guide/app/helpers/env_error_warning_widget.dart';
 import 'package:portugal_guide/app/routing/app_route_module.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
@@ -40,9 +39,8 @@ Future<Widget> _initializeApp() async {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppThemeProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppThemeProvider ))
-        ChangeNotifierProvider(create: (_) => AppLocaleProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppLocaleProvider ))
-        ChangeNotifierProvider(create: (_) => AppRestApiProvider()), // REFACTOR HERE!! LEAVE ALL THIS GUYS WITH THE SAME NAME LOGIC: (( AppRestApiProvider ))
+        ChangeNotifierProvider(create: (_) => AppThemeProvider()), // Manages the app's visual theme (light/dark mode) across the entire application.
+        ChangeNotifierProvider(create: (_) => AppLocaleProvider()), // Manages the app's language, defaulting to the device's locale on startup.
       ],
       child: ModularApp(
         module: AppRouteModule(),
