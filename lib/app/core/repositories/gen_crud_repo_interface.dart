@@ -1,6 +1,8 @@
 import 'package:portugal_guide/app/core/base/base_model.dart';
 
-abstract class BaseRepository<T extends BaseModel> {
+//### ATTENTION: This code is for a generic Crud repository interface for the MVVM pattern. ###
+
+abstract class GenCrudRepoInterface<T extends BaseModel> {
   Future<List<T>> getAll();
   Future<T?> getById(String id);
   Future<T> create(T item);

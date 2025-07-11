@@ -1,42 +1,99 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
-import 'package:portugal_guide/features/user/user_service.dart';
+import 'package:portugal_guide/features/user/user_repository.dart';
+import 'package:portugal_guide/util/error_messages.dart';
 
 class UserViewModel extends ChangeNotifier {
-  final UserService _userService = UserService();
+  final UserRepository _userRepository = UserRepository();
+  final logger = Logger();
+
   List<UserModel> _users = [];
   String? error;
+  bool _isLoading = false;
 
   List<UserModel> get users => _users;
+  bool get isLoading => _isLoading;
 
+  void _logError(String action, Object err, StackTrace stackTrace) {
+    final className = runtimeType.toString();
+    logger.e('$className - ERROR: "$action"', error: err, stackTrace: stackTrace);
+  }
 
-  Future<void> loadUsers() async {
-    try {
-      error = null;
-      _users = await _userService.fetchUsers();
-    } catch (e) {
-      error = e.toString();
-      _users = [];
-    }
+  void _setLoading(bool value) {
+    _isLoading = value;
     notifyListeners();
   }
 
-  // Assinatura atualizada
-  Future<void> addUser(String name, String surname, String email, String password) async {
-    await _userService.addUser(name, surname, email, password);
-    await loadUsers(); // Recarrega a lista para mostrar o novo usuário
+  Future<void> loadUsers() async {
+    _setLoading(true);
+    try {
+      error = null;
+      await Future.delayed(const Duration(seconds: 2)); // Simula um atraso de 2 segundos
+      _users = await _userRepository.getAll();
+    } catch (err, stackTrace) {
+      _logError('loadUsers METHOD', err, stackTrace);
+      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_LOAD_DATA;
+      _users = [];
+    }
+    _setLoading(false);
   }
 
-  // Assinatura atualizada
-  Future<void> updateUser(String id, String name, String surname, String email) async {
-    await _userService.updateUser(id, name, surname, email);
-    await loadUsers();
+  Future<void> addUser(
+    String name,
+    String surname,
+    String email,
+    String password,
+  ) async {
+    _setLoading(true);
+    try {
+      final newUser = UserModel(
+        id: '',
+        name: name,
+        surname: surname,
+        email: email,
+      );
+      await _userRepository.create(newUser);
+      await loadUsers();
+    } catch (err, stackTrace) {
+      _logError('addUser METHOD', err, stackTrace);
+      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_SAVE_DATA;
+      _setLoading(false);
+    }
   }
 
-  // Assinatura atualizada
+  Future<void> updateUser(
+    String id,
+    String name,
+    String surname,
+    String email,
+  ) async {
+    _setLoading(true);
+    try {
+      final updatedUser = UserModel(
+        id: id,
+        name: name,
+        surname: surname,
+        email: email,
+      );
+      await _userRepository.update(updatedUser);
+      await loadUsers();
+    } catch (err, stackTrace) {
+      _logError('updateUser METHOD', err, stackTrace);
+      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_UPDATE_DATA;
+      _setLoading(false);
+    }
+  }
+
   Future<void> deleteUser(String id) async {
-    await _userService.deleteUser(id);
-    await loadUsers();
+    _setLoading(true);
+    try {
+      await _userRepository.destroy(id);
+      await loadUsers();
+    } catch (err, stackTrace) {
+      _logError('deleteUser METHOD', err, stackTrace);
+      error = ErrorMessages.DEFAULT_MSN_FAILED_TO_DESTROY_DATA;
+      _setLoading(false);
+    }
   }
-
 }

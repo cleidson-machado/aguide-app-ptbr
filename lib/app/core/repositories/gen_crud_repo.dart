@@ -1,13 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:portugal_guide/app/core/base/base_model.dart';
-import 'package:portugal_guide/app/core/repositories/base_repository.dart';
+import 'package:portugal_guide/app/core/repositories/gen_crud_repo_interface.dart';
 
-class ApiRepository<T extends BaseModel> implements BaseRepository<T> {
+//### ATTENTION: This code is for a generic Crud repository service Class for the MVVM pattern. ###
+
+class GenCrudRepo<T extends BaseModel> implements GenCrudRepoInterface<T> {
   final Dio _dio;
   final String _endpoint;
   final T Function(Map<String, dynamic>) _fromMap;
 
-  ApiRepository({
+  GenCrudRepo({
     required String endpoint,
     required T Function(Map<String, dynamic>) fromMap,
     Dio? dio,
