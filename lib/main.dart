@@ -44,7 +44,7 @@ Future<Widget> _initializeApp() async {
       ],
       child: ModularApp(
         module: AppRouteModule(),
-        child: const AppMainWidget(),
+        child: const AppMainWidget(), // Verifiy if this is the correct usage of AppMainWidget because we have internacionalization stuff in side it, so it should be the main widget of the app.
       ),
     );
   } catch (err, stackTrace) {
