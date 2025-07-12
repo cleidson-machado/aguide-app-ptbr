@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 
 class UserViewModel extends ChangeNotifier {
-  final UserRepository _userRepository = UserRepository();
+  final UserRepositoryInterface _userRepository;
   final logger = Logger();
+
+  UserViewModel({required UserRepositoryInterface repository}) : _userRepository = repository;
 
   List<UserModel> _users = [];
   String? error;

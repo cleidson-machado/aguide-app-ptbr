@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:portugal_guide/app/app_custom_main_widget.dart';
+import 'package:portugal_guide/app/core/config/injector.dart'; // ##### dependency_injector ######: Importa o Service Locator!!
 import 'package:portugal_guide/app/helpers/env_error_warning_widget.dart';
 import 'package:portugal_guide/app/routing/app_route_module.dart';
 import 'package:portugal_guide/app/theme/app_theme_provider_full.dart';
@@ -27,6 +28,9 @@ class MyHttpOverrides extends HttpOverrides {
 void main() {
   HttpOverrides.global = MyHttpOverrides(); // Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção!
   WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO? YES!!!!!
+
+  setupDependencies(); // <-- ##### dependency_injector ######: Importa o Service Locator!!
+
   _initializeApp().then((app) => runApp(app));
 }
 
