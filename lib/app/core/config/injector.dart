@@ -33,15 +33,15 @@ void setupDependencies() {
 //
 // ## REGISTRATION DETAILS
 //
-// 1. `registerLazySingleton<IUserRepository>(() => UserRepository());`
+// 1. `registerLazySingleton<UserRepositoryInterface>(() => UserRepository());`
 //    - This line registers the repository dependency.
 //    - `registerLazySingleton`: It tells the service locator that there should only
 //      be ONE instance of the repository throughout the app's lifecycle. It's "lazy"
 //      because the `UserRepository` instance is only created the very first time
 //      it's requested, not at startup.
-//    - `<IUserRepository>`: We are registering the ABSTRACT INTERFACE as the "key".
+//    - `<UserRepositoryInterface>`: We are registering the ABSTRACT INTERFACE as the "key".
 //      This is the core of the Dependency Inversion Principle. Other classes will
-//      request an `IUserRepository` without knowing the concrete implementation.
+//      request an `UserRepositoryInterface` without knowing the concrete implementation.
 //    - `() => UserRepository()`: This is the factory function that tells the locator
 //      HOW to create the object. It provides the CONCRETE CLASS `UserRepository`.
 //
@@ -50,8 +50,8 @@ void setupDependencies() {
 //    - `registerFactory`: This tells the service locator to create a NEW INSTANCE
 //      of `UserViewModel` every single time it is requested. This is ideal for
 //      ViewModels that are tied to the lifecycle of a specific screen.
-//    - `repository: injector<IUserRepository>()`: This is where the
+//    - `repository: injector<UserRepositoryInterface>()`: This is where the
 //      magic of DI happens. When creating the `UserViewModel`, its `repository`
 //      parameter is fulfilled by asking the service locator for an instance of
-//      `IUserRepository`. The locator looks up its registry and provides the
+//      `UserRepositoryInterface`. The locator looks up its registry and provides the
 //      singleton instance of `UserRepository` that we registered above.

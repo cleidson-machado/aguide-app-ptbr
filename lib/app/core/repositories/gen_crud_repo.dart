@@ -1,8 +1,10 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:dio/dio.dart';
+// MUDANÇA 1: Importar o pacote 'meta' para a anotação @protected
+import 'package:meta/meta.dart';
 import 'package:portugal_guide/app/core/base/base_model.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repo_interface.dart';
-
-//### ATTENTION: This code is for a generic Crud repository service Class for the MVVM pattern. ###
 
 class GenCrudRepo<T extends BaseModel> implements GenCrudRepoInterface<T> {
   final Dio _dio;
@@ -13,10 +15,22 @@ class GenCrudRepo<T extends BaseModel> implements GenCrudRepoInterface<T> {
     required String endpoint,
     required T Function(Map<String, dynamic>) fromMap,
     Dio? dio,
-  }) : _endpoint = endpoint,
-       _fromMap = fromMap,
-       _dio = dio ?? Dio();
+  })  : _endpoint = endpoint,
+        _fromMap = fromMap,
+        _dio = dio ?? Dio();
 
+  // MUDANÇA 2: Criar getters públicos, mas protegidos, para as subclasses
+  @protected
+  Dio get dio => _dio;
+
+  @protected
+  String get endpoint => _endpoint;
+
+  @protected
+  T Function(Map<String, dynamic>) get fromMap => _fromMap;
+
+
+  // Os métodos de CRUD genéricos continuam aqui, sem alterações...
   @override
   Future<List<T>> getAll() async {
     try {

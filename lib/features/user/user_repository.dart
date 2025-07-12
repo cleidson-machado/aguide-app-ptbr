@@ -35,21 +35,59 @@ class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInt
     return dio;
   }
   
+  // ##################################################################
+  // ### IMPLEMENTAÇÃO CORRIGIDA DOS MÉTODOS ESPECÍFICOS ###
+  // ##################################################################
+
   @override
-  Future<void> changeUserPassword(String userId, String newPassword) {
-    // TODO: implement changeUserPassword
-    throw UnimplementedError();
+  Future<void> changeUserPassword(String userId, String newPassword) async {
+    try {
+      // MUDANÇA: Usa os getters 'dio' e 'endpoint'
+      final response = await dio.put(
+        '$endpoint/$userId/password', // Usa o getter 'endpoint'
+        data: {
+          'password': newPassword,
+        },
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to change password');
+      }
+    } catch (e) {
+      throw Exception('Error changing user password: $e');
+    }
+  }
+
+  @override
+  Future<UserModel?> findByEmail(String email) async {
+    try {
+      // MUDANÇA: Agora usamos os getters 'dio' e 'endpoint' da classe pai.
+      final response = await dio.get(
+        endpoint, // Usa o getter 'endpoint'
+        queryParameters: {'email': email},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        if (data.isNotEmpty) {
+          // MUDANÇA: Usa o getter 'fromMap'
+          return fromMap(data.first);
+        }
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Error finding user by email: $e');
+    }
   }
   
   @override
-  Future<UserModel?> findByEmail(String email) {
-    // TODO: implement findByEmail
-    throw UnimplementedError();
+  Future<bool> isEmailAlreadyRegistered(String email) async {
+    try {
+      final user = await findByEmail(email);
+      return user != null;
+    } catch (e) {
+      throw Exception('Error checking if email is registered: $e');
+    }
   }
-  
-  @override
-  Future<bool> isEmailAlreadyRegistered(String email) {
-    // TODO: implement isEmailAlreadyRegistered
-    throw UnimplementedError();
-  }
+
 }
