@@ -1,37 +1,51 @@
 name: portugal_guide
 description: "Guia completo de Portugal para brasileiros"
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev ##
-
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.7.2 <4.0.0" # FLUTTER Range
+  sdk: ">=3.7.2 <4.0.0"
 
 dependencies:
+  # FLUTTER & CORE SDK
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  intl: ^0.20.2
 
-  cupertino_icons: ^1.0.8
-  google_fonts: ^5.0.0
-  provider: ^6.1.2
-  path_provider: ^2.1.2
-  flutter_dotenv: ^5.2.1
-  dio: ^5.8.0+1
-  http: ^1.4.0
-  logger: ^2.5.0
-  country_flags: ^3.2.0
-  flutter_modular: ^6.3.4
-  get_it: ^8.0.3
+  # ARQUITETURA, ROTAS E INJEÇÃO DE DEPENDÊNCIA
+  # Nota: Você tem 3 pacotes que podem lidar com DI/Estado. Modular já oferece DI.
+  # Considere padronizar para evitar complexidade.
+  flutter_modular: ^6.3.4           ############################ Para modularização, gerenciamento de rotas e injeção de dependência - DI.
+  get_it: ^8.0.3                    ############################ Service Locator para injeção de dependência - DI, desacoplando a interface da implementação.
+  provider: ^6.1.2                  ############################ Wrapper para InheritedWidget, usado para gerenciamento de estado e DI simples.
+
+  # NETWORK & API
+  # Nota: Dio é mais robusto (interceptors, etc.), enquanto http é mais simples.
+  # Geralmente, escolhe-se um, mas podem coexistir para casos de uso diferentes.
+  dio: ^5.8.0+1                     ############################ Cliente HTTP poderoso para Dart, com suporte a interceptors, FormData, etc.
+  http: ^1.4.0                      ############################ Cliente HTTP mais simples e fundamental para requisições web.
+
+  # UI & VISUAL
+  google_fonts: ^5.0.0              ############################ Para usar fontes do Google Fonts de forma fácil.
+  cupertino_icons: ^1.0.8           ############################ Ícones padrões do estilo iOS.
+  country_flags: ^3.2.0             ############################ Widget para exibir bandeiras de países.
+
+  # UTILITÁRIOS & SISTEMA
+  intl: ^0.20.2                     ############################ Para internacionalização (i18n) e formatação de datas, números, etc.
+  path_provider: ^2.1.2             ############################ Para acessar caminhos comuns no sistema de arquivos do dispositivo.
+  flutter_dotenv: ^5.2.1            ############################ Para carregar variáveis de ambiente de um arquivo .env.
+  logger: ^2.5.0                    ############################ Logger para exibir logs coloridos e formatados no console para debug.
 
 dev_dependencies:
+  # TESTES E QUALIDADE DE CÓDIGO
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
-  flutter_gen_runner: ^5.9.0
-  build_runner: ^2.4.13
+  flutter_lints: ^4.0.0             ############################ Regras de linting oficiais para projetos Dart e Flutter.
+
+  # GERAÇÃO DE CÓDIGO (CODEGEN)
+  build_runner: ^2.4.13             ############################ Ferramenta para gerar arquivos a partir de anotações em código (usado pelo Modular, etc.).
+  flutter_gen_runner: ^5.9.0        ############################ Gera código para assets, fontes, cores, etc., evitando strings literais.
 
 flutter:
   uses-material-design: true
