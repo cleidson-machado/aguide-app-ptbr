@@ -3,7 +3,7 @@ import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 
-final injector = GetIt.instance; //##### dependency_injector ###### dependency add to the pubspekage
+final injector = GetIt.instance; //##### dependency_injector ###### get_it dependency add to the pubspekage!!
 
 void setupDependencies() {
   injector.registerLazySingleton<UserRepositoryInterface>(() => UserRepository());

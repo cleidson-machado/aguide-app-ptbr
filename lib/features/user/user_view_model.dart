@@ -2,8 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
-import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/util/error_messages.dart';
+
+// Applying the Dependency Inversion Principle (SOLID) ####################################
+// The ViewModel depends on an abstraction (interface) and not on a concrete implementation.
+// This facilitates the testability and maintenance of the code.
+// In addition, the ViewModel does not know the implementation details of the repository, it only interacts with it through the interface.
+// This allows the repository to be easily replaced with a different implementation if necessary.
 
 class UserViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;

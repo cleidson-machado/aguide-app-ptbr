@@ -16,6 +16,9 @@ class EnvKeyHelperConfig {
   static String get mocApi1 => dotenv.env['MOC_API_A'] ?? '';
   static String get mocApi2 => dotenv.env['MOC_API_B'] ?? '';
 
+  // Moc Api B Token
+  static String get tokenKeyForMocApi2 => dotenv.env['KEY_MOC_API_B'] ?? '';
+
   // Auth / Security
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
   static int get tokenExpirationMinutes => int.tryParse(dotenv.env['TOKEN_EXPIRATION_MINUTES'] ?? '') ?? 60;

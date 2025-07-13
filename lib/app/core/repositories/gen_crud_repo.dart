@@ -21,10 +21,10 @@ class GenCrudRepo<T extends BaseModel> implements GenCrudRepoInterface<T> {
 
   // MUDANÇA 2: Criar getters públicos, mas protegidos, para as subclasses
   @protected
-  Dio get dio => _dio;
+  Dio get dioGenCrudRepo => _dio;
 
   @protected
-  String get endpoint => _endpoint;
+  String get endpointGenCrudRepo => _endpoint;
 
   @protected
   T Function(Map<String, dynamic>) get fromMap => _fromMap;

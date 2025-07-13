@@ -25,8 +25,8 @@ class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInt
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          const String tokenTest = 'my-token-super-recur-12345';
-          options.headers['Authorization'] = 'Bearer $tokenTest';
+          const String tokenRestApi = 'my-token-super-recur-12345';// I stot here the token for the sake of example is not working with the EnvKeyHelperConfig Env Class
+          options.headers['Authorization'] = 'Bearer $tokenRestApi';
           return handler.next(options);
         },
       ),
@@ -43,8 +43,8 @@ class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInt
   Future<void> changeUserPassword(String userId, String newPassword) async {
     try {
       // MUDANÇA: Usa os getters 'dio' e 'endpoint'
-      final response = await dio.put(
-        '$endpoint/$userId/password', // Usa o getter 'endpoint'
+      final response = await dioGenCrudRepo.put(
+        '$endpointGenCrudRepo/$userId/password', // Usa o getter 'endpoint'
         data: {
           'password': newPassword,
         },
@@ -62,8 +62,8 @@ class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInt
   Future<UserModel?> findByEmail(String email) async {
     try {
       // MUDANÇA: Agora usamos os getters 'dio' e 'endpoint' da classe pai.
-      final response = await dio.get(
-        endpoint, // Usa o getter 'endpoint'
+      final response = await dioGenCrudRepo.get(
+        endpointGenCrudRepo, // Usa o getter 'endpoint'
         queryParameters: {'email': email},
       );
 
