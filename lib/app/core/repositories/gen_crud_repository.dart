@@ -4,14 +4,16 @@ import 'package:dio/dio.dart';
 // MUDANÇA 1: Importar o pacote 'meta' para a anotação @protected
 import 'package:meta/meta.dart';
 import 'package:portugal_guide/app/core/base/base_model.dart';
-import 'package:portugal_guide/app/core/repositories/gen_crud_repo_interface.dart';
+import 'package:portugal_guide/app/core/repositories/gen_crud_repository_interface.dart';
 
-class GenCrudRepo<T extends BaseModel> implements GenCrudRepoInterface<T> {
+//### ATTENTION: This code is for a generic Crud repository class for the MVVM pattern. ###
+
+class GenCrudRepository<T extends BaseModel> implements GenCrudRepositoryInterface<T> {
   final Dio _dio;
   final String _endpoint;
   final T Function(Map<String, dynamic>) _fromMap;
 
-  GenCrudRepo({
+  GenCrudRepository({
     required String endpoint,
     required T Function(Map<String, dynamic>) fromMap,
     Dio? dio,

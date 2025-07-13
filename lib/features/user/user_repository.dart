@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:portugal_guide/app/core/repositories/gen_crud_repo.dart';
+import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 
-class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInterface {
+class UserRepository extends GenCrudRepository<UserModel> implements UserRepositoryInterface {
 
   UserRepository()
       : super(
@@ -25,7 +25,7 @@ class UserRepository extends GenCrudRepo<UserModel> implements UserRepositoryInt
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          const String tokenRestApi = 'my-token-super-recur-12345';// I stot here the token for the sake of example is not working with the EnvKeyHelperConfig Env Class
+          const String tokenRestApi = 'my-token-super-recur-12345';// I stop here the token for the sake of example is not working with the EnvKeyHelperConfig Env Class
           options.headers['Authorization'] = 'Bearer $tokenRestApi';
           return handler.next(options);
         },
