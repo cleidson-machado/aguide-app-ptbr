@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
+import 'package:portugal_guide/app/token/rest_api_token.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 
@@ -25,8 +26,9 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          const String tokenRestApi = 'my-token-super-recur-12345';// I stop here the token for the sake of example is not working with the EnvKeyHelperConfig Env Class
-          options.headers['Authorization'] = 'Bearer $tokenRestApi';
+          final String passKey = RestApiToken.key;
+          // Use the token from RestApiToken just for demonstration an local development 
+          options.headers['Authorization'] = 'Bearer $passKey';
           return handler.next(options);
         },
       ),
