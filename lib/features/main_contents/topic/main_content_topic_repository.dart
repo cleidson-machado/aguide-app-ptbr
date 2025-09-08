@@ -43,6 +43,11 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   }
 
   // #########################################################
+  // ### ANOTAÇÕES SOBRE o Override do getAll() ### volar e rever!
+  // https://apps.abacus.ai/chatllm/?convoId=11f362b48e&appId=30ebe4a4
+  // #########################################################
+
+  // #########################################################
   // ### SOBRESCREVENDO O MÉTODO getAll() PARA ESSA API ###
   // #########################################################
   
