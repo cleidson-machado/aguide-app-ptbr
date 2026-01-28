@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, unnecessary_brace_in_string_interps
 
 import 'package:dio/dio.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
@@ -48,7 +48,7 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   // #########################################################
 
   // #########################################################
-  // ### SOBRESCREVENDO O MÉTODO getAll() PARA ESSA API ###
+  // ### SOBRESCREVENDO O MÉTODO getAll() PARA QUE VEIO DA GenCrudRepository ###
   // #########################################################
   
   @override
@@ -88,7 +88,7 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   }
 
   // #########################################################
-  // ### MÉTODOS ESPECÍFICOS DESSA FEATURE ###
+  // ### MÉTODOS ESPECÍFICOS DESSA FEATURE DE PESQUISA ###
   // #########################################################
 
   @override
@@ -123,6 +123,56 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
     } catch (e) {
       print("❌ [MainContentTopicRepository] Erro ao buscar por URL: $e");
       throw Exception('Error finding content by url: $e');
+    }
+  }
+
+  // #########################################################
+  // ### NOVO MÉTODO PARA PAGINAÇÃO INCREMENTAL ###
+  // #########################################################
+
+  @override
+  Future<List<MainContentTopicModel>> getAllPaged({
+    required int page,
+    required int size,
+  }) async {
+    print("📄 [MainContentTopicRepository] Iniciando getAllPaged() - Page: $page, Size: $size");
+    
+    try {
+      final response = await dioGenCrudRepo.get('${endpointGenCrudRepo}/paged',
+        queryParameters: {
+          'page': page,
+          'size': size,
+        },
+      );
+      print("📄 [MainContentTopicRepository] Status: ${response.statusCode}");
+      print("📄 [MainContentTopicRepository] Response data type: ${response.data.runtimeType}");
+      
+      if (response.statusCode == 200) {
+        // A API retorna um wrapper object com paginação
+        final Map<String, dynamic> responseData = response.data as Map<String, dynamic>;
+        print("📄 [MainContentTopicRepository] Response keys: ${responseData.keys}");
+        
+        // Extrair o array "items" ou "content" do wrapper (ajustar conforme sua API)
+        final List<dynamic> itemsData = responseData['items'] as List<dynamic>? ?? 
+                                         responseData['content'] as List<dynamic>? ?? 
+                                         [];
+        print("📄 [MainContentTopicRepository] Encontrados ${itemsData.length} itens na página $page");
+        
+        // Converter cada item para MainContentTopicModel
+        final List<MainContentTopicModel> items = itemsData.map((json) {
+          print("🔄 [MainContentTopicRepository] Processando: ${json['id']} - ${json['title']}");
+          return fromMap(json as Map<String, dynamic>);
+        }).toList();
+        
+        print("✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso da página $page");
+        return items;
+      }
+      
+      throw Exception('Failed to load paged items - Status: ${response.statusCode}');
+    } catch (e, stackTrace) {
+      print("❌ [MainContentTopicRepository] Erro em getAllPaged(): $e");
+      print("❌ [MainContentTopicRepository] StackTrace: $stackTrace");
+      throw Exception('Error fetching paged items: $e');
     }
   }
 }

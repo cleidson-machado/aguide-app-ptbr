@@ -17,17 +17,38 @@ class MainContentTopicScreen extends StatefulWidget {
 
 class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
   final MainContentTopicViewModel viewModel = injector<MainContentTopicViewModel>();
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    viewModel.loadAllContents();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    viewModel.loadPagedContents();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     viewModel.dispose();
     super.dispose();
+  }
+
+  /// Listener para detectar quando o usuário chegou próximo do final da lista
+  /// Usa uma margem de 200px para disparar o carregamento antes de atingir o final absoluto
+  void _onScroll() {
+    final position = _scrollController.position;
+    final maxScroll = position.maxScrollExtent;
+    final currentScroll = position.pixels;
+    
+    // Se chegou perto do final (dentro de 200px) e há mais páginas
+    if (currentScroll >= maxScroll - 200) {
+      if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
+        print("📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página");
+        viewModel.loadNextPage();
+      }
+    }
   }
 
   @override
@@ -84,9 +105,29 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      itemCount: viewModel.contents.length,
+      itemCount: viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        // Se for o último item e estamos carregando, mostrar indicador
+        if (index == viewModel.contents.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Column(
+                children: const [
+                  CupertinoActivityIndicator(),
+                  SizedBox(height: 8),
+                  Text(
+                    "Carregando mais conteúdos...",
+                    style: TextStyle(color: CupertinoColors.systemGrey),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final content = viewModel.contents[index];
         return Column(
           children: [

@@ -7,5 +7,5 @@ abstract class MainContentTopicRepositoryInterface extends GenCrudRepositoryInte
 
   Future<MainContentTopicModel?> findByUrl(String url);
 
-  //PAREI AQUI... achar uma forma de trazer paginação...
+  Future<List<MainContentTopicModel>> getAllPaged({required int page, required int size});
 }
