@@ -39,6 +39,9 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
                 _buildNavigationButton("Users List", () {
                   // Navigate to Users List
                 }),
+                _buildNavigationButton("Add New Tema", () {
+                  // Navigate to Users List
+                }),
                 _buildNavigationButton("Transactions", () {
                   // Navigate to Transactions
                 }),
