@@ -7,6 +7,7 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_m
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -88,7 +89,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
 
   Widget _buildBody() {
     if (viewModel.isLoading) {
-      return const Center(child: CupertinoActivityIndicator());
+      // Skeleton loader para carregamento inicial
+      return _buildSkeletonList();
     }
     
     if (viewModel.error != null) {
@@ -109,23 +111,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       itemCount: viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        // Se for o último item e estamos carregando, mostrar indicador
+        // Se for o último item e estamos carregando, mostrar skeleton loader
         if (index == viewModel.contents.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Column(
-                children: const [
-                  CupertinoActivityIndicator(),
-                  SizedBox(height: 8),
-                  Text(
-                    "Carregando mais conteúdos...",
-                    style: TextStyle(color: CupertinoColors.systemGrey),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return _buildSkeletonCard();
         }
 
         final content = viewModel.contents[index];
@@ -189,6 +177,71 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Skeleton loader para lista completa (carregamento inicial)
+  Widget _buildSkeletonList() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        itemCount: 8, // Mostra 8 skeletons placeholder
+        itemBuilder: (context, index) {
+          return Column(
+            children: [
+              _buildSkeletonCardContent(),
+              const Divider(color: CupertinoColors.systemGrey4),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Skeleton loader para um único card (carregamento incremental)
+  Widget _buildSkeletonCard() {
+    return Skeletonizer(
+      enabled: true,
+      child: Column(
+        children: [
+          _buildSkeletonCardContent(),
+          const Divider(color: CupertinoColors.systemGrey4),
+        ],
+      ),
+    );
+  }
+
+  /// Conteúdo do skeleton card (reutilizável)
+  Widget _buildSkeletonCardContent() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Bone.text(
+                  words: 3,
+                  fontSize: 16,
+                ),
+                const SizedBox(height: 4),
+                Bone.text(
+                  words: 6,
+                  fontSize: 14,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Bone.square(
+            size: 80,
+            borderRadius: BorderRadius.circular(8),
           ),
         ],
       ),
