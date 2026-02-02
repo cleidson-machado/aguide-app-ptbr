@@ -87,17 +87,17 @@ class ContentSortConfig {
   String get description {
     switch (strategy) {
       case ContentSortStrategy.titleAsc:
-        return 'Título A-Z';
+        return 'Filtro - Título A-Z';
       case ContentSortStrategy.titleDesc:
-        return 'Título Z-A';
+        return 'Filtro - Título Z-A';
       case ContentSortStrategy.publishedAtDesc:
-        return 'Mais Recentes';
+        return 'Filtro - Mais Recentes';
       case ContentSortStrategy.publishedAtAsc:
-        return 'Mais Antigos';
+        return 'Filtro - Mais Antigos';
       case ContentSortStrategy.channelNameAsc:
-        return 'Canal A-Z';
+        return 'Filtro - Canal A-Z';
       case ContentSortStrategy.createdAtDesc:
-        return 'Adicionados Recentemente';
+        return 'Filtro - Adicionados Recentemente';
     }
   }
 

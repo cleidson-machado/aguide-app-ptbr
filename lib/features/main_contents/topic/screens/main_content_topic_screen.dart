@@ -209,13 +209,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.08),
+            color: CupertinoColors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.04),
+            color: CupertinoColors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             spreadRadius: 0,
             offset: const Offset(0, 2),
@@ -541,20 +541,34 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         if (context.mounted) {
           _showResetMessage(
             context,
-            '🔄 Filtro removido! Modo aleatório ativado.',
+            '🔄 Filtragem Manual Removida!\n Modo Padrão Ativado!',
           );
         }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: CupertinoColors.systemPink,
-          borderRadius: BorderRadius.circular(30),
+          color: CupertinoColors.darkBackgroundGray.withValues(
+            alpha: 0.25,
+            red: 0.95,
+            green: 0.85,
+            blue: 0.85,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: CupertinoColors.white.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: CupertinoColors.black.withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: CupertinoColors.darkBackgroundGray.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: CupertinoColors.white.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
@@ -571,8 +585,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
               viewModel.currentSortConfig?.description ?? 'Filtro',
               style: const TextStyle(
                 color: CupertinoColors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],

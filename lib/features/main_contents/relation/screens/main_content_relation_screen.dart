@@ -39,7 +39,7 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
             ),
             SizedBox(height: 6),
             Text(
-              "| PERFIL - Painel de Configuração |",
+              "| Painel de Configuração |",
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
