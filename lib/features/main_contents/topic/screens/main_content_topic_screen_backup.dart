@@ -83,27 +83,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
     
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Guia - PORTUGAL",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              "| TEMAS - Perfil de consumidor de Conteúdo |",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: CupertinoColors.systemPink,
-              ),
-            ),
-          ],
-        ),
+        middle: const Text(">> Perfil de Consumidor - Default <<"),
         trailing: GestureDetector(
           onTap: () {
             _popUpHandler(context);
@@ -135,7 +115,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   Widget _buildBody() {
     if (viewModel.isLoading) {
       // Skeleton loader para carregamento inicial
-      return _buildSkeletonGrid();
+      return _buildSkeletonList();
     }
     
     if (viewModel.error != null) {
@@ -151,7 +131,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
       return const Center(child: Text("Nenhum conteúdo encontrado."));
     }
 
-    // CustomScrollView com lista vertical de cards
+    // CustomScrollView permite usar CupertinoSliverRefreshControl (pull-to-refresh nativo iOS)
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
@@ -163,23 +143,24 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
         ),
         // Lista de conteúdos com paginação
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 // Se for o último item e estamos carregando, mostrar skeleton loader
                 if (index == viewModel.contents.length) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: _buildSkeletonCard(),
-                  );
+                  return _buildSkeletonCard();
                 }
 
                 final content = viewModel.contents[index];
-                // Key única baseada no ID do conteúdo para otimizar rebuilds
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: _buildContentCard(content),
+                return Column(
+                  // Key única baseada no ID do conteúdo para otimizar rebuilds
+                  // Permite que o Flutter identifique e reutilize widgets corretamente
+                  key: ValueKey('content_${content.id}'),
+                  children: [
+                    _buildBlogCard(content),
+                    const Divider(color: CupertinoColors.systemGrey4),
+                  ],
                 );
               },
               childCount: viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
@@ -190,118 +171,69 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
     );
   }
 
-  Widget _buildContentCard(MainContentTopicModel content) {
-    return Container(
-      key: ValueKey('content_${content.id}'),
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.08),
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.04),
-            blurRadius: 6,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildBlogCard(MainContentTopicModel content) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail com destaque no topo
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: content.contentImageUrl,
-                fit: BoxFit.contain,
-                memCacheWidth: 600,
-                memCacheHeight: 340,
-                maxWidthDiskCache: 600,
-                maxHeightDiskCache: 340,
-                placeholder: (context, url) => Container(
-                  color: CupertinoColors.systemGrey6,
-                  child: const Center(
-                    child: CupertinoActivityIndicator(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  content.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                errorWidget: (context, url, error) => Container(
-                  color: CupertinoColors.systemGrey6,
-                  child: const Icon(
-                    CupertinoIcons.photo,
-                    size: 60,
+                const SizedBox(height: 4),
+                Text(
+                  content.description, // Usando description no lugar de subtitle
+                  style: const TextStyle(
+                    fontSize: 14,
                     color: CupertinoColors.systemGrey,
                   ),
-                ),
-              ),
-            ),
-          ),
-          // Conteúdo do card
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Título e descrição
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      content.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: CupertinoColors.black,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      content.description,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: CupertinoColors.systemGrey,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Botão Call
-                SizedBox(
-                  width: double.infinity,
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    color: CupertinoColors.activeBlue,
-                    borderRadius: BorderRadius.circular(10),
-                    onPressed: () {
-                      // TODO: Implementar ação do botão
-                    },
-                    child: const Text(
-                      'QUERO VER AGORA!!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.white,
-                      ),
-                    ),
-                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CachedNetworkImage(
+              imageUrl: content.contentImageUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              // Redimensiona em memória para 160x160 (2x para telas retina)
+              memCacheWidth: 160,
+              memCacheHeight: 160,
+              // Redimensiona no cache de disco para economizar espaço
+              maxWidthDiskCache: 160,
+              maxHeightDiskCache: 160,
+              // Placeholder enquanto carrega (atividade indicator nativo iOS)
+              placeholder: (context, url) => Container(
+                width: 80,
+                height: 80,
+                color: CupertinoColors.systemGrey5,
+                child: const Center(
+                  child: CupertinoActivityIndicator(),
+                ),
+              ),
+              // Widget de erro mantido igual ao original
+              errorWidget: (context, url, error) => Container(
+                width: 80,
+                height: 80,
+                color: CupertinoColors.systemGrey5,
+                child: const Icon(
+                  CupertinoIcons.photo,
+                  color: CupertinoColors.white,
+                ),
+              ),
             ),
           ),
         ],
@@ -310,16 +242,18 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   }
 
   /// Skeleton loader para lista completa (carregamento inicial)
-  Widget _buildSkeletonGrid() {
+  Widget _buildSkeletonList() {
     return Skeletonizer(
       enabled: true,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        itemCount: 4, // Mostra 4 skeletons placeholder
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        itemCount: 8, // Mostra 8 skeletons placeholder
         itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: _buildSkeletonCardContent(),
+          return Column(
+            children: [
+              _buildSkeletonCardContent(),
+              const Divider(color: CupertinoColors.systemGrey4),
+            ],
           );
         },
       ),
@@ -330,52 +264,42 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   Widget _buildSkeletonCard() {
     return Skeletonizer(
       enabled: true,
-      child: _buildSkeletonCardContent(),
+      child: Column(
+        children: [
+          _buildSkeletonCardContent(),
+          const Divider(color: CupertinoColors.systemGrey4),
+        ],
+      ),
     );
   }
 
   /// Conteúdo do skeleton card (reutilizável)
   Widget _buildSkeletonCardContent() {
-    return Container(
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Skeleton da imagem
-          Bone.square(
-            size: 280,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-          ),
-          // Skeleton do conteúdo
-          Padding(
-            padding: const EdgeInsets.all(20),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Bone.text(
                   words: 3,
-                  fontSize: 18,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Bone.text(
-                  words: 5,
+                  words: 6,
                   fontSize: 14,
-                ),
-                const SizedBox(height: 16),
-                // Skeleton do botão
-                Bone.button(
-                  width: double.infinity,
-                  height: 50,
-                  borderRadius: BorderRadius.circular(25),
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 10),
+          Bone.square(
+            size: 80,
+            borderRadius: BorderRadius.circular(8),
           ),
         ],
       ),
