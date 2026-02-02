@@ -40,12 +40,13 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
         index: _selectedIndex,
         children: _pages,
       ),
-      bottomNavigationBar: CupertinoTabBar(
-        currentIndex: _selectedIndex,
-        height: 65,
-        iconSize:45,
-        onTap: _onItemTapped,
-        items: const [
+      bottomNavigationBar: SafeArea(
+        child: CupertinoTabBar(
+          currentIndex: _selectedIndex,
+          height: 65,
+          iconSize: 35,
+          onTap: _onItemTapped,
+          items: const [
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.news_solid), // ################################## https://cupertino-icons.web.app
             label: "TEMAS",
@@ -59,6 +60,7 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
             label: "PERFIL",
           ),
         ],
+        ),
       ),
     );
   }
