@@ -25,7 +25,27 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
-        middle: Text(">> Altera PF de Consumidor p/ Fornecedor <<"),
+        middle: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Guia - PORTUGAL",
+              style: TextStyle(
+                fontSize: 18, 
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              "| PERFIL - Painel de Configuração |",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: CupertinoColors.systemPink,
+              ),
+            ),
+          ],
+        ),
       ),
       child: Column(
         children: [

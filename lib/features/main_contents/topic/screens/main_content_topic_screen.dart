@@ -89,13 +89,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
             Text(
               "Guia - PORTUGAL",
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18, 
                 fontWeight: FontWeight.w500,
               ),
             ),
             SizedBox(height: 6),
             Text(
-              "| TEMAS - Perfil de consumidor de Conteúdo |",
+              "| TEMAS - Perfil Consumidor de Conteúdo |",
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,

@@ -8,24 +8,22 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_m
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 
 /// Repository concreto que implementa a interface e herda o CRUD básico
-class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel>
+class MainContentTopicRepository
+    extends GenCrudRepository<MainContentTopicModel>
     implements MainContentTopicRepositoryInterface {
-  
   MainContentTopicRepository()
-      : super(
-          endpoint: '/contents',
-          fromMap: MainContentTopicModel.fromMap,
-          dio: _setupDio(),
-        );
+    : super(
+        endpoint: '/contents',
+        fromMap: MainContentTopicModel.fromMap,
+        dio: _setupDio(),
+      );
 
   /// Configurações customizadas do Dio para esse Repository
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
         baseUrl: EnvKeyHelperConfig.mocApi2,
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );
 
@@ -50,35 +48,47 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   // #########################################################
   // ### SOBRESCREVENDO O MÉTODO getAll() PARA QUE VEIO DA GenCrudRepository ###
   // #########################################################
-  
+
   @override
   Future<List<MainContentTopicModel>> getAll() async {
     print("🌐 [MainContentTopicRepository] Iniciando getAll()...");
-    
+
     try {
       final response = await dioGenCrudRepo.get(endpointGenCrudRepo);
       print("🌐 [MainContentTopicRepository] Status: ${response.statusCode}");
-      print("🌐 [MainContentTopicRepository] Response data type: ${response.data.runtimeType}");
-      
+      print(
+        "🌐 [MainContentTopicRepository] Response data type: ${response.data.runtimeType}",
+      );
+
       if (response.statusCode == 200) {
         // A API retorna um wrapper object, não um array direto
-        final Map<String, dynamic> responseData = response.data as Map<String, dynamic>;
-        print("🌐 [MainContentTopicRepository] Response keys: ${responseData.keys}");
-        
+        final Map<String, dynamic> responseData =
+            response.data as Map<String, dynamic>;
+        print(
+          "🌐 [MainContentTopicRepository] Response keys: ${responseData.keys}",
+        );
+
         // Extrair o array "items" do wrapper
         final List<dynamic> itemsData = responseData['items'] as List<dynamic>;
-        print("🌐 [MainContentTopicRepository] Encontrados ${itemsData.length} itens");
-        
+        print(
+          "🌐 [MainContentTopicRepository] Encontrados ${itemsData.length} itens",
+        );
+
         // Converter cada item para MainContentTopicModel
-        final List<MainContentTopicModel> items = itemsData.map((json) {
-          print("🔄 [MainContentTopicRepository] Processando: ${json['id']} - ${json['title']}");
-          return fromMap(json as Map<String, dynamic>);
-        }).toList();
-        
-        print("✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso");
+        final List<MainContentTopicModel> items =
+            itemsData.map((json) {
+              print(
+                "🔄 [MainContentTopicRepository] Processando: ${json['id']} - ${json['title']}",
+              );
+              return fromMap(json as Map<String, dynamic>);
+            }).toList();
+
+        print(
+          "✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso",
+        );
         return items;
       }
-      
+
       throw Exception('Failed to load items - Status: ${response.statusCode}');
     } catch (e, stackTrace) {
       print("❌ [MainContentTopicRepository] Erro em getAll(): $e");
@@ -94,16 +104,22 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   @override
   Future<List<MainContentTopicModel>> searchByTitle(String title) async {
     print("🔍 [MainContentTopicRepository] Buscando por título: '$title'");
-    
+
     // Para busca, vamos usar o getAll() e filtrar localmente
     // (a menos que sua API tenha um endpoint específico de busca)
     try {
       final allItems = await getAll();
-      final filteredItems = allItems
-          .where((item) => item.title.toLowerCase().contains(title.toLowerCase()))
-          .toList();
-      
-      print("🔍 [MainContentTopicRepository] Encontrados ${filteredItems.length} itens para '$title'");
+      final filteredItems =
+          allItems
+              .where(
+                (item) =>
+                    item.title.toLowerCase().contains(title.toLowerCase()),
+              )
+              .toList();
+
+      print(
+        "🔍 [MainContentTopicRepository] Encontrados ${filteredItems.length} itens para '$title'",
+      );
       return filteredItems;
     } catch (e) {
       print("❌ [MainContentTopicRepository] Erro na busca: $e");
@@ -116,9 +132,12 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
     try {
       // Buscar todos e filtrar por URL
       final allItems = await getAll();
-      final foundItem = allItems.where((item) => item.contentUrl == url).firstOrNull;
-      
-      print("🔍 [MainContentTopicRepository] Busca por URL '$url': ${foundItem != null ? 'encontrado' : 'não encontrado'}");
+      final foundItem =
+          allItems.where((item) => item.contentUrl == url).firstOrNull;
+
+      print(
+        "🔍 [MainContentTopicRepository] Busca por URL '$url': ${foundItem != null ? 'encontrado' : 'não encontrado'}",
+      );
       return foundItem;
     } catch (e) {
       print("❌ [MainContentTopicRepository] Erro ao buscar por URL: $e");
@@ -127,56 +146,81 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
   }
 
   // #########################################################
-  // ### NOVO MÉTODO PARA PAGINAÇÃO INCREMENTAL ###
+  // ### NOVO MÉTODO PARA PAGINAÇÃO INCREMENTAL COM ORDENAÇÃO DINÂMICA ###
   // #########################################################
 
   @override
   Future<List<MainContentTopicModel>> getAllPaged({
     required int page,
     required int size,
+    String? sortField,
+    String? sortOrder,
   }) async {
     // ⚠️ IMPORTANTE: A API usa paginação ZERO-BASED (page=0 é a primeira página)
     // Converter de 1-based (usado no app) para 0-based (usado na API)
     final int apiPage = page - 1;
-    
-    print("📄 [MainContentTopicRepository] Iniciando getAllPaged() - App Page: $page → API Page: $apiPage, Size: $size");
-    
+
+    // Parâmetros de ordenação (padrões da API: title e asc)
+    final String sort = sortField ?? 'title';
+    final String order = sortOrder ?? 'asc';
+
+    print("📄 [MainContentTopicRepository] Iniciando getAllPaged()");
+    print("   App Page: $page → API Page: $apiPage, Size: $size");
+    print("   🎲 Ordenação: $sort ($order)");
+
     try {
-      final response = await dioGenCrudRepo.get('${endpointGenCrudRepo}/paged',
+      // ✅ Usando endpoint /contents com parâmetros flexíveis
+      final response = await dioGenCrudRepo.get(
+        endpointGenCrudRepo,
         queryParameters: {
-          'page': apiPage,  // ✅ Envia zero-based para a API
+          'page': apiPage, // ✅ Envia zero-based para a API
           'size': size,
+          'sort': sort,
+          'order': order,
         },
       );
       print("📄 [MainContentTopicRepository] Status: ${response.statusCode}");
-      
+
       if (response.statusCode == 200) {
         // A API retorna: {content: [...], totalItems: 91, totalPages: 2, currentPage: 0}
-        final Map<String, dynamic> responseData = response.data as Map<String, dynamic>;
-        
+        final Map<String, dynamic> responseData =
+            response.data as Map<String, dynamic>;
+
         // Extrair metadados de paginação
         final int totalItems = responseData['totalItems'] as int? ?? 0;
         final int totalPages = responseData['totalPages'] as int? ?? 0;
         final int currentPage = responseData['currentPage'] as int? ?? 0;
-        
-        print("📊 [MainContentTopicRepository] Paginação - Total itens: $totalItems, Total páginas: $totalPages, Página atual (API): $currentPage");
-        
+
+        print(
+          "📊 [MainContentTopicRepository] Paginação - Total itens: $totalItems, Total páginas: $totalPages, Página atual (API): $currentPage",
+        );
+
         // Extrair o array "content" (estrutura padrão Spring Boot PageImpl)
-        final List<dynamic> contentData = responseData['content'] as List<dynamic>? ?? [];
-        print("📄 [MainContentTopicRepository] Encontrados ${contentData.length} itens na página $page (API page $apiPage)");
-        
+        final List<dynamic> contentData =
+            responseData['content'] as List<dynamic>? ?? [];
+        print(
+          "📄 [MainContentTopicRepository] Encontrados ${contentData.length} itens na página $page (API page $apiPage)",
+        );
+
         // Converter cada item para MainContentTopicModel
-        final List<MainContentTopicModel> items = contentData.map((json) {
-          return fromMap(json as Map<String, dynamic>);
-        }).toList();
-        
-        print("✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso da página $page");
-        print("📊 [MainContentTopicRepository] Progresso: ${(page * size).clamp(0, totalItems)}/$totalItems itens carregados");
-        
+        final List<MainContentTopicModel> items =
+            contentData.map((json) {
+              return fromMap(json as Map<String, dynamic>);
+            }).toList();
+
+        print(
+          "✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso da página $page",
+        );
+        print(
+          "📊 [MainContentTopicRepository] Progresso: ${(page * size).clamp(0, totalItems)}/$totalItems itens carregados",
+        );
+
         return items;
       }
-      
-      throw Exception('Failed to load paged items - Status: ${response.statusCode}');
+
+      throw Exception(
+        'Failed to load paged items - Status: ${response.statusCode}',
+      );
     } catch (e, stackTrace) {
       print("❌ [MainContentTopicRepository] Erro em getAllPaged(): $e");
       print("❌ [MainContentTopicRepository] StackTrace: $stackTrace");
