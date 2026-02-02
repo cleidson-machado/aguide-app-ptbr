@@ -2,13 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
-import 'package:portugal_guide/resources/locale_provider.dart';
-import 'package:portugal_guide/resources/translation/app_localizations.dart';
-import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -19,8 +15,10 @@ class MainContentTopicScreen extends StatefulWidget {
   State<MainContentTopicScreen> createState() => _MainContentTopicScreenState();
 }
 
-class _MainContentTopicScreenState extends State<MainContentTopicScreen> with AutomaticKeepAliveClientMixin {
-  final MainContentTopicViewModel viewModel = injector<MainContentTopicViewModel>();
+class _MainContentTopicScreenState extends State<MainContentTopicScreen>
+    with AutomaticKeepAliveClientMixin {
+  final MainContentTopicViewModel viewModel =
+      injector<MainContentTopicViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
 
@@ -53,11 +51,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
     final position = _scrollController.position;
     final maxScroll = position.maxScrollExtent;
     final currentScroll = position.pixels;
-    
+
     // Se chegou perto do final (dentro de 200px) e há mais páginas
     if (currentScroll >= maxScroll - 200) {
       if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
-        print("📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página");
+        print(
+          "📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página",
+        );
         viewModel.loadNextPage();
       }
     }
@@ -69,7 +69,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   void _onSearchChanged(String value) {
     // Cancela timer anterior se existir
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     // Cria novo timer de 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
       viewModel.searchContents(value);
@@ -80,18 +80,15 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   Widget build(BuildContext context) {
     // OBRIGATÓRIO: chama super.build() para AutomaticKeepAliveClientMixin funcionar
     super.build(context);
-    
+
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Column(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               "Guia - PORTUGAL",
-              style: TextStyle(
-                fontSize: 18, 
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 6),
             Text(
@@ -103,12 +100,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
               ),
             ),
           ],
-        ),
-        trailing: GestureDetector(
-          onTap: () {
-            _popUpHandler(context);
-          },
-          child: const Icon(CupertinoIcons.globe, size: 24),
         ),
       ),
       child: Column(
@@ -137,7 +128,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
       // Skeleton loader para carregamento inicial
       return _buildSkeletonGrid();
     }
-    
+
     if (viewModel.error != null) {
       return Center(
         child: Text(
@@ -146,7 +137,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
         ),
       );
     }
-    
+
     if (viewModel.contents.isEmpty) {
       return const Center(child: Text("Nenhum conteúdo encontrado."));
     }
@@ -182,7 +173,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
                   child: _buildContentCard(content),
                 );
               },
-              childCount: viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
+              childCount:
+                  viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
             ),
           ),
         ),
@@ -230,20 +222,20 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
                 memCacheHeight: 340,
                 maxWidthDiskCache: 600,
                 maxHeightDiskCache: 340,
-                placeholder: (context, url) => Container(
-                  color: CupertinoColors.systemGrey6,
-                  child: const Center(
-                    child: CupertinoActivityIndicator(),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: CupertinoColors.systemGrey6,
-                  child: const Icon(
-                    CupertinoIcons.photo,
-                    size: 60,
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
+                placeholder:
+                    (context, url) => Container(
+                      color: CupertinoColors.systemGrey6,
+                      child: const Center(child: CupertinoActivityIndicator()),
+                    ),
+                errorWidget:
+                    (context, url, error) => Container(
+                      color: CupertinoColors.systemGrey6,
+                      child: const Icon(
+                        CupertinoIcons.photo,
+                        size: 60,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    ),
               ),
             ),
           ),
@@ -328,10 +320,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
 
   /// Skeleton loader para um único card (carregamento incremental)
   Widget _buildSkeletonCard() {
-    return Skeletonizer(
-      enabled: true,
-      child: _buildSkeletonCardContent(),
-    );
+    return Skeletonizer(enabled: true, child: _buildSkeletonCardContent());
   }
 
   /// Conteúdo do skeleton card (reutilizável)
@@ -358,15 +347,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                Bone.text(
-                  words: 3,
-                  fontSize: 18,
-                ),
+                Bone.text(words: 3, fontSize: 18),
                 const SizedBox(height: 8),
-                Bone.text(
-                  words: 5,
-                  fontSize: 14,
-                ),
+                Bone.text(words: 5, fontSize: 14),
                 const SizedBox(height: 16),
                 // Skeleton do botão
                 Bone.button(
@@ -378,123 +361,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Future<dynamic> _popUpHandler(BuildContext context) {
-    return showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text(
-          AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
-        ),
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('pt', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'BR',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languagePortuguese ?? 'Portuguese',
-                ),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('en', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'US',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageEnglish ?? 'English',
-                ),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('es', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'ES',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageSpanish ?? 'Spanish',
-                ),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('fr', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'FR',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageFrench ?? 'French',
-                ),
-              ],
-            ),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            AppLocalizations.of(context)?.cancel ?? 'Cancel',
-          ),
-        ),
       ),
     );
   }
