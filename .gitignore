@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .env
+
+# Temp Local IA File Generatated by LocalAI
+x_temp_files/
+

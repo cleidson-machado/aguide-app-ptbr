@@ -18,5 +18,15 @@
         "titleBar.inactiveBackground": "#d8f58a99",
         "titleBar.inactiveForeground": "#15202b99"
     },
-    "peacock.color": "#d8f58a"
+    "peacock.color": "#d8f58a",
+
+    // GitHub Copilot configuration
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": true,
+        "plaintext": true,
+        "markdown": true,
+        "python": true
+    },
+    "github.copilot.chat.instructionsFile": ".github/copilot-instructions.md"
 }
