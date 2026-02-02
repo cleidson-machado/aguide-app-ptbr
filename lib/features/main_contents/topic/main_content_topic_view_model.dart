@@ -24,6 +24,8 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
   // ===== Estratégia de Ordenação Randômica =====
   ContentSortConfig? _currentSortConfig;
+  bool _isManualFilterActive =
+      false; // Flag para saber se filtro manual está ativo
 
   // ===== Getters públicos =====
   List<MainContentTopicModel> get contents => _contents;
@@ -34,6 +36,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool get isLoadingMore => _isLoadingMore;
   int get currentPage => _currentPage;
   ContentSortConfig? get currentSortConfig => _currentSortConfig;
+  bool get isManualFilterActive => _isManualFilterActive;
 
   // ===== Ações =====
   Future<void> loadAllContents() async {
@@ -59,6 +62,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
     // 🎲 Escolher estratégia aleatória de ordenação
     final randomStrategy = ContentSortConfig.randomStrategy();
     _currentSortConfig = ContentSortConfig.fromStrategy(randomStrategy);
+    _isManualFilterActive = false; // Desativa filtro manual quando randomiza
 
     print(
       "🎲 [MainContentTopicViewModel] Estratégia selecionada: ${_currentSortConfig!.description}",
@@ -206,6 +210,59 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _hasMorePages = true;
     _error = null;
     await loadPagedContents();
+  }
+
+  /// Aplica um filtro manual específico (não randômico)
+  /// Marca o filtro como ativo para exibir botão de reset
+  Future<void> applyManualFilter(ContentSortStrategy strategy) async {
+    print(
+      "🔧 [MainContentTopicViewModel] Aplicando filtro manual: ${strategy.name}",
+    );
+
+    _currentSortConfig = ContentSortConfig.fromStrategy(strategy);
+    _isManualFilterActive = true; // Ativa flag de filtro manual
+
+    print(
+      "🔧 [MainContentTopicViewModel] Filtro aplicado: ${_currentSortConfig!.description}",
+    );
+
+    _currentPage = 1;
+    _hasMorePages = true;
+    _contents = [];
+    _setLoading(true);
+
+    try {
+      final items = await _repository.getAllPaged(
+        page: _currentPage,
+        size: _pageSize,
+        sortField: _currentSortConfig!.sortField,
+        sortOrder: _currentSortConfig!.sortOrder,
+      );
+
+      _contents = items;
+      _error = null;
+      _isInitialized = true;
+
+      if (items.length < _pageSize) {
+        _hasMorePages = false;
+      }
+
+      print(
+        "✅ [MainContentTopicViewModel] Filtro manual aplicado com sucesso!",
+      );
+    } catch (e) {
+      _error = "Erro ao aplicar filtro: $e";
+      print("❌ [MainContentTopicViewModel] Erro ao aplicar filtro: $e");
+    }
+
+    _setLoading(false);
+  }
+
+  /// Reseta filtro manual e volta ao modo randômico
+  Future<void> resetToRandomMode() async {
+    print("🔄 [MainContentTopicViewModel] Resetando para modo randômico");
+    _isManualFilterActive = false;
+    await loadPagedContents(); // Carrega com estratégia randômica
   }
 
   // ===== Helpers internos =====

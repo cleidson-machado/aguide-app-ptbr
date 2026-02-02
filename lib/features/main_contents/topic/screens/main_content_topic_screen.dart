@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/content_sort_strategy.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -21,6 +22,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       injector<MainContentTopicViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
+  Timer? _dialogTimer; // Timer para auto-fechar dialog
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -39,6 +41,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   @override
   void dispose() {
     _debounce?.cancel(); // Cancela o timer pendente ao destruir o widget
+    _dialogTimer?.cancel(); // Cancela timer do dialog
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     viewModel.dispose();
@@ -108,23 +111,33 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
         ),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: CupertinoSearchTextField(
-              onChanged: _onSearchChanged, // Usa handler com debounce
-            ),
-          ),
-          Expanded(
-            child: AnimatedBuilder(
-              animation: viewModel,
-              builder: (context, child) {
-                return _buildBody();
-              },
-            ),
-          ),
-        ],
+      child: AnimatedBuilder(
+        animation: viewModel,
+        builder: (context, child) {
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: CupertinoSearchTextField(
+                      onChanged: _onSearchChanged, // Usa handler com debounce
+                    ),
+                  ),
+                  Expanded(child: _buildBody()),
+                ],
+              ),
+              // Botão flutuante de reset (só aparece quando filtro manual está ativo)
+              if (viewModel.isManualFilterActive)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 24,
+                  child: Center(child: _buildResetFilterButton(context)),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -386,9 +399,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
             actions: <CupertinoActionSheetAction>[
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Título A-Z
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.titleAsc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -400,9 +415,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Título Z-A
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.titleDesc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -414,9 +431,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Mais Recentes
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.publishedAtDesc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -428,9 +447,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Mais Antigos
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.publishedAtAsc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -442,9 +463,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Canal A-Z
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.channelNameAsc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -456,9 +479,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar ordenação por Adicionados Recentemente
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.applyManualFilter(
+                    ContentSortStrategy.createdAtDesc,
+                  );
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -470,9 +495,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  // TODO: Implementar modo randômico
+                onPressed: () async {
                   Navigator.pop(context);
+                  await viewModel.resetToRandomMode();
+                  if (context.mounted) {
+                    _showResetMessage(context, '🎲 Modo Aleatório ativado!');
+                  }
                 },
                 isDestructiveAction: false,
                 child: const Row(
@@ -503,5 +531,89 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
     );
+  }
+
+  /// Widget do botão flutuante para resetar filtro
+  Widget _buildResetFilterButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        await viewModel.resetToRandomMode();
+        if (context.mounted) {
+          _showResetMessage(
+            context,
+            '🔄 Filtro removido! Modo aleatório ativado.',
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemPink,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: CupertinoColors.black.withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              CupertinoIcons.clear_circled_solid,
+              color: CupertinoColors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              viewModel.currentSortConfig?.description ?? 'Filtro',
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Exibe mensagem de confirmação de reset
+  void _showResetMessage(BuildContext context, String message) {
+    if (!mounted) return; // Proteção contra widget já descartado
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (BuildContext context) => CupertinoAlertDialog(
+            title: const Icon(
+              CupertinoIcons.checkmark_circle_fill,
+              color: CupertinoColors.activeGreen,
+              size: 48,
+            ),
+            content: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(message, style: const TextStyle(fontSize: 16)),
+            ),
+          ),
+    );
+
+    // Auto-fechar após 1.5 segundos com proteções
+    _dialogTimer?.cancel(); // Cancela timer anterior se existir
+    _dialogTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted) return; // Verifica se widget ainda existe
+      if (context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (e) {
+          // Ignora erro se dialog já foi fechado
+          print('⚠️ Dialog já foi fechado: $e');
+        }
+      }
+    });
   }
 }
