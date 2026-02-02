@@ -82,8 +82,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     super.build(context);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Column(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
@@ -100,6 +100,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
               ),
             ),
           ],
+        ),
+        trailing: GestureDetector(
+          onTap: () {
+            _filterPopUpHandler(context);
+          },
+          child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
         ),
       ),
       child: Column(
@@ -362,6 +368,140 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Future<dynamic> _filterPopUpHandler(BuildContext context) {
+    return showCupertinoModalPopup(
+      context: context,
+      builder:
+          (BuildContext context) => CupertinoActionSheet(
+            title: const Text(
+              'Selecione a ordenação dos conteúdos',
+              style: TextStyle(fontSize: 14),
+            ),
+            message: const Text(
+              'Escolha como deseja visualizar os conteúdos',
+              style: TextStyle(fontSize: 12),
+            ),
+            actions: <CupertinoActionSheetAction>[
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Título A-Z
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.sort_up, size: 20),
+                    SizedBox(width: 8),
+                    Text('Título A-Z'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Título Z-A
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.sort_down, size: 20),
+                    SizedBox(width: 8),
+                    Text('Título Z-A'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Mais Recentes
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.clock_fill, size: 20),
+                    SizedBox(width: 8),
+                    Text('Mais Recentes'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Mais Antigos
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.time, size: 20),
+                    SizedBox(width: 8),
+                    Text('Mais Antigos'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Canal A-Z
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.tv, size: 20),
+                    SizedBox(width: 8),
+                    Text('Canal A-Z'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar ordenação por Adicionados Recentemente
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.add_circled_solid, size: 20),
+                    SizedBox(width: 8),
+                    Text('Adicionados Recentemente'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  // TODO: Implementar modo randômico
+                  Navigator.pop(context);
+                },
+                isDestructiveAction: false,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.shuffle,
+                      size: 20,
+                      color: CupertinoColors.activeBlue,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '🎲 Surpreenda-me (Aleatório)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: CupertinoColors.activeBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+          ),
     );
   }
 }
