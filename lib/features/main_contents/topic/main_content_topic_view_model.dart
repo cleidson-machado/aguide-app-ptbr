@@ -133,6 +133,17 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _setLoading(false);
   }
 
+  /// Recarrega a lista do início (usado em pull-to-refresh)
+  /// Reseta estado de paginação e recarrega primeira página
+  Future<void> refreshContents() async {
+    print("🔄 [MainContentTopicViewModel] Iniciando refreshContents()");
+    _currentPage = 1;
+    _contents.clear();
+    _hasMorePages = true;
+    _error = null;
+    await loadPagedContents();
+  }
+
   // ===== Helpers internos =====
   void _setLoading(bool value) {
     _isLoading = value;

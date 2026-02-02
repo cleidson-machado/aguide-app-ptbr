@@ -31,6 +31,7 @@ dependencies:
   cupertino_icons: ^1.0.8           ############################ Ícones padrões do estilo iOS.
   country_flags: ^3.2.0             ############################ Widget para exibir bandeiras de países.
   skeletonizer: ^2.1.2              ############################ Para criar skeleton loaders modernos e melhorar UX durante carregamentos.
+  cached_network_image: ^3.3.0      ############################ Cache otimizado de imagens de rede (memória + disco) para performance.
 
   # UTILITÁRIOS & SISTEMA
   intl: ^0.20.2                     ############################ Para internacionalização (i18n) e formatação de datas, números, etc.
