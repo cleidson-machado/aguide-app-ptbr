@@ -44,30 +44,33 @@ class MainContentTopicViewModel extends ChangeNotifier {
   }
 
   /// Carrega a primeira página de conteúdos de forma paginada
+  /// NOTA: App usa paginação 1-based (page 1, 2, 3...) que é convertida para 0-based na API
   Future<void> loadPagedContents() async {
     print("📄 [MainContentTopicViewModel] Iniciando loadPagedContents()");
     
-    _currentPage = 1;
+    _currentPage = 1;  // App inicia em page=1 (será convertido para API page=0)
     _hasMorePages = true;
     _contents = [];
     _setLoading(true);
     try {
       final items = await _repository.getAllPaged(
-        page: _currentPage,
+        page: _currentPage,  // page=1 → API recebe page=0
         size: _pageSize,
       );
-      print("📄 [MainContentTopicViewModel] Página 1 carregada com ${items.length} itens");
+      print("📄 [MainContentTopicViewModel] Página $_currentPage carregada com ${items.length} itens");
       
       _contents = items;
       _error = null;
       _isInitialized = true; // Marca como inicializado
       
-      // Se recebeu menos itens que o pageSize, não há mais páginas
+      // ✅ LÓGICA CORRIGIDA: Verifica se há mais páginas
+      // Se recebeu menos itens que o pageSize, acabaram as páginas
       if (items.length < _pageSize) {
         _hasMorePages = false;
-        print("ℹ️  [MainContentTopicViewModel] Nota: Apenas 1 página disponível");
+        print("ℹ️  [MainContentTopicViewModel] Última página atingida (${items.length} < $_pageSize)");
       } else {
-        print("ℹ️  [MainContentTopicViewModel] Há mais páginas disponíveis");
+        _hasMorePages = true;
+        print("ℹ️  [MainContentTopicViewModel] Há mais páginas disponíveis (recebidos $_pageSize itens)");
       }
     } catch (e) {
       _error = "Erro ao carregar conteúdos: $e";

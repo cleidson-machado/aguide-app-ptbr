@@ -135,36 +135,44 @@ class MainContentTopicRepository extends GenCrudRepository<MainContentTopicModel
     required int page,
     required int size,
   }) async {
-    print("📄 [MainContentTopicRepository] Iniciando getAllPaged() - Page: $page, Size: $size");
+    // ⚠️ IMPORTANTE: A API usa paginação ZERO-BASED (page=0 é a primeira página)
+    // Converter de 1-based (usado no app) para 0-based (usado na API)
+    final int apiPage = page - 1;
+    
+    print("📄 [MainContentTopicRepository] Iniciando getAllPaged() - App Page: $page → API Page: $apiPage, Size: $size");
     
     try {
       final response = await dioGenCrudRepo.get('${endpointGenCrudRepo}/paged',
         queryParameters: {
-          'page': page,
+          'page': apiPage,  // ✅ Envia zero-based para a API
           'size': size,
         },
       );
       print("📄 [MainContentTopicRepository] Status: ${response.statusCode}");
-      print("📄 [MainContentTopicRepository] Response data type: ${response.data.runtimeType}");
       
       if (response.statusCode == 200) {
-        // A API retorna um wrapper object com paginação
+        // A API retorna: {content: [...], totalItems: 91, totalPages: 2, currentPage: 0}
         final Map<String, dynamic> responseData = response.data as Map<String, dynamic>;
-        print("📄 [MainContentTopicRepository] Response keys: ${responseData.keys}");
         
-        // Extrair o array "items" ou "content" do wrapper (ajustar conforme sua API)
-        final List<dynamic> itemsData = responseData['items'] as List<dynamic>? ?? 
-                                         responseData['content'] as List<dynamic>? ?? 
-                                         [];
-        print("📄 [MainContentTopicRepository] Encontrados ${itemsData.length} itens na página $page");
+        // Extrair metadados de paginação
+        final int totalItems = responseData['totalItems'] as int? ?? 0;
+        final int totalPages = responseData['totalPages'] as int? ?? 0;
+        final int currentPage = responseData['currentPage'] as int? ?? 0;
+        
+        print("📊 [MainContentTopicRepository] Paginação - Total itens: $totalItems, Total páginas: $totalPages, Página atual (API): $currentPage");
+        
+        // Extrair o array "content" (estrutura padrão Spring Boot PageImpl)
+        final List<dynamic> contentData = responseData['content'] as List<dynamic>? ?? [];
+        print("📄 [MainContentTopicRepository] Encontrados ${contentData.length} itens na página $page (API page $apiPage)");
         
         // Converter cada item para MainContentTopicModel
-        final List<MainContentTopicModel> items = itemsData.map((json) {
-          print("🔄 [MainContentTopicRepository] Processando: ${json['id']} - ${json['title']}");
+        final List<MainContentTopicModel> items = contentData.map((json) {
           return fromMap(json as Map<String, dynamic>);
         }).toList();
         
         print("✅ [MainContentTopicRepository] ${items.length} itens convertidos com sucesso da página $page");
+        print("📊 [MainContentTopicRepository] Progresso: ${(page * size).clamp(0, totalItems)}/$totalItems itens carregados");
+        
         return items;
       }
       
