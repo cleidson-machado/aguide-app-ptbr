@@ -13,6 +13,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
   List<MainContentTopicModel> _contents = [];
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false; // Flag para controlar se já foi inicializado
   
   // ===== Estado de Paginação =====
   int _currentPage = 1;
@@ -24,6 +25,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
   List<MainContentTopicModel> get contents => _contents;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get isInitialized => _isInitialized;
   bool get hasMorePages => _hasMorePages;
   bool get isLoadingMore => _isLoadingMore;
   int get currentPage => _currentPage;
@@ -58,6 +60,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
       
       _contents = items;
       _error = null;
+      _isInitialized = true; // Marca como inicializado
       
       // Se recebeu menos itens que o pageSize, não há mais páginas
       if (items.length < _pageSize) {
@@ -71,6 +74,17 @@ class MainContentTopicViewModel extends ChangeNotifier {
       print("❌ [MainContentTopicViewModel] Erro em loadPagedContents(): $e");
     }
     _setLoading(false);
+  }
+
+  /// Carrega conteúdos apenas se ainda não foi inicializado
+  /// Usado no initState() para evitar recarregamento ao voltar da tab
+  Future<void> loadPagedContentsIfNeeded() async {
+    if (!_isInitialized) {
+      print("✅ [MainContentTopicViewModel] Primeira inicialização - carregando dados");
+      await loadPagedContents();
+    } else {
+      print("ℹ️  [MainContentTopicViewModel] Já inicializado - reutilizando dados em cache");
+    }
   }
 
   /// Carrega próxima página e adiciona aos conteúdos existentes (paginação incremental)

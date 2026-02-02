@@ -33,7 +33,13 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      // ✅ IndexedStack mantém todas as tabs vivas na árvore de widgets
+      // Isso permite que AutomaticKeepAliveClientMixin funcione corretamente
+      // Apenas alterna a visibilidade entre as tabs sem destruir os widgets
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: CupertinoTabBar(
         currentIndex: _selectedIndex,
         height: 65,

@@ -19,17 +19,23 @@ class MainContentTopicScreen extends StatefulWidget {
   State<MainContentTopicScreen> createState() => _MainContentTopicScreenState();
 }
 
-class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
+class _MainContentTopicScreenState extends State<MainContentTopicScreen> with AutomaticKeepAliveClientMixin {
   final MainContentTopicViewModel viewModel = injector<MainContentTopicViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
+
+  /// Mantém o estado vivo quando a tab não está ativa
+  /// Evita recriação do widget e recarregamento de dados ao trocar de tab
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    viewModel.loadPagedContents();
+    // Carrega apenas se for a primeira vez (viewModel não inicializado)
+    viewModel.loadPagedContentsIfNeeded();
   }
 
   @override
@@ -72,6 +78,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // OBRIGATÓRIO: chama super.build() para AutomaticKeepAliveClientMixin funcionar
+    super.build(context);
+    
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text(">> Perfil de Consumidor - Default <<"),
