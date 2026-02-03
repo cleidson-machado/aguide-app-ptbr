@@ -38,6 +38,7 @@ dependencies:
   path_provider: ^2.1.2             ############################ Para acessar caminhos comuns no sistema de arquivos do dispositivo.
   flutter_dotenv: ^5.2.1            ############################ Para carregar variáveis de ambiente de um arquivo .env.
   logger: ^2.5.0                    ############################ Logger para exibir logs coloridos e formatados no console para debug.
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   # TESTES E QUALIDADE DE CÓDIGO
@@ -48,6 +49,16 @@ dev_dependencies:
   # GERAÇÃO DE CÓDIGO (CODEGEN)
   build_runner: ^2.4.13             ############################ Ferramenta para gerar arquivos a partir de anotações em código (usado pelo Modular, etc.).
   flutter_gen_runner: ^5.9.0        ############################ Gera código para assets, fontes, cores, etc., evitando strings literais.
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "assets/icon/background.png"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  adaptive_icon_monochrome: "assets/icon/monochrome.png"
+  remove_alpha_ios: true  # Remove canal alpha para compliance com App Store
 
 flutter:
   uses-material-design: true
