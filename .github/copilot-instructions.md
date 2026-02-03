@@ -459,6 +459,180 @@ Antes de finalizar uma tela com lista:
 
 ---
 
+## 🎯 Qualidade de Código e Linting (CRÍTICO)
+
+### ⚠️ Problema Recorrente
+Durante o desenvolvimento, erros de linting se acumulam no painel de PROBLEMAS do VS Code, impactando a qualidade do código e podendo causar bugs sutis em produção.
+
+### 🔍 Validação Obrigatória Antes de Commit
+
+#### 1. Executar Flutter Analyze
+```bash
+# Sempre executar antes de commit
+flutter analyze
+
+# Meta: 0 errors, < 5 warnings
+```
+
+#### 2. Tipos de Problemas Comuns e Soluções
+
+##### 🚨 **APIs Deprecated (deprecated_member_use)**
+```dart
+// ❌ ERRADO - API deprecated
+colorScheme.surfaceVariant  // Deprecated no Flutter 3.18+
+
+// ✅ CORRETO - Usar substituto recomendado
+colorScheme.surfaceContainerHighest
+```
+
+**Regra:** SEMPRE verificar changelog do Flutter ao atualizar versão e substituir APIs deprecated imediatamente.
+
+##### 🔧 **prefer_const_declarations**
+```dart
+// ❌ ERRADO - Variável final que poderia ser const
+final strategies = ContentSortStrategy.values;
+
+// ✅ CORRETO - Usar const para valores imutáveis conhecidos em compile-time
+const strategies = ContentSortStrategy.values;
+```
+
+**Benefício:** Reduz uso de memória e melhora performance ao reutilizar instâncias constantes.
+
+##### ⚡ **prefer_const_constructors**
+```dart
+// ❌ ERRADO - Construtor sem const
+Bone.text(words: 3, fontSize: 18)
+SizedBox(height: 8)
+Padding(padding: EdgeInsets.all(20), child: ...)
+
+// ✅ CORRETO - Adicionar const quando possível
+const Bone.text(words: 3, fontSize: 18)
+const SizedBox(height: 8)
+const Padding(padding: EdgeInsets.all(20), child: ...)
+```
+
+**Benefício:** Widgets const não são reconstruídos em hot reload, melhorando performance drasticamente.
+
+##### 📦 **unnecessary_import**
+```dart
+// ❌ ERRADO - Import redundante
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';  // Material já incluído em Cupertino
+
+// ✅ CORRETO - Remover import desnecessário
+import 'package:flutter/cupertino.dart';
+```
+
+**Regra:** Em apps Cupertino (iOS-style), evitar import de Material a menos que realmente necessário.
+
+##### 🐞 **avoid_print**
+```dart
+// ❌ ERRADO - print() em código de produção
+print('✅ Dados carregados: ${contents.length}');
+
+// ✅ CORRETO - Usar logger ou debugPrint
+import 'package:flutter/foundation.dart';
+
+if (kDebugMode) {
+  debugPrint('✅ Dados carregados: ${contents.length}');
+}
+
+// OU usar package logger
+logger.info('Dados carregados: ${contents.length}');
+```
+
+**Regra:** NUNCA usar `print()` em código de produção. Usar `debugPrint()` com `kDebugMode` ou package `logger`.
+
+##### 🎨 **prefer_const_literals_to_create_immutables**
+```dart
+// ❌ ERRADO - Lista não const em widget imutável
+@immutable
+class MyWidget extends StatelessWidget {
+  final List<Widget> children = [
+    Text('Item 1'),
+    Text('Item 2'),
+  ];
+}
+
+// ✅ CORRETO - Lista const
+@immutable
+class MyWidget extends StatelessWidget {
+  final List<Widget> children = const [
+    Text('Item 1'),
+    Text('Item 2'),
+  ];
+}
+```
+
+### 🤖 Comportamento Esperado da IA
+
+#### Antes de Gerar Código
+- [ ] Verificar se não está usando APIs deprecated
+- [ ] Adicionar `const` em todos os construtores quando possível
+- [ ] Usar `const` em vez de `final` para valores imutáveis conhecidos em compile-time
+- [ ] Preferir `debugPrint` com `kDebugMode` em vez de `print`
+- [ ] Remover imports desnecessários
+
+#### Após Modificar Código
+- [ ] Sugerir `flutter analyze` se múltiplos arquivos foram alterados
+- [ ] Alertar sobre APIs deprecated detectadas
+- [ ] Sugerir otimizações de const quando relevante
+
+### 📋 Checklist Pré-Commit de Qualidade
+
+```bash
+# 1. Formatar código
+dart format .
+
+# 2. Análise estática
+flutter analyze
+
+# 3. Verificar se há < 5 issues
+# Se > 5 issues: corrigir antes de commit
+
+# 4. (Opcional) Executar testes
+flutter test
+```
+
+### 🎯 Métricas de Qualidade Aceitáveis
+
+| Métrica | Meta | Limite Máximo |
+|---------|------|---------------|
+| Erros (errors) | 0 | 0 |
+| Avisos (warnings) | 0 | 5 |
+| Info (hints) | < 10 | 20 |
+| Tempo de análise | < 5s | 10s |
+
+### 🚨 Sinais de Alerta
+
+**PARAR desenvolvimento e limpar linting** se:
+- ⚠️ > 20 problemas detectados no painel PROBLEMS
+- ⚠️ Erros (errors) aparecem no `flutter analyze`
+- ⚠️ APIs deprecated sendo usadas em novo código
+- ⚠️ Múltiplos arquivos com warnings de const
+
+### 📚 Recursos para Linting
+
+```yaml
+# analysis_options.yaml - Configuração de linting do projeto
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Regras críticas sempre ativas
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - avoid_print
+    - unnecessary_import
+```
+
+**Documentação:**
+- [Linting oficial Flutter](https://docs.flutter.dev/testing/code-analysis)
+- [Effective Dart](https://dart.dev/guides/language/effective-dart)
+- [Flutter Lints Package](https://pub.dev/packages/flutter_lints)
+
+---
+
 ## Testes
 - Localização: `test/features/[feature]/`
 - Nomenclatura: `[nome_arquivo]_test.dart`

@@ -5,21 +5,16 @@ import 'package:portugal_guide/app/token/rest_api_token.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 
-class UserRepository extends GenCrudRepository<UserModel> implements UserRepositoryInterface {
-
+class UserRepository extends GenCrudRepository<UserModel>
+    implements UserRepositoryInterface {
   UserRepository()
-      : super(
-          endpoint: '/users',
-          fromMap: UserModel.fromMap,
-          dio: _setupDio(),
-        );
+    : super(endpoint: '/users', fromMap: UserModel.fromMap, dio: _setupDio());
 
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
         baseUrl: EnvKeyHelperConfig.mocApi2,
-        headers: {'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );
 
@@ -27,7 +22,7 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final String passKey = RestApiToken.key;
-          // Use the token from RestApiToken just for demonstration an local development 
+          // Use the token from RestApiToken just for demonstration an local development
           options.headers['Authorization'] = 'Bearer $passKey';
           return handler.next(options);
         },
@@ -36,7 +31,7 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
 
     return dio;
   }
-  
+
   // ##################################################################
   // ### IMPLEMENTAÇÃO CORRIGIDA DOS MÉTODOS ESPECÍFICOS ###
   // ##################################################################
@@ -47,9 +42,7 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
       // MUDANÇA: Usa os getters 'dio' e 'endpoint'
       final response = await dioGenCrudRepo.put(
         '$endpointGenCrudRepo/$userId/password', // Usa o getter 'endpoint'
-        data: {
-          'password': newPassword,
-        },
+        data: {'password': newPassword},
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -81,7 +74,7 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
       throw Exception('Error finding user by email: $e');
     }
   }
-  
+
   @override
   Future<bool> isEmailAlreadyRegistered(String email) async {
     try {
@@ -91,5 +84,4 @@ class UserRepository extends GenCrudRepository<UserModel> implements UserReposit
       throw Exception('Error checking if email is registered: $e');
     }
   }
-
 }

@@ -57,19 +57,25 @@ class MainContentTopicViewModel extends ChangeNotifier {
   /// NOTA: App usa paginação 1-based (page 1, 2, 3...) que é convertida para 0-based na API
   /// 🎲 RANDOMIZAÇÃO: Escolhe aleatoriamente uma estratégia de ordenação a cada carregamento
   Future<void> loadPagedContents() async {
-    print("📄 [MainContentTopicViewModel] Iniciando loadPagedContents()");
+    if (kDebugMode) {
+      debugPrint(
+        "📄 [MainContentTopicViewModel] Iniciando loadPagedContents()",
+      );
+    }
 
     // 🎲 Escolher estratégia aleatória de ordenação
     final randomStrategy = ContentSortConfig.randomStrategy();
     _currentSortConfig = ContentSortConfig.fromStrategy(randomStrategy);
     _isManualFilterActive = false; // Desativa filtro manual quando randomiza
 
-    print(
-      "🎲 [MainContentTopicViewModel] Estratégia selecionada: ${_currentSortConfig!.description}",
-    );
-    print(
-      "   Campo: ${_currentSortConfig!.sortField}, Ordem: ${_currentSortConfig!.sortOrder}",
-    );
+    if (kDebugMode) {
+      debugPrint(
+        "🎲 [MainContentTopicViewModel] Estratégia selecionada: ${_currentSortConfig!.description}",
+      );
+      debugPrint(
+        "   Campo: ${_currentSortConfig!.sortField}, Ordem: ${_currentSortConfig!.sortOrder}",
+      );
+    }
 
     _currentPage = 1; // App inicia em page=1 (será convertido para API page=0)
     _hasMorePages = true;
@@ -82,9 +88,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
         sortField: _currentSortConfig!.sortField,
         sortOrder: _currentSortConfig!.sortOrder,
       );
-      print(
-        "📄 [MainContentTopicViewModel] Página $_currentPage carregada com ${items.length} itens",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "📄 [MainContentTopicViewModel] Página $_currentPage carregada com ${items.length} itens",
+        );
+      }
 
       _contents = items;
       _error = null;
@@ -94,18 +102,26 @@ class MainContentTopicViewModel extends ChangeNotifier {
       // Se recebeu menos itens que o pageSize, acabaram as páginas
       if (items.length < _pageSize) {
         _hasMorePages = false;
-        print(
-          "ℹ️  [MainContentTopicViewModel] Última página atingida (${items.length} < $_pageSize)",
-        );
+        if (kDebugMode) {
+          debugPrint(
+            "ℹ️  [MainContentTopicViewModel] Última página atingida (${items.length} < $_pageSize)",
+          );
+        }
       } else {
         _hasMorePages = true;
-        print(
-          "ℹ️  [MainContentTopicViewModel] Há mais páginas disponíveis (recebidos $_pageSize itens)",
-        );
+        if (kDebugMode) {
+          debugPrint(
+            "ℹ️  [MainContentTopicViewModel] Há mais páginas disponíveis (recebidos $_pageSize itens)",
+          );
+        }
       }
     } catch (e) {
       _error = "Erro ao carregar conteúdos: $e";
-      print("❌ [MainContentTopicViewModel] Erro em loadPagedContents(): $e");
+      if (kDebugMode) {
+        debugPrint(
+          "❌ [MainContentTopicViewModel] Erro em loadPagedContents(): $e",
+        );
+      }
     }
     _setLoading(false);
   }
@@ -114,14 +130,18 @@ class MainContentTopicViewModel extends ChangeNotifier {
   /// Usado no initState() para evitar recarregamento ao voltar da tab
   Future<void> loadPagedContentsIfNeeded() async {
     if (!_isInitialized) {
-      print(
-        "✅ [MainContentTopicViewModel] Primeira inicialização - carregando dados",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "✅ [MainContentTopicViewModel] Primeira inicialização - carregando dados",
+        );
+      }
       await loadPagedContents();
     } else {
-      print(
-        "ℹ️  [MainContentTopicViewModel] Já inicializado - reutilizando dados em cache",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "ℹ️  [MainContentTopicViewModel] Já inicializado - reutilizando dados em cache",
+        );
+      }
     }
   }
 
@@ -130,23 +150,29 @@ class MainContentTopicViewModel extends ChangeNotifier {
   Future<void> loadNextPage() async {
     if (!_hasMorePages || _isLoadingMore) return;
 
-    print("📄 [MainContentTopicViewModel] Iniciando loadNextPage()");
-    print(
-      "📄 [MainContentTopicViewModel] currentPage: $_currentPage, hasMorePages: $_hasMorePages, isLoadingMore: $_isLoadingMore",
-    );
-    print(
-      "📄 [MainContentTopicViewModel] Total de itens antes: ${_contents.length}",
-    );
-    print(
-      "🎲 [MainContentTopicViewModel] Mantendo estratégia: ${_currentSortConfig?.description}",
-    );
+    if (kDebugMode) {
+      debugPrint("📄 [MainContentTopicViewModel] Iniciando loadNextPage()");
+      debugPrint(
+        "📄 [MainContentTopicViewModel] currentPage: $_currentPage, hasMorePages: $_hasMorePages, isLoadingMore: $_isLoadingMore",
+      );
+      debugPrint(
+        "📄 [MainContentTopicViewModel] Total de itens antes: ${_contents.length}",
+      );
+      debugPrint(
+        "🎲 [MainContentTopicViewModel] Mantendo estratégia: ${_currentSortConfig?.description}",
+      );
+    }
 
     _isLoadingMore = true;
     notifyListeners();
 
     try {
       final nextPage = _currentPage + 1;
-      print("📄 [MainContentTopicViewModel] Requisitando página: $nextPage");
+      if (kDebugMode) {
+        debugPrint(
+          "📄 [MainContentTopicViewModel] Requisitando página: $nextPage",
+        );
+      }
 
       final items = await _repository.getAllPaged(
         page: nextPage,
@@ -155,30 +181,38 @@ class MainContentTopicViewModel extends ChangeNotifier {
         sortOrder: _currentSortConfig?.sortOrder,
       );
 
-      print(
-        "📄 [MainContentTopicViewModel] Recebidos ${items.length} itens da página $nextPage",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "📄 [MainContentTopicViewModel] Recebidos ${items.length} itens da página $nextPage",
+        );
+      }
 
       // Adicionar os novos itens à lista existente
       _contents.addAll(items);
       _currentPage = nextPage;
 
-      print(
-        "📄 [MainContentTopicViewModel] Total de itens após: ${_contents.length}",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "📄 [MainContentTopicViewModel] Total de itens após: ${_contents.length}",
+        );
+      }
 
       // Se recebeu menos itens que o pageSize, não há mais páginas
       if (items.length < _pageSize) {
         _hasMorePages = false;
-        print(
-          "✅ [MainContentTopicViewModel] Fim da paginação atingido! (${items.length} < $_pageSize)",
-        );
+        if (kDebugMode) {
+          debugPrint(
+            "✅ [MainContentTopicViewModel] Fim da paginação atingido! (${items.length} < $_pageSize)",
+          );
+        }
       }
 
       _error = null;
     } catch (e) {
       _error = "Erro ao carregar próxima página: $e";
-      print("❌ [MainContentTopicViewModel] Erro em loadNextPage(): $e");
+      if (kDebugMode) {
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadNextPage(): $e");
+      }
     }
 
     _isLoadingMore = false;
@@ -204,7 +238,9 @@ class MainContentTopicViewModel extends ChangeNotifier {
   /// Recarrega a lista do início (usado em pull-to-refresh)
   /// Reseta estado de paginação e recarrega primeira página
   Future<void> refreshContents() async {
-    print("🔄 [MainContentTopicViewModel] Iniciando refreshContents()");
+    if (kDebugMode) {
+      debugPrint("🔄 [MainContentTopicViewModel] Iniciando refreshContents()");
+    }
     _currentPage = 1;
     _contents.clear();
     _hasMorePages = true;
@@ -215,16 +251,20 @@ class MainContentTopicViewModel extends ChangeNotifier {
   /// Aplica um filtro manual específico (não randômico)
   /// Marca o filtro como ativo para exibir botão de reset
   Future<void> applyManualFilter(ContentSortStrategy strategy) async {
-    print(
-      "🔧 [MainContentTopicViewModel] Aplicando filtro manual: ${strategy.name}",
-    );
+    if (kDebugMode) {
+      debugPrint(
+        "🔧 [MainContentTopicViewModel] Aplicando filtro manual: ${strategy.name}",
+      );
+    }
 
     _currentSortConfig = ContentSortConfig.fromStrategy(strategy);
     _isManualFilterActive = true; // Ativa flag de filtro manual
 
-    print(
-      "🔧 [MainContentTopicViewModel] Filtro aplicado: ${_currentSortConfig!.description}",
-    );
+    if (kDebugMode) {
+      debugPrint(
+        "🔧 [MainContentTopicViewModel] Filtro aplicado: ${_currentSortConfig!.description}",
+      );
+    }
 
     _currentPage = 1;
     _hasMorePages = true;
@@ -247,12 +287,16 @@ class MainContentTopicViewModel extends ChangeNotifier {
         _hasMorePages = false;
       }
 
-      print(
-        "✅ [MainContentTopicViewModel] Filtro manual aplicado com sucesso!",
-      );
+      if (kDebugMode) {
+        debugPrint(
+          "✅ [MainContentTopicViewModel] Filtro manual aplicado com sucesso!",
+        );
+      }
     } catch (e) {
       _error = "Erro ao aplicar filtro: $e";
-      print("❌ [MainContentTopicViewModel] Erro ao aplicar filtro: $e");
+      if (kDebugMode) {
+        debugPrint("❌ [MainContentTopicViewModel] Erro ao aplicar filtro: $e");
+      }
     }
 
     _setLoading(false);
@@ -260,7 +304,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
   /// Reseta filtro manual e volta ao modo randômico
   Future<void> resetToRandomMode() async {
-    print("🔄 [MainContentTopicViewModel] Resetando para modo randômico");
+    if (kDebugMode) {
+      debugPrint(
+        "🔄 [MainContentTopicViewModel] Resetando para modo randômico",
+      );
+    }
     _isManualFilterActive = false;
     await loadPagedContents(); // Carrega com estratégia randômica
   }

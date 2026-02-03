@@ -36,10 +36,7 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
       // ✅ IndexedStack mantém todas as tabs vivas na árvore de widgets
       // Isso permite que AutomaticKeepAliveClientMixin funcione corretamente
       // Apenas alterna a visibilidade entre as tabs sem destruir os widgets
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: SafeArea(
         child: CupertinoTabBar(
           currentIndex: _selectedIndex,
@@ -47,19 +44,25 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
           iconSize: 35,
           onTap: _onItemTapped,
           items: const [
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.news_solid), // ################################## https://cupertino-icons.web.app
-            label: "TEMAS",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.arrow_up_arrow_down_square), // ################## https://cupertino-icons.web.app
-            label: "RELAÇÕES",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.rectangle_stack_person_crop_fill), // ############ https://cupertino-icons.web.app
-            label: "PERFIL",
-          ),
-        ],
+            BottomNavigationBarItem(
+              icon: Icon(
+                CupertinoIcons.news_solid,
+              ), // ################################## https://cupertino-icons.web.app
+              label: "TEMAS",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                CupertinoIcons.arrow_up_arrow_down_square,
+              ), // ################## https://cupertino-icons.web.app
+              label: "RELAÇÕES",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                CupertinoIcons.rectangle_stack_person_crop_fill,
+              ), // ############ https://cupertino-icons.web.app
+              label: "PERFIL",
+            ),
+          ],
         ),
       ),
     );

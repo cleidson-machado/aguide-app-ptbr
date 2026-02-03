@@ -24,5 +24,4 @@ class AppLocaleProvider extends ChangeNotifier {
     _currentLocale = newLocale;
     notifyListeners();
   }
-  
 }

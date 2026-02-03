@@ -30,7 +30,13 @@ class ChatController extends ChangeNotifier {
   }
 
   void _addMessage(String text, {required bool isSender}) {
-    _messages.add(ChatMessageModel(text: text, isSender: isSender, timestamp: DateTime.now()));
+    _messages.add(
+      ChatMessageModel(
+        text: text,
+        isSender: isSender,
+        timestamp: DateTime.now(),
+      ),
+    );
     notifyListeners();
   }
 

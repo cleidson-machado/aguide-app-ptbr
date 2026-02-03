@@ -1,7 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EnvKeyHelperConfig {
-
   // Environment Info
   static String get label => dotenv.env['LABEL'] ?? 'UNKNOWN';
   static String get buildFlavor => dotenv.env['BUILD_FLAVOR'] ?? 'development';
@@ -21,12 +20,15 @@ class EnvKeyHelperConfig {
 
   // Auth / Security
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
-  static int get tokenExpirationMinutes => int.tryParse(dotenv.env['TOKEN_EXPIRATION_MINUTES'] ?? '') ?? 60;
+  static int get tokenExpirationMinutes =>
+      int.tryParse(dotenv.env['TOKEN_EXPIRATION_MINUTES'] ?? '') ?? 60;
 
   // Firebase / Analytics
-  static String get firebaseProjectId => dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
+  static String get firebaseProjectId =>
+      dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
   static String get firebaseApiKey => dotenv.env['FIREBASE_API_KEY'] ?? '';
-  static String get firebaseMessagingSenderId => dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
+  static String get firebaseMessagingSenderId =>
+      dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
   static String get firebaseAppId => dotenv.env['FIREBASE_APP_ID'] ?? '';
 
   // Feature Toggles

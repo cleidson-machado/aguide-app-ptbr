@@ -5,7 +5,8 @@ class AuthGuard extends RouteGuard {
 
   @override
   Future<bool> canActivate(String path, ModularRoute route) async {
-    bool isAuthenticated = false; // Simula autenticação (altere para true para testar)
+    bool isAuthenticated =
+        false; // Simula autenticação (altere para true para testar)
     return isAuthenticated;
   }
 }

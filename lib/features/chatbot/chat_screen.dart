@@ -43,7 +43,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    Provider.of<ChatController>(context, listen: false).removeListener(_scrollToBottom);
+    Provider.of<ChatController>(
+      context,
+      listen: false,
+    ).removeListener(_scrollToBottom);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -54,7 +57,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Consumer<ChatController>(
       builder: (context, controller, child) {
         return CupertinoPageScaffold(
-          navigationBar: const CupertinoNavigationBar(middle: Text('AI Chat (MVC)')),
+          navigationBar: const CupertinoNavigationBar(
+            middle: Text('AI Chat (MVC)'),
+          ),
           child: SafeArea(
             child: Column(
               children: <Widget>[
@@ -101,12 +106,17 @@ class ChatMessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
         decoration: BoxDecoration(
-          color: isSender ? CupertinoColors.activeBlue : CupertinoColors.systemGrey5,
+          color:
+              isSender
+                  ? CupertinoColors.activeBlue
+                  : CupertinoColors.systemGrey5,
           borderRadius: BorderRadius.circular(16.0),
         ),
         child: Text(
           message.text,
-          style: TextStyle(color: isSender ? CupertinoColors.white : CupertinoColors.label),
+          style: TextStyle(
+            color: isSender ? CupertinoColors.white : CupertinoColors.label,
+          ),
         ),
       ),
     );

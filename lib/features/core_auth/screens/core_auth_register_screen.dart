@@ -9,13 +9,16 @@ class CoreAuthRegisterScreen extends StatefulWidget {
 }
 
 class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
-   bool _agreeTerms = false;
+  bool _agreeTerms = false;
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text("Sign up - Plus", style: GoogleFonts.lato(fontWeight: FontWeight.bold)),
+        middle: Text(
+          "Sign up - Plus",
+          style: GoogleFonts.lato(fontWeight: FontWeight.bold),
+        ),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -25,7 +28,10 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
             // Título
             Text(
               "Create an account to get started",
-              style: GoogleFonts.lato(fontSize: 16, color: CupertinoColors.systemGrey),
+              style: GoogleFonts.lato(
+                fontSize: 16,
+                color: CupertinoColors.systemGrey,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -62,12 +68,18 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
                 Expanded(
                   child: Wrap(
                     children: [
-                      Text("I've read and agree with the ", style: GoogleFonts.lato(fontSize: 14)),
+                      Text(
+                        "I've read and agree with the ",
+                        style: GoogleFonts.lato(fontSize: 14),
+                      ),
                       GestureDetector(
                         onTap: () {}, // Ação de abrir termos
                         child: Text(
                           "Terms and Conditions",
-                          style: GoogleFonts.lato(fontSize: 14, color: CupertinoColors.activeBlue),
+                          style: GoogleFonts.lato(
+                            fontSize: 14,
+                            color: CupertinoColors.activeBlue,
+                          ),
                         ),
                       ),
                       Text(" and the ", style: GoogleFonts.lato(fontSize: 14)),
@@ -75,7 +87,10 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
                         onTap: () {}, // Ação de abrir política
                         child: Text(
                           "Privacy Policy.",
-                          style: GoogleFonts.lato(fontSize: 14, color: CupertinoColors.activeBlue),
+                          style: GoogleFonts.lato(
+                            fontSize: 14,
+                            color: CupertinoColors.activeBlue,
+                          ),
                         ),
                       ),
                     ],
@@ -90,9 +105,12 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
               width: double.infinity,
               child: CupertinoButton.filled(
                 borderRadius: BorderRadius.circular(8),
-                onPressed: _agreeTerms ? () {
-                  // Ação de cadastro
-                } : null,
+                onPressed:
+                    _agreeTerms
+                        ? () {
+                          // Ação de cadastro
+                        }
+                        : null,
                 child: const Text("Sign up"),
               ),
             ),
@@ -106,7 +124,11 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: GoogleFonts.lato(fontSize: 16, fontWeight: FontWeight.bold, color: CupertinoColors.black),
+      style: GoogleFonts.lato(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: CupertinoColors.black,
+      ),
     );
   }
 
@@ -121,13 +143,17 @@ class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: CupertinoColors.systemGrey3),
       ),
-      suffix: obscureText
-          ? CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: const Icon(CupertinoIcons.eye, color: CupertinoColors.systemGrey),
-              onPressed: () {}, // Ação de visibilidade da senha
-            )
-          : null,
+      suffix:
+          obscureText
+              ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                child: const Icon(
+                  CupertinoIcons.eye,
+                  color: CupertinoColors.systemGrey,
+                ),
+                onPressed: () {}, // Ação de visibilidade da senha
+              )
+              : null,
     );
   }
 }

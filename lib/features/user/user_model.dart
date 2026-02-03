@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'package:portugal_guide/app/core/base/base_model.dart';
 
 class UserModel implements BaseModel {
-
   @override
   final String id;
-  
+
   String name;
   String surname;
   String email;
@@ -53,7 +52,8 @@ class UserModel implements BaseModel {
 
   String toJson() => json.encode(toMap());
 
-  factory UserModel.fromJson(String source) => UserModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory UserModel.fromJson(String source) =>
+      UserModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -63,19 +63,15 @@ class UserModel implements BaseModel {
   @override
   bool operator ==(covariant UserModel other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.name == name &&
-      other.surname == surname &&
-      other.email == email;
+
+    return other.id == id &&
+        other.name == name &&
+        other.surname == surname &&
+        other.email == email;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^
-      name.hashCode ^
-      surname.hashCode ^
-      email.hashCode;
+    return id.hashCode ^ name.hashCode ^ surname.hashCode ^ email.hashCode;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
@@ -19,8 +20,10 @@ class MainContentTopicScreen extends StatefulWidget {
   State<MainContentTopicScreen> createState() => _MainContentTopicScreenState();
 }
 
-class _MainContentTopicScreenState extends State<MainContentTopicScreen> with AutomaticKeepAliveClientMixin {
-  final MainContentTopicViewModel viewModel = injector<MainContentTopicViewModel>();
+class _MainContentTopicScreenState extends State<MainContentTopicScreen>
+    with AutomaticKeepAliveClientMixin {
+  final MainContentTopicViewModel viewModel =
+      injector<MainContentTopicViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
 
@@ -53,11 +56,15 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
     final position = _scrollController.position;
     final maxScroll = position.maxScrollExtent;
     final currentScroll = position.pixels;
-    
+
     // Se chegou perto do final (dentro de 200px) e há mais páginas
     if (currentScroll >= maxScroll - 200) {
       if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
-        print("📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página");
+        if (kDebugMode) {
+          debugPrint(
+            "📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página",
+          );
+        }
         viewModel.loadNextPage();
       }
     }
@@ -69,7 +76,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   void _onSearchChanged(String value) {
     // Cancela timer anterior se existir
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     // Cria novo timer de 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
       viewModel.searchContents(value);
@@ -80,7 +87,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   Widget build(BuildContext context) {
     // OBRIGATÓRIO: chama super.build() para AutomaticKeepAliveClientMixin funcionar
     super.build(context);
-    
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text(">> Perfil de Consumidor - Default <<"),
@@ -117,7 +124,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
       // Skeleton loader para carregamento inicial
       return _buildSkeletonList();
     }
-    
+
     if (viewModel.error != null) {
       return Center(
         child: Text(
@@ -126,7 +133,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
         ),
       );
     }
-    
+
     if (viewModel.contents.isEmpty) {
       return const Center(child: Text("Nenhum conteúdo encontrado."));
     }
@@ -163,7 +170,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
                   ],
                 );
               },
-              childCount: viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
+              childCount:
+                  viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
             ),
           ),
         ),
@@ -191,7 +199,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  content.description, // Usando description no lugar de subtitle
+                  content
+                      .description, // Usando description no lugar de subtitle
                   style: const TextStyle(
                     fontSize: 14,
                     color: CupertinoColors.systemGrey,
@@ -216,24 +225,24 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
               maxWidthDiskCache: 160,
               maxHeightDiskCache: 160,
               // Placeholder enquanto carrega (atividade indicator nativo iOS)
-              placeholder: (context, url) => Container(
-                width: 80,
-                height: 80,
-                color: CupertinoColors.systemGrey5,
-                child: const Center(
-                  child: CupertinoActivityIndicator(),
-                ),
-              ),
+              placeholder:
+                  (context, url) => Container(
+                    width: 80,
+                    height: 80,
+                    color: CupertinoColors.systemGrey5,
+                    child: const Center(child: CupertinoActivityIndicator()),
+                  ),
               // Widget de erro mantido igual ao original
-              errorWidget: (context, url, error) => Container(
-                width: 80,
-                height: 80,
-                color: CupertinoColors.systemGrey5,
-                child: const Icon(
-                  CupertinoIcons.photo,
-                  color: CupertinoColors.white,
-                ),
-              ),
+              errorWidget:
+                  (context, url, error) => Container(
+                    width: 80,
+                    height: 80,
+                    color: CupertinoColors.systemGrey5,
+                    child: const Icon(
+                      CupertinoIcons.photo,
+                      color: CupertinoColors.white,
+                    ),
+                  ),
             ),
           ),
         ],
@@ -280,27 +289,18 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Bone.text(
-                  words: 3,
-                  fontSize: 16,
-                ),
-                const SizedBox(height: 4),
-                Bone.text(
-                  words: 6,
-                  fontSize: 14,
-                ),
+                Bone.text(words: 3, fontSize: 16),
+                SizedBox(height: 4),
+                Bone.text(words: 6, fontSize: 14),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Bone.square(
-            size: 80,
-            borderRadius: BorderRadius.circular(8),
-          ),
+          Bone.square(size: 80, borderRadius: BorderRadius.circular(8)),
         ],
       ),
     );
@@ -309,117 +309,119 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> with Au
   Future<dynamic> _popUpHandler(BuildContext context) {
     return showCupertinoModalPopup(
       context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text(
-          AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
-        ),
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('pt', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'BR',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
+      builder:
+          (BuildContext context) => CupertinoActionSheet(
+            title: Text(
+              AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+            ),
+            actions: <CupertinoActionSheetAction>[
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Provider.of<AppLocaleProvider>(
+                    context,
+                    listen: false,
+                  ).changeLocale(const Locale('pt', ''));
+                  Navigator.pop(context);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CountryFlag.fromCountryCode(
+                      'BR',
+                      height: 16,
+                      width: 24,
+                      shape: const RoundedRectangle(4),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)?.languagePortuguese ??
+                          'Portuguese',
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languagePortuguese ?? 'Portuguese',
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Provider.of<AppLocaleProvider>(
+                    context,
+                    listen: false,
+                  ).changeLocale(const Locale('en', ''));
+                  Navigator.pop(context);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CountryFlag.fromCountryCode(
+                      'US',
+                      height: 16,
+                      width: 24,
+                      shape: const RoundedRectangle(4),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)?.languageEnglish ??
+                          'English',
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Provider.of<AppLocaleProvider>(
+                    context,
+                    listen: false,
+                  ).changeLocale(const Locale('es', ''));
+                  Navigator.pop(context);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CountryFlag.fromCountryCode(
+                      'ES',
+                      height: 16,
+                      width: 24,
+                      shape: const RoundedRectangle(4),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)?.languageSpanish ??
+                          'Spanish',
+                    ),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Provider.of<AppLocaleProvider>(
+                    context,
+                    listen: false,
+                  ).changeLocale(const Locale('fr', ''));
+                  Navigator.pop(context);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CountryFlag.fromCountryCode(
+                      'FR',
+                      height: 16,
+                      width: 24,
+                      shape: const RoundedRectangle(4),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)?.languageFrench ?? 'French',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             ),
           ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('en', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'US',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageEnglish ?? 'English',
-                ),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('es', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'ES',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageSpanish ?? 'Spanish',
-                ),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Provider.of<AppLocaleProvider>(
-                context,
-                listen: false,
-              ).changeLocale(const Locale('fr', ''));
-              Navigator.pop(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CountryFlag.fromCountryCode(
-                  'FR',
-                  height: 16,
-                  width: 24,
-                  shape: const RoundedRectangle(4),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)?.languageFrench ?? 'French',
-                ),
-              ],
-            ),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text(
-            AppLocalizations.of(context)?.cancel ?? 'Cancel',
-          ),
-        ),
-      ),
     );
   }
 }

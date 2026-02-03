@@ -6,7 +6,6 @@ import 'package:portugal_guide/app/core/base/base_model.dart';
 /// Model da camada de domínio usado pela UI/ViewModel
 /// Mantém nomes adaptados para o contexto da aplicação Flutter
 class MainContentTopicModel implements BaseModel {
-  
   @override
   final String id;
 
@@ -61,21 +60,26 @@ class MainContentTopicModel implements BaseModel {
   }
 
   factory MainContentTopicModel.fromMap(Map<String, dynamic> map) {
-  return MainContentTopicModel(
-    id: map['id'] as String,
-    title: map['title'] as String,
-    subtitle: map['channelName'] as String, // Mapeia channelName para subtitle
-    description: map['description'] as String,
-    contentImageUrl: map['thumbnailUrl'] as String, // Mapeia thumbnailUrl para contentImageUrl
-    contentUrl: map['url'] as String, // Mapeia url para contentUrl
-    contentType: map['type'] as String, // Mapeia type para contentType
-  );
-}
+    return MainContentTopicModel(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      subtitle:
+          map['channelName'] as String, // Mapeia channelName para subtitle
+      description: map['description'] as String,
+      contentImageUrl:
+          map['thumbnailUrl']
+              as String, // Mapeia thumbnailUrl para contentImageUrl
+      contentUrl: map['url'] as String, // Mapeia url para contentUrl
+      contentType: map['type'] as String, // Mapeia type para contentType
+    );
+  }
 
   String toJson() => json.encode(toMap());
 
-  factory MainContentTopicModel.fromJson(String source) => 
-      MainContentTopicModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory MainContentTopicModel.fromJson(String source) =>
+      MainContentTopicModel.fromMap(
+        json.decode(source) as Map<String, dynamic>,
+      );
 
   @override
   String toString() {
@@ -85,25 +89,24 @@ class MainContentTopicModel implements BaseModel {
   @override
   bool operator ==(covariant MainContentTopicModel other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.title == title &&
-      other.subtitle == subtitle &&
-      other.description == description &&
-      other.contentImageUrl == contentImageUrl &&
-      other.contentUrl == contentUrl &&
-      other.contentType == contentType;
+
+    return other.id == id &&
+        other.title == title &&
+        other.subtitle == subtitle &&
+        other.description == description &&
+        other.contentImageUrl == contentImageUrl &&
+        other.contentUrl == contentUrl &&
+        other.contentType == contentType;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      title.hashCode ^
-      subtitle.hashCode ^
-      description.hashCode ^
-      contentImageUrl.hashCode ^
-      contentUrl.hashCode ^
-      contentType.hashCode;
+        title.hashCode ^
+        subtitle.hashCode ^
+        description.hashCode ^
+        contentImageUrl.hashCode ^
+        contentUrl.hashCode ^
+        contentType.hashCode;
   }
 }

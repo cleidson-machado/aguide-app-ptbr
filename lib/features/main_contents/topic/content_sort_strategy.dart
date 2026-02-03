@@ -79,7 +79,7 @@ class ContentSortConfig {
   /// Seleciona uma estratégia aleatória
   static ContentSortStrategy randomStrategy() {
     final random = Random();
-    final strategies = ContentSortStrategy.values;
+    const strategies = ContentSortStrategy.values;
     return strategies[random.nextInt(strategies.length)];
   }
 

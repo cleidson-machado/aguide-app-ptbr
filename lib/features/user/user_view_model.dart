@@ -14,7 +14,8 @@ class UserViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;
   final logger = Logger();
 
-  UserViewModel({required UserRepositoryInterface repository}) : _userRepository = repository;
+  UserViewModel({required UserRepositoryInterface repository})
+    : _userRepository = repository;
 
   List<UserModel> _users = [];
   String? error;
@@ -25,7 +26,11 @@ class UserViewModel extends ChangeNotifier {
 
   void _logError(String action, Object err, StackTrace stackTrace) {
     final className = runtimeType.toString();
-    logger.e('$className - ERROR: "$action"', error: err, stackTrace: stackTrace);
+    logger.e(
+      '$className - ERROR: "$action"',
+      error: err,
+      stackTrace: stackTrace,
+    );
   }
 
   void _setLoading(bool value) {
@@ -36,8 +41,11 @@ class UserViewModel extends ChangeNotifier {
   Future<void> loadUsers() async {
     _setLoading(true);
     try {
-      error = null; // ######################################### Clear the error message before loading users
-      await Future.delayed(const Duration(seconds: 2)); // ##### Simulates a 2-second delay
+      error =
+          null; // ######################################### Clear the error message before loading users
+      await Future.delayed(
+        const Duration(seconds: 2),
+      ); // ##### Simulates a 2-second delay
       _users = await _userRepository.getAll();
     } catch (err, stackTrace) {
       _logError('loadUsers METHOD', err, stackTrace);

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
@@ -58,9 +58,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     // Se chegou perto do final (dentro de 200px) e há mais páginas
     if (currentScroll >= maxScroll - 200) {
       if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
-        print(
-          "📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página",
-        );
+        if (kDebugMode) {
+          debugPrint(
+            "📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página",
+          );
+        }
         viewModel.loadNextPage();
       }
     }
@@ -354,9 +356,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           // Skeleton da imagem
-          Bone.square(
+          const Bone.square(
             size: 280,
-            borderRadius: const BorderRadius.only(
+            borderRadius: BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
             ),
@@ -366,9 +368,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                Bone.text(words: 3, fontSize: 18),
+                const Bone.text(words: 3, fontSize: 18),
                 const SizedBox(height: 8),
-                Bone.text(words: 5, fontSize: 14),
+                const Bone.text(words: 5, fontSize: 14),
                 const SizedBox(height: 16),
                 // Skeleton do botão
                 Bone.button(
@@ -625,7 +627,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           Navigator.of(context, rootNavigator: true).pop();
         } catch (e) {
           // Ignora erro se dialog já foi fechado
-          print('⚠️ Dialog já foi fechado: $e');
+          if (kDebugMode) {
+            debugPrint('⚠️ Dialog já foi fechado: $e');
+          }
         }
       }
     });

@@ -14,9 +14,10 @@ class CustomRouteManager {
       routeManager.child(
         path,
         child: (context) => widget,
-        transition: path == AppRoutes.initial 
-            ? TransitionType.fadeIn 
-            : defaultTransition,
+        transition:
+            path == AppRoutes.initial
+                ? TransitionType.fadeIn
+                : defaultTransition,
         duration: defaultDuration,
         guards: guards?[path] ?? [],
       );

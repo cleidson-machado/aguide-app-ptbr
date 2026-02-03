@@ -35,9 +35,7 @@ class ProposalMainContentTopicScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                Expanded(
-                  child: _buildBody(vm),
-                ),
+                Expanded(child: _buildBody(vm)),
               ],
             ),
           );
@@ -131,34 +129,58 @@ class ProposalMainContentTopicScreen extends StatelessWidget {
   void _showLanguageModal(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text(
-          AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
-        ),
-        actions: <CupertinoActionSheetAction>[
-          _buildLangAction(context, 'pt', 'BR',
-              AppLocalizations.of(context)?.languagePortuguese ?? 'Portuguese'),
-          _buildLangAction(context, 'en', 'US',
-              AppLocalizations.of(context)?.languageEnglish ?? 'English'),
-          _buildLangAction(context, 'es', 'ES',
-              AppLocalizations.of(context)?.languageSpanish ?? 'Spanish'),
-          _buildLangAction(context, 'fr', 'FR',
-              AppLocalizations.of(context)?.languageFrench ?? 'French'),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-        ),
-      ),
+      builder:
+          (BuildContext context) => CupertinoActionSheet(
+            title: Text(
+              AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+            ),
+            actions: <CupertinoActionSheetAction>[
+              _buildLangAction(
+                context,
+                'pt',
+                'BR',
+                AppLocalizations.of(context)?.languagePortuguese ??
+                    'Portuguese',
+              ),
+              _buildLangAction(
+                context,
+                'en',
+                'US',
+                AppLocalizations.of(context)?.languageEnglish ?? 'English',
+              ),
+              _buildLangAction(
+                context,
+                'es',
+                'ES',
+                AppLocalizations.of(context)?.languageSpanish ?? 'Spanish',
+              ),
+              _buildLangAction(
+                context,
+                'fr',
+                'FR',
+                AppLocalizations.of(context)?.languageFrench ?? 'French',
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+            ),
+          ),
     );
   }
 
   CupertinoActionSheetAction _buildLangAction(
-      BuildContext context, String langCode, String countryCode, String label) {
+    BuildContext context,
+    String langCode,
+    String countryCode,
+    String label,
+  ) {
     return CupertinoActionSheetAction(
       onPressed: () {
-        Provider.of<AppLocaleProvider>(context, listen: false)
-            .changeLocale(Locale(langCode, ''));
+        Provider.of<AppLocaleProvider>(
+          context,
+          listen: false,
+        ).changeLocale(Locale(langCode, ''));
         Navigator.pop(context);
       },
       child: Row(

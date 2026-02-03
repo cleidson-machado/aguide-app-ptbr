@@ -21,8 +21,11 @@ class CoreAuthLoginScreen extends StatelessWidget {
               color: CupertinoColors.lightBackgroundGray,
               child: Center(
                 child: CupertinoButton(
-                  child: const Icon(CupertinoIcons.photo,
-                      size: 50, color: CupertinoColors.inactiveGray),
+                  child: const Icon(
+                    CupertinoIcons.photo,
+                    size: 50,
+                    color: CupertinoColors.inactiveGray,
+                  ),
                   onPressed: () {}, // Placeholder para imagem
                 ),
               ),
@@ -30,8 +33,10 @@ class CoreAuthLoginScreen extends StatelessWidget {
 
             // Seção de Login
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -65,8 +70,10 @@ class CoreAuthLoginScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     suffix: CupertinoButton(
                       padding: EdgeInsets.zero,
-                      child: const Icon(CupertinoIcons.eye,
-                          color: CupertinoColors.systemGrey),
+                      child: const Icon(
+                        CupertinoIcons.eye,
+                        color: CupertinoColors.systemGrey,
+                      ),
                       onPressed: () {}, // Ação para exibir senha
                     ),
                     decoration: BoxDecoration(
@@ -94,7 +101,9 @@ class CoreAuthLoginScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           CupertinoPageRoute(
-                              builder: (context) => const CoreAuthForgotPassScreen()),
+                            builder:
+                                (context) => const CoreAuthForgotPassScreen(),
+                          ),
                         );
                       },
                     ),
@@ -121,7 +130,9 @@ class CoreAuthLoginScreen extends StatelessWidget {
                       Text(
                         "Not a member?  | ",
                         style: GoogleFonts.lato(
-                            fontSize: 14, color: CupertinoColors.systemGrey),
+                          fontSize: 14,
+                          color: CupertinoColors.systemGrey,
+                        ),
                       ),
                       CupertinoButton(
                         padding: EdgeInsets.zero,
@@ -135,7 +146,9 @@ class CoreAuthLoginScreen extends StatelessWidget {
                         ),
                         //#######>>>> SIMPLE LINK TO OTHER PAGE.....
                         onPressed: () {
-                          Modular.to.pushNamed(AppRoutes.register); // Go to REGISTER Page (free route!??)
+                          Modular.to.pushNamed(
+                            AppRoutes.register,
+                          ); // Go to REGISTER Page (free route!??)
 
                           //#######>>>> THIS IS THE OLD WAY TO NAVIGATE! START
                           // Navigator.push(
@@ -144,7 +157,6 @@ class CoreAuthLoginScreen extends StatelessWidget {
                           //       builder: (context) => const CoreAuthRegisterScreen()),
                           // );
                           //#######>>>> THIS IS THE OLD WAY TO NAVIGATE! END!
-
                         },
                       ),
                     ],
@@ -156,16 +168,21 @@ class CoreAuthLoginScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         const Expanded(
-                            child: Divider(color: CupertinoColors.systemGrey3)),
+                          child: Divider(color: CupertinoColors.systemGrey3),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text("Or continue with",
-                              style: GoogleFonts.lato(
-                                  fontSize: 14,
-                                  color: CupertinoColors.systemGrey)),
+                          child: Text(
+                            "Or continue with",
+                            style: GoogleFonts.lato(
+                              fontSize: 14,
+                              color: CupertinoColors.systemGrey,
+                            ),
+                          ),
                         ),
                         const Expanded(
-                            child: Divider(color: CupertinoColors.systemGrey3)),
+                          child: Divider(color: CupertinoColors.systemGrey3),
+                        ),
                       ],
                     ),
                   ),
@@ -197,10 +214,7 @@ class CoreAuthLoginScreen extends StatelessWidget {
       child: Container(
         width: 50,
         height: 50,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Center(
           child: Text(
             label,

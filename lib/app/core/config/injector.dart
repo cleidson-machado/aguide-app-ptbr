@@ -6,17 +6,28 @@ import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 
-final injector = GetIt.instance; //##### dependency_injector ###### get_it dependency add to the pubspekage!!
+final injector =
+    GetIt
+        .instance; //##### dependency_injector ###### get_it dependency add to the pubspekage!!
 
 void setupDependencies() {
-
   //### For User ###
-  injector.registerLazySingleton<UserRepositoryInterface>(() => UserRepository());
-  injector.registerFactory<UserViewModel>(() => UserViewModel(repository: injector<UserRepositoryInterface>()));
+  injector.registerLazySingleton<UserRepositoryInterface>(
+    () => UserRepository(),
+  );
+  injector.registerFactory<UserViewModel>(
+    () => UserViewModel(repository: injector<UserRepositoryInterface>()),
+  );
 
   //### For Main Content Topic ###
-  injector.registerLazySingleton<MainContentTopicRepositoryInterface>(() => MainContentTopicRepository());
-  injector.registerFactory<MainContentTopicViewModel>(() => MainContentTopicViewModel(repository: injector<MainContentTopicRepositoryInterface>()));
+  injector.registerLazySingleton<MainContentTopicRepositoryInterface>(
+    () => MainContentTopicRepository(),
+  );
+  injector.registerFactory<MainContentTopicViewModel>(
+    () => MainContentTopicViewModel(
+      repository: injector<MainContentTopicRepositoryInterface>(),
+    ),
+  );
 }
 
 // -----------------------------------------------------------------------------

@@ -8,20 +8,29 @@ class MainContentProfileScreen extends StatefulWidget {
   const MainContentProfileScreen({super.key});
 
   @override
-  _MainContentProfileScreenState createState() => _MainContentProfileScreenState();
+  _MainContentProfileScreenState createState() =>
+      _MainContentProfileScreenState();
 }
 
 class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
-  final TextEditingController _nameController = TextEditingController(text: "Suzane Jobs");
-  final TextEditingController _emailController = TextEditingController(text: "abc@gmail.com");
-  final TextEditingController _phoneController = TextEditingController(text: "+91 123456890");
+  final TextEditingController _nameController = TextEditingController(
+    text: "Suzane Jobs",
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: "abc@gmail.com",
+  );
+  final TextEditingController _phoneController = TextEditingController(
+    text: "+91 123456890",
+  );
 
   final isDev = EnvKeyHelperConfig.label.toUpperCase() == 'DEV'; // TEST
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text(">> Lista Contatos para Ambos <<")),
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text(">> Lista Contatos para Ambos <<"),
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
@@ -32,7 +41,9 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
               children: [
                 const CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage("https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"), // Replace with user's image
+                  backgroundImage: NetworkImage(
+                    "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+                  ), // Replace with user's image
                 ),
                 CupertinoButton(
                   padding: EdgeInsets.zero,
@@ -43,15 +54,25 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
                       color: CupertinoColors.black,
                     ),
                     padding: const EdgeInsets.all(5),
-                    child: const Icon(CupertinoIcons.pencil, color: CupertinoColors.white, size: 16),
+                    child: const Icon(
+                      CupertinoIcons.pencil,
+                      color: CupertinoColors.white,
+                      size: 16,
+                    ),
                   ),
                 ),
               ],
             ),
 
             const SizedBox(height: 10),
-            const Text("Suzane Jobs", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const Text("user@gmail.com", style: TextStyle(color: CupertinoColors.systemGrey)),
+            const Text(
+              "Suzane Jobs",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              "user@gmail.com",
+              style: TextStyle(color: CupertinoColors.systemGrey),
+            ),
 
             const SizedBox(height: 30),
 
@@ -84,7 +105,10 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 5),
         CupertinoTextField(
           controller: controller,
@@ -98,4 +122,3 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
     );
   }
 }
-

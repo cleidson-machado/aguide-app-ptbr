@@ -73,8 +73,11 @@ class ChatApp extends StatelessWidget {
     return CupertinoApp(
       title: 'Chat Interface',
       theme: const CupertinoThemeData(
-        primaryColor: CupertinoColors.activeBlue, // A common primary color for Cupertino apps
-        brightness: Brightness.light, // Ensure light mode for consistent appearance
+        primaryColor:
+            CupertinoColors
+                .activeBlue, // A common primary color for Cupertino apps
+        brightness:
+            Brightness.light, // Ensure light mode for consistent appearance
       ),
       home: ChangeNotifierProvider<ChatData>(
         create: (BuildContext context) => ChatData(),
@@ -148,14 +151,20 @@ class _ChatScreenState extends State<ChatScreen> {
       navigationBar: const CupertinoNavigationBar(
         middle: Text('AI Chat'), // Title for the navigation bar
       ),
-      backgroundColor: CupertinoColors.systemGroupedBackground, // Typical iOS background color
-      child: SafeArea( // Ensures content is not obscured by system UI
+      backgroundColor:
+          CupertinoColors
+              .systemGroupedBackground, // Typical iOS background color
+      child: SafeArea(
+        // Ensures content is not obscured by system UI
         child: Column(
           children: <Widget>[
             Expanded(
               child: Consumer<ChatData>(
-                builder:
-                    (BuildContext context, ChatData chatData, Widget? child) {
+                builder: (
+                  BuildContext context,
+                  ChatData chatData,
+                  Widget? child,
+                ) {
                   return ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(8.0),
@@ -195,26 +204,32 @@ class ChatMessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
         decoration: BoxDecoration(
-          color: isSender
-              ? CupertinoColors.activeBlue // Sender's bubble color
-              : CupertinoColors.systemGrey5, // Receiver's bubble color
+          color:
+              isSender
+                  ? CupertinoColors
+                      .activeBlue // Sender's bubble color
+                  : CupertinoColors.systemGrey5, // Receiver's bubble color
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16.0),
             topRight: const Radius.circular(16.0),
-            bottomLeft: isSender
-                ? const Radius.circular(16.0)
-                : const Radius.circular(4.0),
-            bottomRight: isSender
-                ? const Radius.circular(4.0)
-                : const Radius.circular(16.0),
+            bottomLeft:
+                isSender
+                    ? const Radius.circular(16.0)
+                    : const Radius.circular(4.0),
+            bottomRight:
+                isSender
+                    ? const Radius.circular(4.0)
+                    : const Radius.circular(16.0),
           ),
         ),
         child: Text(
           message.text,
           style: TextStyle(
-            color: isSender
-                ? CupertinoColors.white // Text color for sender
-                : CupertinoColors.label, // Text color for receiver
+            color:
+                isSender
+                    ? CupertinoColors
+                        .white // Text color for sender
+                    : CupertinoColors.label, // Text color for receiver
           ),
         ),
       ),
@@ -248,14 +263,19 @@ class MessageInput extends StatelessWidget {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(), // Send on enter key
               decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground, // White background for the text field
+                color:
+                    CupertinoColors
+                        .systemBackground, // White background for the text field
                 borderRadius: BorderRadius.circular(20.0),
                 border: Border.all(
                   color: CupertinoColors.systemGrey4, // Subtle border
                   width: 0.5,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 10.0,
+              ),
             ),
           ),
           const SizedBox(width: 8.0),
@@ -266,7 +286,9 @@ class MessageInput extends StatelessWidget {
               width: 40.0, // Fixed width for circular button
               height: 40.0, // Fixed height for circular button
               decoration: const BoxDecoration(
-                color: CupertinoColors.activeBlue, // Background color for send button
+                color:
+                    CupertinoColors
+                        .activeBlue, // Background color for send button
                 shape: BoxShape.circle,
               ),
               child: const Icon(

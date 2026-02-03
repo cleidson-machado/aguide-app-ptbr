@@ -16,7 +16,6 @@ class AppMainWidget extends StatefulWidget {
 }
 
 class _AppMainWidgetState extends State<AppMainWidget> {
-
   final isDev = EnvKeyHelperConfig.label.toUpperCase() == 'DEV'; // TEST_env
 
   @override
@@ -32,7 +31,7 @@ class _AppMainWidgetState extends State<AppMainWidget> {
               // onGenerateRoute: AppRoutesHandler.generateRoute,
               // initialRoute: AppRoutesHandler.home,
               debugShowCheckedModeBanner: isDev ? true : false,
-              
+
               // Adicionando suporte a internacionalização
               locale: applocaleProvider.currentLocale,
               localizationsDelegates: const [
@@ -47,7 +46,6 @@ class _AppMainWidgetState extends State<AppMainWidget> {
                 Locale('pt', ''), // Portuguese
                 Locale('fr', ''), // French
               ],
-              
             );
           },
         );

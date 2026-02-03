@@ -153,18 +153,21 @@ class _ChatScreenState extends State<ChatScreen> {
         children: <Widget>[
           Expanded(
             child: Consumer<ChatData>(
-              builder:
-                  (BuildContext context, ChatData chatData, Widget? child) {
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(8.0),
-                      itemCount: chatData.messages.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final Message message = chatData.messages[index];
-                        return ChatMessageBubble(message: message);
-                      },
-                    );
+              builder: (
+                BuildContext context,
+                ChatData chatData,
+                Widget? child,
+              ) {
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: chatData.messages.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final Message message = chatData.messages[index];
+                    return ChatMessageBubble(message: message);
                   },
+                );
+              },
             ),
           ),
           _MessageInput(
@@ -194,26 +197,30 @@ class ChatMessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 14.0),
         decoration: BoxDecoration(
-          color: isSender
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceVariant,
+          color:
+              isSender
+                  ? colorScheme.primaryContainer
+                  : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16.0),
             topRight: const Radius.circular(16.0),
-            bottomLeft: isSender
-                ? const Radius.circular(16.0)
-                : const Radius.circular(4.0),
-            bottomRight: isSender
-                ? const Radius.circular(4.0)
-                : const Radius.circular(16.0),
+            bottomLeft:
+                isSender
+                    ? const Radius.circular(16.0)
+                    : const Radius.circular(4.0),
+            bottomRight:
+                isSender
+                    ? const Radius.circular(4.0)
+                    : const Radius.circular(16.0),
           ),
         ),
         child: Text(
           message.text,
           style: TextStyle(
-            color: isSender
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
+            color:
+                isSender
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -248,9 +255,8 @@ class _MessageInput extends StatelessWidget {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               ),
               onSubmitted: (_) => onSend(), // Send on enter key

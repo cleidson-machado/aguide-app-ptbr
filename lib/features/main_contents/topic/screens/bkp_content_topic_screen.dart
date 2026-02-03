@@ -6,10 +6,10 @@ import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-  // ##################################################################
-  // ### CÓPIA DE SEGURANÇA DO LAYOUT ORIGINAL EM 07-09-2025 ###
-  // ### USANDO DADOS MOCADOS E ESTRUTURA LOCAL ###
-  // ##################################################################
+// ##################################################################
+// ### CÓPIA DE SEGURANÇA DO LAYOUT ORIGINAL EM 07-09-2025 ###
+// ### USANDO DADOS MOCADOS E ESTRUTURA LOCAL ###
+// ##################################################################
 
 /// 📝 Main Screen - This will Be a List of register contents or any stuff shared by a User...
 /// NOTE: REMEMBER!! REBUILD THIS SCREEN TO MATCH YOUR RESPECTIVE MODEL CLASS................ lib/modules/main_contents/topic/main_content_topic_model.dart
@@ -18,12 +18,12 @@ class BkpContentTopicScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     final List<Map<String, String>> blogPosts = List.generate(25, (index) {
       return {
         "title": "Blog Post ${index + 1}",
         "subtitle": "Short description of the blog post.",
-        "image": "${EnvKeyHelperConfig.imageMocTemp1}?random=$index", //ORIGINAL WAY: "image": "https://picsum.photos/200/300?random=$index",
+        "image":
+            "${EnvKeyHelperConfig.imageMocTemp1}?random=$index", //ORIGINAL WAY: "image": "https://picsum.photos/200/300?random=$index",
       };
     });
 
@@ -38,7 +38,8 @@ class BkpContentTopicScreen extends StatelessWidget {
               builder:
                   (BuildContext context) => CupertinoActionSheet(
                     title: Text(
-                      AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+                      AppLocalizations.of(context)?.selectLanguage ??
+                          'Select Language',
                     ),
                     actions: <CupertinoActionSheetAction>[
                       CupertinoActionSheetAction(

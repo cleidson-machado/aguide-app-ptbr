@@ -4,7 +4,8 @@ import 'package:portugal_guide/app/core/repositories/gen_crud_repository_interfa
 import 'package:portugal_guide/features/user/user_model.dart';
 
 // Este é o "Cinto de Ferramentas do Eletricista"
-abstract class UserRepositoryInterface extends GenCrudRepositoryInterface<UserModel> {
+abstract class UserRepositoryInterface
+    extends GenCrudRepositoryInterface<UserModel> {
   // Ele já vem com as ferramentas genéricas (getAll, create, etc.) por herança.
 
   // E AGORA, ADICIONAMOS AS FERRAMENTAS ESPECIAIS:

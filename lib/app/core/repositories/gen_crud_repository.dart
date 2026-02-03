@@ -8,7 +8,8 @@ import 'package:portugal_guide/app/core/repositories/gen_crud_repository_interfa
 
 //### ATTENTION: This code is for a generic Crud repository class for the MVVM pattern. ###
 
-class GenCrudRepository<T extends BaseModel> implements GenCrudRepositoryInterface<T> {
+class GenCrudRepository<T extends BaseModel>
+    implements GenCrudRepositoryInterface<T> {
   final Dio _dio;
   final String _endpoint;
   final T Function(Map<String, dynamic>) _fromMap;
@@ -17,9 +18,9 @@ class GenCrudRepository<T extends BaseModel> implements GenCrudRepositoryInterfa
     required String endpoint,
     required T Function(Map<String, dynamic>) fromMap,
     Dio? dio,
-  })  : _endpoint = endpoint,
-        _fromMap = fromMap,
-        _dio = dio ?? Dio();
+  }) : _endpoint = endpoint,
+       _fromMap = fromMap,
+       _dio = dio ?? Dio();
 
   // MUDANÇA 2: Criar getters públicos, mas protegidos, para as subclasses
   @protected
@@ -30,7 +31,6 @@ class GenCrudRepository<T extends BaseModel> implements GenCrudRepositoryInterfa
 
   @protected
   T Function(Map<String, dynamic>) get fromMap => _fromMap;
-
 
   // Os métodos de CRUD genéricos continuam aqui, sem alterações...
   @override
@@ -63,10 +63,7 @@ class GenCrudRepository<T extends BaseModel> implements GenCrudRepositoryInterfa
   @override
   Future<T> create(T item) async {
     try {
-      final response = await _dio.post(
-        _endpoint,
-        data: item.toMap(),
-      );
+      final response = await _dio.post(_endpoint, data: item.toMap());
       if (response.statusCode == 201) {
         return _fromMap(response.data);
       }

@@ -45,8 +45,10 @@ class _CoreAuthForgotPassScreenState extends State<CoreAuthForgotPassScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text("Forgot Password - Plus",
-            style: GoogleFonts.lato(fontWeight: FontWeight.bold)),
+        middle: Text(
+          "Forgot Password - Plus",
+          style: GoogleFonts.lato(fontWeight: FontWeight.bold),
+        ),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -57,7 +59,9 @@ class _CoreAuthForgotPassScreenState extends State<CoreAuthForgotPassScreen> {
             Text(
               "Enter your email or phone number to reset your password",
               style: GoogleFonts.lato(
-                  fontSize: 16, color: CupertinoColors.systemGrey),
+                fontSize: 16,
+                color: CupertinoColors.systemGrey,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -92,7 +96,9 @@ class _CoreAuthForgotPassScreenState extends State<CoreAuthForgotPassScreen> {
               Text(
                 "Enter the 6-digit code sent to your email or phone",
                 style: GoogleFonts.lato(
-                    fontSize: 16, color: CupertinoColors.systemGrey),
+                  fontSize: 16,
+                  color: CupertinoColors.systemGrey,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -123,7 +129,9 @@ class _CoreAuthForgotPassScreenState extends State<CoreAuthForgotPassScreen> {
                   child: Text(
                     "Resend Code",
                     style: GoogleFonts.lato(
-                        fontSize: 14, color: CupertinoColors.activeBlue),
+                      fontSize: 14,
+                      color: CupertinoColors.activeBlue,
+                    ),
                   ),
                   onPressed: _sendCode,
                 ),

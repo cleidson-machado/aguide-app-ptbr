@@ -23,12 +23,12 @@ customCupertinoDialog(BuildContext context, String message) {
               style: const TextStyle(
                 color: CupertinoColors.systemRed,
                 fontSize: 14,
-                fontWeight: FontWeight.w500
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
-        ),  
-        
+        ),
+
         actions: <Widget>[
           CupertinoDialogAction(
             isDefaultAction: true,
