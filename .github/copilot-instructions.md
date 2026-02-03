@@ -51,6 +51,106 @@ lib/
 
 ---
 
+## 🔄 Compatibilidade Cross-Platform iOS/Android (CRÍTICO)
+
+### ⚠️ Contexto do Ambiente de Desenvolvimento
+- **Plataforma Principal de Dev:** macOS com emuladores iOS (mais rápido)
+- **Emuladores Disponíveis:** iOS Simulator, Pixel 3a/9 Pro API 29/30/35
+- **Fluxo de Trabalho:** Desenvolvimento intensivo em iOS → Testes periódicos em Android
+- **Problema Recorrente:** Após longas sessões de dev em iOS, o build Android (`flutter build apk --debug`) frequentemente quebra devido a incompatibilidades de dependências ou configurações gradle
+
+### 🎯 REGRAS OBRIGATÓRIAS para Preservar Build Android
+
+#### 1. Validação Antes de Adicionar Dependências
+**SEMPRE** que propor adicionar/atualizar um pacote no `pubspec.yaml`:
+
+✅ **FAZER:**
+- Verificar compatibilidade Android do pacote no pub.dev
+- Checar se requer configurações específicas em `android/build.gradle.kts` ou `android/app/build.gradle.kts`
+- Alertar se a versão do pacote requer:
+  - Gradle 8.x+ (verificar compatibilidade com Gradle 8.7 atual)
+  - Android SDK/NDK específico
+  - Configurações Kotlin DSL específicas
+  - Java/Kotlin versions diferentes das atuais (Java 17, Kotlin 1.8.22)
+- Verificar se há issues conhecidas com Gradle Kotlin DSL
+- Testar mentalmente se o pacote funciona em **ambas** as plataformas
+
+❌ **NUNCA:**
+- Adicionar pacotes sem verificar seção "Platforms" no pub.dev
+- Propor versões que exijam Dart SDK > 3.8.0 (limite atual do projeto)
+- Ignorar avisos de compatibilidade Android em pacotes nativos
+
+#### 2. Monitoramento Proativo de Problemas Gradle
+
+**ALERTA AUTOMÁTICO** quando detectar:
+- Plugins com build.gradle (Groovy) em projetos Kotlin DSL
+- Versões de plugins Android que não suportam Gradle 8.7
+- Conflitos entre `compileSdk`, `targetSdk`, `minSdk` em diferentes módulos
+- Uso de APIs descontinuadas do Gradle (ex: `getOrElse`, `orNull` em propriedades simples)
+
+**Exemplo de Alerta Esperado:**
+```
+⚠️ ATENÇÃO: O pacote 'sqflite_android' v2.4.1 pode causar problemas no build Android:
+- Usa build.gradle (Groovy) enquanto o projeto usa Kotlin DSL
+- Pode falhar com Gradle 8.7
+- Versão 2.4.2+2 corrige, mas requer Dart SDK 3.9.0+ (incompatível)
+- Solução: Manter v2.4.1 e adicionar configuração de compatibilidade em android/build.gradle.kts
+
+📝 Recomendação: Testar `flutter build apk --debug` após adicionar este pacote.
+```
+
+#### 3. Checklist Pré-Commit para Grandes Features
+
+Quando finalizar uma feature desenvolvida primariamente em iOS:
+
+```bash
+# Checklist obrigatório antes de commit
+[ ] flutter clean
+[ ] flutter pub get
+[ ] flutter analyze (sem erros críticos)
+[ ] flutter build apk --debug (build Android OK)
+[ ] flutter build ios --debug (build iOS OK)
+```
+
+**A IA deve sugerir este checklist automaticamente** quando:
+- Detectar múltiplas mudanças em `pubspec.yaml`
+- Identificar sessão longa de desenvolvimento (> 5 arquivos modificados)
+- Antes de comandos `git commit` com mudanças em dependências
+
+#### 4. Configurações Gradle Preventivas
+
+Sempre manter no `android/build.gradle.kts`:
+
+```kotlin
+subprojects {
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            extensions.configure<com.android.build.gradle.BaseExtension>("android") {
+                compileSdkVersion(35) // Forçar SDK consistente
+            }
+        }
+    }
+}
+```
+
+#### 5. Documentação de Problemas Conhecidos
+
+Manter atualizado em `x_temp_files/ANDROID_BUILD_ISSUES.md`:
+- Pacotes problemáticos e soluções aplicadas
+- Conflitos Gradle resolvidos
+- Versões de dependências que causaram problemas
+
+#### 6. Sinais de Alerta para Intervenção Imediata
+
+🚨 **PARAR e AVISAR o desenvolvedor** se:
+- Versão de pacote requer Dart SDK > 3.8.0
+- Pacote não tem suporte oficial para Android
+- Plugin nativo requer modificações manuais em código nativo Android
+- Gradle plugin version upgrade necessário (> 8.7.0)
+- NDK version incompatível detectada
+
+---
+
 ## Convenções de Código Flutter/Dart
 
 ### 1. Screens (Views)
