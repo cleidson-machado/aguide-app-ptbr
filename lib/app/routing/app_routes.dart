@@ -3,6 +3,7 @@ import 'package:portugal_guide/app/routing_guards/auth_guard.dart';
 abstract class AppRoutes {
   // Base Routes
   static const String initial = '/';
+  static const String main = '/home'; // Tela principal após login
   static const String login = '/login';
   static const String register = '/register';
   static const String admin = '/admin';

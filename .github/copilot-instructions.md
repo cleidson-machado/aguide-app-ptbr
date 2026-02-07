@@ -689,9 +689,22 @@ test('loadPagedContents deve carregar dados com sucesso', () async {
 
 ## Segurança
 - Nunca comitar API keys, tokens ou credenciais
+- **NUNCA hardcodar URLs de API no código** - sempre usar variáveis de ambiente via `EnvKeyHelperConfig`
 - Usar variáveis de ambiente para segredos (`.env` com `flutter_dotenv`)
 - Validar inputs do usuário antes de enviar para API
 - Usar HTTPS para todas as requisições
+
+### Exemplo correto de uso de URL de API:
+
+```dart
+// ❌ ERRADO - URL hardcoded
+static const String baseUrl = 'https://api.aguide-ptbr.com.br/api/v1';
+
+// ✅ CORRETO - Usar variável de ambiente
+import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
+
+static String get baseUrl => EnvKeyHelperConfig.mocApi2;
+```
 
 ## Assets e Recursos
 - Imagens em `assets/images/`

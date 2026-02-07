@@ -14,6 +14,7 @@ class EnvKeyHelperConfig {
   static String get imageMocTemp1 => dotenv.env['IMAGES_TEMP_GENERATOR'] ?? '';
   static String get mocApi1 => dotenv.env['MOC_API_A'] ?? '';
   static String get mocApi2 => dotenv.env['MOC_API_B'] ?? '';
+  static String get mocApi3Auth => dotenv.env['MOC_API_C_AUTH'] ?? '';
 
   // Moc Api B Token
   static String get tokenKeyForMocApi2 => dotenv.env['KEY_MOC_API_B'] ?? '';

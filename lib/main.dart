@@ -26,12 +26,12 @@ class MyHttpOverrides extends HttpOverrides {
 }
 // ########### Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção! --- FIM
 
-void main() {
+void main() async {
   HttpOverrides.global =
       MyHttpOverrides(); // Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção!
   WidgetsFlutterBinding.ensureInitialized(); //USO CORRETO? YES!!!!!
 
-  setupDependencies(); // <-- ##### dependency_injector ######: Importa o Service Locator!!
+  await setupDependencies(); // <-- ##### dependency_injector ######: Inicializa o Service Locator de forma assíncrona!!
 
   _initializeApp().then((app) => runApp(app));
 }

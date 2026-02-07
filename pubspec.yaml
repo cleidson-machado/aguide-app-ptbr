@@ -38,7 +38,8 @@ dependencies:
   path_provider: ^2.1.2             ############################ Para acessar caminhos comuns no sistema de arquivos do dispositivo.
   flutter_dotenv: ^5.2.1            ############################ Para carregar variáveis de ambiente de um arquivo .env.
   logger: ^2.5.0                    ############################ Logger para exibir logs coloridos e formatados no console para debug.
-  flutter_launcher_icons: ^0.14.4
+  flutter_launcher_icons: ^0.14.4   ############################ Para gerar ícones de aplicativo para Android e iOS a partir de uma imagem base.
+  shared_preferences: ^2.5.3        ############################ Para armazenamento local de dados simples (chave-valor), como tokens de autenticação e preferências do usuário.
 
 dev_dependencies:
   # TESTES E QUALIDADE DE CÓDIGO

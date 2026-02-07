@@ -1,9 +1,10 @@
 // ignore_for_file: avoid_print, unnecessary_brace_in_string_interps
 
 import 'package:dio/dio.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
-import 'package:portugal_guide/app/token/rest_api_token.dart';
+import 'package:portugal_guide/features/core_auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 
@@ -30,8 +31,19 @@ class MainContentTopicRepository
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final String passKey = RestApiToken.key;
-          options.headers['Authorization'] = 'Bearer $passKey';
+          // Obter token do AuthTokenManager
+          final tokenManager = injector<AuthTokenManager>();
+          final token = tokenManager.getToken();
+          
+          print('🔑 [MainContentTopicRepository] Token obtido: ${token?.substring(0, 20) ?? "null"}...');
+          
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+            print('✅ [MainContentTopicRepository] Header Authorization adicionado');
+          } else {
+            print('⚠️ [MainContentTopicRepository] Token não encontrado!');
+          }
+          
           return handler.next(options);
         },
       ),
