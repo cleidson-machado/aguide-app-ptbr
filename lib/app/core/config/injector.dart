@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
-import 'package:portugal_guide/features/core_auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/core_auth/core_auth_login_view_model.dart';
 import 'package:portugal_guide/features/core_auth/core_auth_service.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';

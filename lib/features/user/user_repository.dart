@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
-import 'package:portugal_guide/app/token/rest_api_token.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
 
@@ -21,9 +22,11 @@ class UserRepository extends GenCrudRepository<UserModel>
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final String passKey = RestApiToken.key;
-          // Use the token from RestApiToken just for demonstration an local development
-          options.headers['Authorization'] = 'Bearer $passKey';
+          // Obtém o token dinâmico JWT do usuário autenticado via AuthTokenManager
+          final authToken = injector<AuthTokenManager>().getAuthorizationHeader();
+          if (authToken != null) {
+            options.headers['Authorization'] = authToken;
+          }
           return handler.next(options);
         },
       ),

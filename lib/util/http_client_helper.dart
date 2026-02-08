@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/core/config/injector.dart';
-import 'package:portugal_guide/features/core_auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 
 /// Cliente HTTP que adiciona automaticamente o token de autenticação
 /// nos headers de todas as requisições

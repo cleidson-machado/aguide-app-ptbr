@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:portugal_guide/features/core_auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/core_auth/core_auth_model.dart';
 import 'package:portugal_guide/features/core_auth/core_auth_service.dart';
 
