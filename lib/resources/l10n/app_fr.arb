@@ -1,0 +1,20 @@
+{
+    "@@locale": "fr",
+    "hello": "Bonjour",
+    "welcome": "Bienvenue",
+    "goodbye": "Au revoir",
+    "thank_you": "Merci",
+    "please": "S'il vous plaît",
+    "yes": "Oui",
+    "no": "Non",
+    "error": "Erreur",
+    "loading": "Chargement",
+    "success": "Succès",
+    "languageEnglish": "Anglais",
+    "languageSpanish": "Espagnol",
+    "languagePortuguese": "Portugais",
+    "languageFrench": "Français",
+    "selectLanguage": "Sélectionnez la langue souhaitée!",
+    "userSimpleListViewTitle": "Simples - Liste d'utilisateurs",
+    "cancel": "Annuler"
+    }

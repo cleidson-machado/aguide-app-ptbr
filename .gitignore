@@ -11,7 +11,6 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
 # IntelliJ related
 *.iml
 *.ipr
@@ -43,3 +42,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+.env
+
+# Temp Local IA File Generatated by LocalAI
+x_temp_files/
+

@@ -1,0 +1,6 @@
+arb-dir: lib/resources/l10n
+template-arb-file: app_en.arb
+output-dir: lib/resources/translation
+synthetic-package: false
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations

@@ -1,89 +1,69 @@
 name: portugal_guide
 description: "Guia completo de Portugal para brasileiros"
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ">=3.7.2 <4.0.0"
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
+  # FLUTTER & CORE SDK
   flutter:
     sdk: flutter
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-
-dev_dependencies:
-  flutter_test:
+  flutter_localizations:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  # ARQUITETURA, ROTAS E INJEÇÃO DE DEPENDÊNCIA
+  # Nota: Você tem 3 pacotes que podem lidar com DI/Estado. Modular já oferece DI.
+  # Considere padronizar para evitar complexidade.
+  flutter_modular: ^6.3.4           ############################ Para modularização, gerenciamento de rotas e injeção de dependência - DI.
+  get_it: ^8.0.3                    ############################ Service Locator para injeção de dependência - DI, desacoplando a interface da implementação.
+  provider: ^6.1.2                  ############################ Wrapper para InheritedWidget, usado para gerenciamento de estado e DI simples.
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+  # NETWORK & API
+  # Nota: Dio é mais robusto (interceptors, etc.), enquanto http é mais simples.
+  # Geralmente, escolhe-se um, mas podem coexistir para casos de uso diferentes.
+  dio: ^5.8.0+1                     ############################ Cliente HTTP poderoso para Dart, com suporte a interceptors, FormData, etc.
+  http: ^1.4.0                      ############################ Cliente HTTP mais simples e fundamental para requisições web.
 
-# The following section is specific to Flutter packages.
+  # UI & VISUAL
+  google_fonts: ^5.0.0              ############################ Para usar fontes do Google Fonts de forma fácil.
+  cupertino_icons: ^1.0.8           ############################ Ícones padrões do estilo iOS.
+  country_flags: ^3.2.0             ############################ Widget para exibir bandeiras de países.
+  skeletonizer: ^2.1.2              ############################ Para criar skeleton loaders modernos e melhorar UX durante carregamentos.
+  cached_network_image: ^3.3.0      ############################ Cache otimizado de imagens de rede (memória + disco) para performance.
+
+  # UTILITÁRIOS & SISTEMA
+  intl: ^0.20.2                     ############################ Para internacionalização (i18n) e formatação de datas, números, etc.
+  path_provider: ^2.1.2             ############################ Para acessar caminhos comuns no sistema de arquivos do dispositivo.
+  flutter_dotenv: ^5.2.1            ############################ Para carregar variáveis de ambiente de um arquivo .env.
+  logger: ^2.5.0                    ############################ Logger para exibir logs coloridos e formatados no console para debug.
+  flutter_launcher_icons: ^0.14.4   ############################ Para gerar ícones de aplicativo para Android e iOS a partir de uma imagem base.
+  shared_preferences: ^2.5.3        ############################ Para armazenamento local de dados simples (chave-valor), como tokens de autenticação e preferências do usuário.
+
+dev_dependencies:
+  # TESTES E QUALIDADE DE CÓDIGO
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0             ############################ Regras de linting oficiais para projetos Dart e Flutter.
+
+  # GERAÇÃO DE CÓDIGO (CODEGEN)
+  build_runner: ^2.4.13             ############################ Ferramenta para gerar arquivos a partir de anotações em código (usado pelo Modular, etc.).
+  flutter_gen_runner: ^5.9.0        ############################ Gera código para assets, fontes, cores, etc., evitando strings literais.
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "assets/icon/background.png"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  adaptive_icon_monochrome: "assets/icon/monochrome.png"
+  remove_alpha_ios: true  # Remove canal alpha para compliance com App Store
+
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
-
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  generate: true
+  assets:
+    - .env.dev
+    - .env.prod
