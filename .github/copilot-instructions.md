@@ -614,7 +614,42 @@ class MyWidget extends StatelessWidget {
   ];
 }
 ```
+### 🎯 Exemplo Prático: Refatoração SOLID + DDD
 
+**Problema:** Arquivo com múltiplas responsabilidades (violação SRP)
+```dart
+// ❌ ERRADO - content_sort_strategy.dart (múltiplas responsabilidades)
+enum ContentSortStrategy { titleAsc, titleDesc }
+class ContentSortConfig {  // Mapeia para API
+  final strategies = ContentSortStrategy.values;  // Método estático
+  String get description => "...";  // Descrição para UI
+}
+```
+
+**Solução:** Separar em arquivos seguindo SOLID + Linguagem Ubíqua
+```dart
+// ✅ CORRETO - Separação de responsabilidades
+
+// 1. content_sort_option.dart (Domínio - Linguagem Ubíqua)
+enum ContentSortOption {
+  titleAscending,   // Nome claro do domínio
+  titleDescending,
+  newestPublished,
+}
+
+// 2. content_sort_criteria.dart (Value Object - Parâmetros de API)
+class ContentSortCriteria {
+  final String field;
+  final String order;
+  factory ContentSortCriteria.fromOption(ContentSortOption option) { }
+}
+
+// 3. content_sort_service.dart (Serviço - Lógica de negócio)
+class ContentSortService {
+  ContentSortOption getRandomOption() { }
+  ContentSortCriteria toCriteria(ContentSortOption option) { }
+}
+```
 ### 🤖 Comportamento Esperado da IA
 
 #### Antes de Gerar Código

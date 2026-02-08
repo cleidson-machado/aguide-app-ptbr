@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
-import 'package:portugal_guide/features/main_contents/topic/content_sort_strategy.dart';
+import 'package:portugal_guide/features/main_contents/topic/content_sort_option.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -404,7 +404,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.titleAsc,
+                    ContentSortOption.titleAscending,
                   );
                 },
                 child: const Row(
@@ -420,7 +420,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.titleDesc,
+                    ContentSortOption.titleDescending,
                   );
                 },
                 child: const Row(
@@ -436,7 +436,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.publishedAtDesc,
+                    ContentSortOption.newestPublished,
                   );
                 },
                 child: const Row(
@@ -452,7 +452,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.publishedAtAsc,
+                    ContentSortOption.oldestPublished,
                   );
                 },
                 child: const Row(
@@ -468,7 +468,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.channelNameAsc,
+                    ContentSortOption.channelNameAscending,
                   );
                 },
                 child: const Row(
@@ -484,7 +484,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortStrategy.createdAtDesc,
+                    ContentSortOption.recentlyAdded,
                   );
                 },
                 child: const Row(
@@ -584,7 +584,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
             const SizedBox(width: 8),
             Text(
-              viewModel.currentSortConfig?.description ?? 'Filtro',
+              viewModel.currentSortCriteria?.displayName ?? 'Filtro',
               style: const TextStyle(
                 color: CupertinoColors.white,
                 fontSize: 16,
