@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
-import 'package:portugal_guide/features/main_contents/topic/content_sort_option.dart';
+import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -404,7 +404,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.titleAscending,
+                    MainContentSortOption.titleAscending,
                   );
                 },
                 child: const Row(
@@ -420,7 +420,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.titleDescending,
+                    MainContentSortOption.titleDescending,
                   );
                 },
                 child: const Row(
@@ -436,7 +436,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.newestPublished,
+                    MainContentSortOption.newestPublished,
                   );
                 },
                 child: const Row(
@@ -452,7 +452,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.oldestPublished,
+                    MainContentSortOption.oldestPublished,
                   );
                 },
                 child: const Row(
@@ -468,7 +468,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.channelNameAscending,
+                    MainContentSortOption.channelNameAscending,
                   );
                 },
                 child: const Row(
@@ -484,7 +484,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 onPressed: () async {
                   Navigator.pop(context);
                   await viewModel.applyManualFilter(
-                    ContentSortOption.recentlyAdded,
+                    MainContentSortOption.recentlyAdded,
                   );
                 },
                 child: const Row(

@@ -1,7 +1,7 @@
 /// Opções de ordenação disponíveis para conteúdos
 /// Representa as escolhas do usuário no domínio da aplicação
 /// Segue Linguagem Ubíqua: termos compreensíveis por stakeholders
-enum ContentSortOption {
+enum MainContentSortOption {
   /// Ordena por título em ordem alfabética crescente (A-Z)
   titleAscending,
 
@@ -22,21 +22,21 @@ enum ContentSortOption {
 }
 
 /// Extensão para fornecer descrições legíveis das opções de ordenação
-extension ContentSortOptionExtension on ContentSortOption {
+extension MainContentSortOptionExtension on MainContentSortOption {
   /// Retorna descrição amigável para exibição na UI
   String get displayName {
     switch (this) {
-      case ContentSortOption.titleAscending:
+      case MainContentSortOption.titleAscending:
         return 'Título A-Z';
-      case ContentSortOption.titleDescending:
+      case MainContentSortOption.titleDescending:
         return 'Título Z-A';
-      case ContentSortOption.newestPublished:
+      case MainContentSortOption.newestPublished:
         return 'Mais Recentes';
-      case ContentSortOption.oldestPublished:
+      case MainContentSortOption.oldestPublished:
         return 'Mais Antigos';
-      case ContentSortOption.channelNameAscending:
+      case MainContentSortOption.channelNameAscending:
         return 'Canal A-Z';
-      case ContentSortOption.recentlyAdded:
+      case MainContentSortOption.recentlyAdded:
         return 'Adicionados Recentemente';
     }
   }
@@ -44,17 +44,17 @@ extension ContentSortOptionExtension on ContentSortOption {
   /// Retorna descrição detalhada para logs e debugging
   String get debugDescription {
     switch (this) {
-      case ContentSortOption.titleAscending:
+      case MainContentSortOption.titleAscending:
         return 'Filtro - Título A-Z';
-      case ContentSortOption.titleDescending:
+      case MainContentSortOption.titleDescending:
         return 'Filtro - Título Z-A';
-      case ContentSortOption.newestPublished:
+      case MainContentSortOption.newestPublished:
         return 'Filtro - Mais Recentes';
-      case ContentSortOption.oldestPublished:
+      case MainContentSortOption.oldestPublished:
         return 'Filtro - Mais Antigos';
-      case ContentSortOption.channelNameAscending:
+      case MainContentSortOption.channelNameAscending:
         return 'Filtro - Canal A-Z';
-      case ContentSortOption.recentlyAdded:
+      case MainContentSortOption.recentlyAdded:
         return 'Filtro - Adicionados Recentemente';
     }
   }

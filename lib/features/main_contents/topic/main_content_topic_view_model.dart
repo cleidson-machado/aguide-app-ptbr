@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
-import 'package:portugal_guide/features/main_contents/topic/content_sort_criteria.dart';
-import 'package:portugal_guide/features/main_contents/topic/content_sort_option.dart';
-import 'package:portugal_guide/features/main_contents/topic/content_sort_service.dart';
+import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_criteria.dart';
+import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
+import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_service.dart';
 
 class MainContentTopicViewModel extends ChangeNotifier {
   final MainContentTopicRepositoryInterface _repository;
@@ -25,8 +25,8 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool _isLoadingMore = false;
 
   // ===== Estratégia de Ordenação Randômica =====
-  ContentSortCriteria? _currentSortCriteria;
-  final ContentSortService _sortService = ContentSortService();
+  MainContentSortCriteria? _currentSortCriteria;
+  final MainContentSortService _sortService = MainContentSortService();
   bool _isManualFilterActive =
       false; // Flag para saber se filtro manual está ativo
 
@@ -38,7 +38,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool get hasMorePages => _hasMorePages;
   bool get isLoadingMore => _isLoadingMore;
   int get currentPage => _currentPage;
-  ContentSortCriteria? get currentSortCriteria => _currentSortCriteria;
+  MainContentSortCriteria? get currentSortCriteria => _currentSortCriteria;
   bool get isManualFilterActive => _isManualFilterActive;
 
   // ===== Ações =====
@@ -68,7 +68,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
     // 🎲 Escolher estratégia aleatória de ordenação
     final randomOption = _sortService.getRandomOption();
-    _currentSortCriteria = ContentSortCriteria.fromOption(randomOption);
+    _currentSortCriteria = MainContentSortCriteria.fromOption(randomOption);
     _isManualFilterActive = false; // Desativa filtro manual quando randomiza
 
     if (kDebugMode) {
@@ -253,14 +253,14 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
   /// Aplica um filtro manual específico (não randômico)
   /// Marca o filtro como ativo para exibir botão de reset
-  Future<void> applyManualFilter(ContentSortOption option) async {
+  Future<void> applyManualFilter(MainContentSortOption option) async {
     if (kDebugMode) {
       debugPrint(
         "🔍 [MainContentTopicViewModel] Aplicando filtro manual: ${option.displayName}",
       );
     }
 
-    _currentSortCriteria = ContentSortCriteria.fromOption(option);
+    _currentSortCriteria = MainContentSortCriteria.fromOption(option);
     _isManualFilterActive = true; // Ativa flag de filtro manual
 
     if (kDebugMode) {
