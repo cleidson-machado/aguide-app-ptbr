@@ -3,15 +3,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class CoreAuthForgotPassScreen extends StatefulWidget {
-  const CoreAuthForgotPassScreen({super.key});
+class AuthCredentialsForgotPassScreen extends StatefulWidget {
+  const AuthCredentialsForgotPassScreen({super.key});
 
   @override
-  _CoreAuthForgotPassScreenState createState() =>
-      _CoreAuthForgotPassScreenState();
+  _AuthCredentialsForgotPassScreenState createState() =>
+      _AuthCredentialsForgotPassScreenState();
 }
 
-class _CoreAuthForgotPassScreenState extends State<CoreAuthForgotPassScreen> {
+class _AuthCredentialsForgotPassScreenState extends State<AuthCredentialsForgotPassScreen> {
   final TextEditingController _inputController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
   bool _codeSent = false;

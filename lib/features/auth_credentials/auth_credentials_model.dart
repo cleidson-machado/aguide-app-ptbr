@@ -1,17 +1,17 @@
 /// Model para representar a resposta da API de login
-class CoreAuthLoginResponse {
+class AuthCredentialsLoginResponse {
   final String token;
   final String? refreshToken;
   final UserData? user;
 
-  const CoreAuthLoginResponse({
+  const AuthCredentialsLoginResponse({
     required this.token,
     this.refreshToken,
     this.user,
   });
 
-  factory CoreAuthLoginResponse.fromJson(Map<String, dynamic> json) {
-    return CoreAuthLoginResponse(
+  factory AuthCredentialsLoginResponse.fromJson(Map<String, dynamic> json) {
+    return AuthCredentialsLoginResponse(
       token: json['token'] as String,
       refreshToken: json['refreshToken'] as String?,
       user: json['user'] != null 
@@ -59,11 +59,11 @@ class UserData {
 }
 
 /// Model para requisição de login
-class CoreAuthLoginRequest {
+class AuthCredentialsLoginRequest {
   final String email;
   final String password;
 
-  const CoreAuthLoginRequest({
+  const AuthCredentialsLoginRequest({
     required this.email,
     required this.password,
   });

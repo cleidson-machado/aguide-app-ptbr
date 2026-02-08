@@ -220,3 +220,72 @@ Este projeto segue as [diretrizes oficiais do Flutter](https://docs.flutter.dev/
 - ✅ APIs deprecated devem ser substituídas imediatamente
 
 Para mais detalhes, consulte [.github/copilot-instructions.md](.github/copilot-instructions.md)
+
+---
+
+## 🏗️ Arquitetura e Padrões do Projeto
+
+### 📂 Estrutura de Pastas (MVVM + DDD)
+
+Este projeto utiliza **MVVM (Model-View-ViewModel)** com **DDD (Domain-Driven Design)**, seguindo a **Linguagem Ubíqua** para nomenclatura.
+
+```
+lib/
+├── app/
+│   ├── core/                      # Código compartilhado do núcleo (RESERVADO)
+│   │   ├── config/                # Injeção de dependência, rotas
+│   │   └── constants/             # Constantes globais
+│   └── app_custom_main_widget.dart
+├── features/                      # Funcionalidades por domínio (DDD)
+│   ├── auth_credentials/          # Autenticação via API REST (email/senha)
+│   ├── auth_google/               # Autenticação OAuth Google
+│   ├── main_contents/             # Conteúdos principais
+│   ├── user/                      # Gerenciamento de usuário
+│   └── [outras features...]
+├── resources/                     # Recursos globais (i18n, assets)
+├── util/                          # Utilitários compartilhados
+└── widgets/                       # Widgets reutilizáveis
+```
+
+### 🔐 Padrão de Nomenclatura para Autenticação
+
+**Importante:** A palavra **"core"** é EXCLUSIVA para `lib/app/core/` (código compartilhado).
+
+**Features de autenticação seguem o padrão:**
+
+```
+lib/features/
+├── auth_credentials/      # Autenticação própria (API REST - email/senha)
+├── auth_google/           # OAuth Google
+├── auth_facebook/         # OAuth Facebook (futuro)
+├── auth_linkedin/         # OAuth LinkedIn (futuro)
+├── auth_apple/            # Sign in with Apple (futuro)
+```
+
+**Por que `auth_credentials`?**
+- ✅ Indica claramente que é autenticação por credenciais (email/senha)
+- ✅ Diferencia de autenticações externas (OAuth/Social)
+- ✅ Segue padrão DDD (termo do domínio, não técnico)
+- ✅ Escalável para adicionar novos providers sem conflito
+
+**Exemplo de estrutura interna:**
+```
+lib/features/auth_credentials/
+├── auth_credentials_controller.dart
+├── auth_credentials_login_view_model.dart
+├── auth_credentials_model.dart
+├── auth_credentials_service.dart
+└── screens/
+    ├── auth_credentials_login_screen.dart
+    ├── auth_credentials_register_screen.dart
+    └── auth_credentials_forgot_pass_screen.dart
+```
+
+### 📋 Camadas da Arquitetura MVVM
+
+1. **View (Screens)**: Interface do usuário (widgets Cupertino)
+2. **ViewModel**: Lógica de negócio e gerenciamento de estado (`ChangeNotifier`)
+3. **Model**: Representação de dados (classes imutáveis com `fromJson`/`toJson`)
+4. **Service**: Camada de dados (requisições HTTP, cache, etc.)
+
+---

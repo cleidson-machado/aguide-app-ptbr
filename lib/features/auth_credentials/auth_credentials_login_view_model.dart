@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_model.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_service.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 
 /// Estados possíveis do login
 enum LoginState {
@@ -12,22 +12,22 @@ enum LoginState {
 }
 
 /// ViewModel responsável pela lógica de login
-class CoreAuthLoginViewModel extends ChangeNotifier {
-  final CoreAuthService _service;
+class AuthCredentialsLoginViewModel extends ChangeNotifier {
+  final AuthCredentialsService _service;
   final AuthTokenManager _tokenManager;
 
   LoginState _state = LoginState.initial;
   String? _errorMessage;
-  CoreAuthLoginResponse? _loginResponse;
+  AuthCredentialsLoginResponse? _loginResponse;
 
   LoginState get state => _state;
   String? get errorMessage => _errorMessage;
-  CoreAuthLoginResponse? get loginResponse => _loginResponse;
+  AuthCredentialsLoginResponse? get loginResponse => _loginResponse;
   bool get isLoading => _state == LoginState.loading;
   bool get isAuthenticated => _tokenManager.isAuthenticated();
 
-  CoreAuthLoginViewModel({
-    required CoreAuthService service,
+  AuthCredentialsLoginViewModel({
+    required AuthCredentialsService service,
     required AuthTokenManager tokenManager,
   })  : _service = service,
         _tokenManager = tokenManager;
@@ -66,8 +66,8 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
       final tokenSaved = await _tokenManager.saveToken(response.token);
       
       if (kDebugMode) {
-        print('💾 [CoreAuthLoginViewModel] Token salvo: $tokenSaved');
-        print('🔍 [CoreAuthLoginViewModel] Verificando token salvo: ${_tokenManager.getToken()?.substring(0, 20)}...');
+        print('💾 [AuthCredentialsLoginViewModel] Token salvo: $tokenSaved');
+        print('🔍 [AuthCredentialsLoginViewModel] Verificando token salvo: ${_tokenManager.getToken()?.substring(0, 20)}...');
       }
       
       // Salvar refresh token se disponível
@@ -85,8 +85,8 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
       _errorMessage = null;
 
       if (kDebugMode) {
-        print('✅ [CoreAuthLoginViewModel] Login realizado com sucesso');
-        print('📜 [CoreAuthLoginViewModel] Token: ${response.token.substring(0, 20)}...');
+        print('✅ [AuthCredentialsLoginViewModel] Login realizado com sucesso');
+        print('📜 [AuthCredentialsLoginViewModel] Token: ${response.token.substring(0, 20)}...');
       }
 
       notifyListeners();
@@ -95,7 +95,7 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
       _errorMessage = e.message;
       
       if (kDebugMode) {
-        print('❌ [CoreAuthLoginViewModel] Erro de autenticação: ${e.message}');
+        print('❌ [AuthCredentialsLoginViewModel] Erro de autenticação: ${e.message}');
       }
 
       notifyListeners();
@@ -104,7 +104,7 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
       _errorMessage = 'Erro inesperado: ${e.toString()}';
       
       if (kDebugMode) {
-        print('❌ [CoreAuthLoginViewModel] Erro inesperado: $e');
+        print('❌ [AuthCredentialsLoginViewModel] Erro inesperado: $e');
       }
 
       notifyListeners();
@@ -120,7 +120,7 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
         await _service.logout(token);
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [CoreAuthLoginViewModel] Erro ao fazer logout no servidor: $e');
+          print('⚠️ [AuthCredentialsLoginViewModel] Erro ao fazer logout no servidor: $e');
         }
       }
     }
@@ -133,7 +133,7 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
     _loginResponse = null;
     
     if (kDebugMode) {
-      print('✅ [CoreAuthLoginViewModel] Logout realizado com sucesso');
+      print('✅ [AuthCredentialsLoginViewModel] Logout realizado com sucesso');
     }
 
     notifyListeners();
@@ -169,7 +169,7 @@ class CoreAuthLoginViewModel extends ChangeNotifier {
   @override
   void dispose() {
     if (kDebugMode) {
-      print('🗑️ [CoreAuthLoginViewModel] Dispose');
+      print('🗑️ [AuthCredentialsLoginViewModel] Dispose');
     }
     super.dispose();
   }

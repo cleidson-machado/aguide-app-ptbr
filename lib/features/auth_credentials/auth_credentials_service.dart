@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_model.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
 
 /// Exceção customizada para erros de autenticação
 class AuthException implements Exception {
@@ -15,27 +15,27 @@ class AuthException implements Exception {
 }
 
 /// Service responsável por fazer requisições de autenticação à API
-class CoreAuthService {
+class AuthCredentialsService {
   final http.Client client;
   
   // Usar variável de ambiente específica para autenticação
   static String get baseUrl => EnvKeyHelperConfig.mocApi3Auth;
 
-  CoreAuthService(this.client);
+  AuthCredentialsService(this.client);
 
   /// Realiza o login na API
-  Future<CoreAuthLoginResponse> login({
+  Future<AuthCredentialsLoginResponse> login({
     required String email,
     required String password,
   }) async {
     try {
-      final request = CoreAuthLoginRequest(
+      final request = AuthCredentialsLoginRequest(
         email: email,
         password: password,
       );
 
-      print('🔐 [CoreAuthService] Tentando login para: $email');
-      print('📍 [CoreAuthService] URL: $baseUrl/auth/login');
+      print('🔐 [AuthCredentialsService] Tentando login para: $email');
+      print('📍 [AuthCredentialsService] URL: $baseUrl/auth/login');
 
       final response = await client.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -45,19 +45,19 @@ class CoreAuthService {
         body: jsonEncode(request.toJson()),
       );
 
-      print('📥 [CoreAuthService] Status Code: ${response.statusCode}');
+      print('📥 [AuthCredentialsService] Status Code: ${response.statusCode}');
       final bodyPreview = response.body.length > 200 
           ? '${response.body.substring(0, 200)}...' 
           : response.body;
-      print('📥 [CoreAuthService] Response Body: $bodyPreview');
+      print('📥 [AuthCredentialsService] Response Body: $bodyPreview');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        print('✅ [CoreAuthService] JSON parseado com sucesso');
-        print('🔑 [CoreAuthService] Token presente: ${jsonResponse.containsKey('token')}');
+        print('✅ [AuthCredentialsService] JSON parseado com sucesso');
+        print('🔑 [AuthCredentialsService] Token presente: ${jsonResponse.containsKey('token')}');
         
-        final loginResponse = CoreAuthLoginResponse.fromJson(jsonResponse);
-        print('✅ [CoreAuthService] Model criado com sucesso');
+        final loginResponse = AuthCredentialsLoginResponse.fromJson(jsonResponse);
+        print('✅ [AuthCredentialsService] Model criado com sucesso');
         
         return loginResponse;
       } else if (response.statusCode == 401) {

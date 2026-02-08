@@ -5,18 +5,18 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_login_view_model.dart';
-import 'package:portugal_guide/features/core_auth/screens/core_auth_forgot_pass_screen.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
+import 'package:portugal_guide/features/auth_credentials/screens/auth_credentials_forgot_pass_screen.dart';
 
-class CoreAuthLoginScreen extends StatefulWidget {
-  const CoreAuthLoginScreen({super.key});
+class AuthCredentialsLoginScreen extends StatefulWidget {
+  const AuthCredentialsLoginScreen({super.key});
 
   @override
-  State<CoreAuthLoginScreen> createState() => _CoreAuthLoginScreenState();
+  State<AuthCredentialsLoginScreen> createState() => _AuthCredentialsLoginScreenState();
 }
 
-class _CoreAuthLoginScreenState extends State<CoreAuthLoginScreen> {
-  final CoreAuthLoginViewModel _viewModel = injector<CoreAuthLoginViewModel>();
+class _AuthCredentialsLoginScreenState extends State<AuthCredentialsLoginScreen> {
+  final AuthCredentialsLoginViewModel _viewModel = injector<AuthCredentialsLoginViewModel>();
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   bool _isPasswordVisible = false;
@@ -51,7 +51,7 @@ class _CoreAuthLoginScreenState extends State<CoreAuthLoginScreen> {
       
       // Login bem-sucedido, navegar para tela principal
       if (kDebugMode) {
-        print('✅ [CoreAuthLoginScreen] Login bem-sucedido, navegando...');
+        print('✅ [AuthCredentialsLoginScreen] Login bem-sucedido, navegando...');
       }
       
       // Navegar para tela principal após um pequeno delay para garantir que a UI está pronta
@@ -61,7 +61,7 @@ class _CoreAuthLoginScreenState extends State<CoreAuthLoginScreen> {
             _isNavigating = false; // Reset flag após navegação
           }).catchError((error) {
             if (kDebugMode) {
-              print('❌ [CoreAuthLoginScreen] Erro ao navegar: $error');
+              print('❌ [AuthCredentialsLoginScreen] Erro ao navegar: $error');
             }
             _isNavigating = false;
           });
@@ -209,7 +209,7 @@ class _CoreAuthLoginScreenState extends State<CoreAuthLoginScreen> {
                                         context,
                                         CupertinoPageRoute(
                                           builder: (context) =>
-                                              const CoreAuthForgotPassScreen(),
+                                              const AuthCredentialsForgotPassScreen(),
                                         ),
                                       );
                                     },

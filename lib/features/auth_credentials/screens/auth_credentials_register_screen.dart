@@ -1,14 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class CoreAuthRegisterScreen extends StatefulWidget {
-  const CoreAuthRegisterScreen({super.key});
+class AuthCredentialsRegisterScreen extends StatefulWidget {
+  const AuthCredentialsRegisterScreen({super.key});
 
   @override
-  State<CoreAuthRegisterScreen> createState() => _CoreAuthRegisterScreenState();
+  State<AuthCredentialsRegisterScreen> createState() => _AuthCredentialsRegisterScreenState();
 }
 
-class _CoreAuthRegisterScreenState extends State<CoreAuthRegisterScreen> {
+class _AuthCredentialsRegisterScreenState extends State<AuthCredentialsRegisterScreen> {
   bool _agreeTerms = false;
 
   @override

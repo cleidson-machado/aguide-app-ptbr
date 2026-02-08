@@ -151,6 +151,57 @@ Manter atualizado em `x_temp_files/ANDROID_BUILD_ISSUES.md`:
 
 ---
 
+## 🔐 Padrão de Nomenclatura para Autenticação (CRÍTICO)
+
+### Contexto DDD e Linguagem Ubíqua
+
+Este projeto utiliza **DDD (Domain-Driven Design)** e segue a **Linguagem Ubíqua** para nomenclatura de features. A palavra **"core"** é reservada EXCLUSIVAMENTE para código compartilhado em `lib/app/core/`.
+
+### Nomenclatura de Features de Autenticação
+
+Para diferenciar claramente os diferentes métodos de autenticação:
+
+**✅ Padrão Obrigatório:**
+```
+lib/features/
+├── auth_credentials/      ← Autenticação própria (API REST do app)
+├── auth_google/           ← OAuth Google
+├── auth_facebook/         ← OAuth Facebook (futuro)
+├── auth_linkedin/         ← OAuth LinkedIn (futuro)
+├── auth_apple/            ← Sign in with Apple (futuro)
+```
+
+**Convenção de Nomenclatura:**
+- **`auth_credentials`**: Autenticação por credenciais (email/senha) via API REST própria do app
+- **`auth_<provider>`**: Autenticação externa via OAuth/Social (Google, Facebook, LinkedIn, Apple, etc.)
+
+**Estrutura de Arquivos (exemplo auth_credentials):**
+```
+lib/features/auth_credentials/
+├── auth_credentials_controller.dart
+├── auth_credentials_login_view_model.dart
+├── auth_credentials_model.dart
+├── auth_credentials_service.dart
+└── screens/
+    ├── auth_credentials_login_screen.dart
+    ├── auth_credentials_register_screen.dart
+    └── auth_credentials_forgot_pass_screen.dart
+```
+
+**❌ NUNCA Usar:**
+- `core_auth` (conflita com lib/app/core/)
+- `auth` genérico (ambíguo, não indica o método)
+- `login` (muito genérico, não expressa o contexto)
+
+### Justificativa
+
+- **Linguagem Ubíqua**: "Autenticação por credenciais" é um termo do domínio, entendível por desenvolvedores e stakeholders
+- **Clareza**: Diferencia imediatamente autenticação própria de OAuth/Social
+- **Escalabilidade**: Facilita adição de novos providers sem confusão
+- **DDD**: Alinha com Bounded Contexts (cada método de auth é um contexto distinto)
+
+---
+
 ## Convenções de Código Flutter/Dart
 
 ### 1. Screens (Views)

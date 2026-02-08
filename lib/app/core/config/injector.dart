@@ -1,8 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_login_view_model.dart';
-import 'package:portugal_guide/features/core_auth/core_auth_service.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
+import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
@@ -27,12 +27,12 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<AuthTokenManager>(
     () => AuthTokenManager(injector<SharedPreferences>()),
   );
-  injector.registerLazySingleton<CoreAuthService>(
-    () => CoreAuthService(injector<http.Client>()),
+  injector.registerLazySingleton<AuthCredentialsService>(
+    () => AuthCredentialsService(injector<http.Client>()),
   );
-  injector.registerFactory<CoreAuthLoginViewModel>(
-    () => CoreAuthLoginViewModel(
-      service: injector<CoreAuthService>(),
+  injector.registerFactory<AuthCredentialsLoginViewModel>(
+    () => AuthCredentialsLoginViewModel(
+      service: injector<AuthCredentialsService>(),
       tokenManager: injector<AuthTokenManager>(),
     ),
   );
