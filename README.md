@@ -42,7 +42,28 @@ and its behavior is defined by extending StatelessWidget, StatefulWidget, or oth
 
 ## 🛠️ Comandos Úteis de Manutenção
 
-### 🔍 Análise e Qualidade de Código
+### � Scripts Automatizados de Build Check
+
+```bash
+# Verificação completa de build Android
+./android_build_check.sh
+
+# Verificação completa de build iOS (Simulador)
+./ios_build_check.sh
+```
+
+Estes scripts executam:
+- ✅ Limpeza de cache
+- ✅ Instalação de dependências
+- ✅ Análise estática
+- ✅ Build debug
+- ✅ Validação de ambiente
+
+📚 **Ver comandos detalhados:** [FLUTTER_BUILD_COMMANDS.md](FLUTTER_BUILD_COMMANDS.md)
+
+---
+
+### �🔍 Análise e Qualidade de Código
 ```bash
 # Análise estática do código (verificar erros de linting)
 flutter analyze
