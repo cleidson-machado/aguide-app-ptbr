@@ -789,7 +789,7 @@ static const String baseUrl = 'https://api.aguide-ptbr.com.br/api/v1';
 // ✅ CORRETO - Usar variável de ambiente
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 
-static String get baseUrl => EnvKeyHelperConfig.mocApi2;
+static String get baseUrl => EnvKeyHelperConfig.ourQuarkusRestApi;
 ```
 
 ## Assets e Recursos
