@@ -97,7 +97,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
             SizedBox(height: 6),
             Text(
-              "| TEMAS - Perfil Consumidor de Conteúdo |",
+              "| TEMAS - Perfil CRIADOR de Conteúdo |",
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -294,25 +294,66 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Botão Call
-                SizedBox(
-                  width: double.infinity,
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    color: CupertinoColors.activeBlue,
-                    borderRadius: BorderRadius.circular(10),
-                    onPressed: () {
-                      // TODO: Implementar ação do botão
-                    },
-                    child: const Text(
-                      'QUERO VER AGORA!!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.white,
+                // Botões Call to Action
+                Row(
+                  children: [
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        color: CupertinoColors.activeBlue,
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação do botão
+                        },
+                        child: const Text(
+                          'PLAY',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        color: const Color(0xFFFF9500), // Laranja (systemOrange)
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação do botão curtir
+                        },
+                        child: const Text(
+                          'DETALHES',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        color: const Color(0xFF2D7A3E), // Verde escuro
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação do botão de crédito
+                        },
+                        child: const Text(
+                          'AUTORIA',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
