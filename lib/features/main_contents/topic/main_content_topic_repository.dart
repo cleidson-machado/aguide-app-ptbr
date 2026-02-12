@@ -9,6 +9,8 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_m
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 
 /// Repository concreto que implementa a interface e herda o CRUD básico
+/// Retorna Models completos com todos os atributos da API
+/// A conversão para DTO (apenas campos essenciais) ocorre na camada de apresentação
 class MainContentTopicRepository
     extends GenCrudRepository<MainContentTopicModel>
     implements MainContentTopicRepositoryInterface {
@@ -86,13 +88,13 @@ class MainContentTopicRepository
           "🌐 [MainContentTopicRepository] Encontrados ${itemsData.length} itens",
         );
 
-        // Converter cada item para MainContentTopicModel
+        // Converter cada item usando Model.fromMap()
         final List<MainContentTopicModel> items =
             itemsData.map((json) {
               print(
                 "🔄 [MainContentTopicRepository] Processando: ${json['id']} - ${json['title']}",
               );
-              return fromMap(json as Map<String, dynamic>);
+              return MainContentTopicModel.fromMap(json as Map<String, dynamic>);
             }).toList();
 
         print(
@@ -145,7 +147,7 @@ class MainContentTopicRepository
       // Buscar todos e filtrar por URL
       final allItems = await getAll();
       final foundItem =
-          allItems.where((item) => item.contentUrl == url).firstOrNull;
+          allItems.where((item) => item.videoUrl == url).firstOrNull;
 
       print(
         "🔍 [MainContentTopicRepository] Busca por URL '$url': ${foundItem != null ? 'encontrado' : 'não encontrado'}",
@@ -214,10 +216,10 @@ class MainContentTopicRepository
           "📄 [MainContentTopicRepository] Encontrados ${contentData.length} itens na página $page (API page $apiPage)",
         );
 
-        // Converter cada item para MainContentTopicModel
+        // Converter cada item usando Model.fromMap()
         final List<MainContentTopicModel> items =
             contentData.map((json) {
-              return fromMap(json as Map<String, dynamic>);
+              return MainContentTopicModel.fromMap(json as Map<String, dynamic>);
             }).toList();
 
         print(
