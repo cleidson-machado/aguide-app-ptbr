@@ -237,7 +237,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 topRight: Radius.circular(16),
               ),
               child: CachedNetworkImage(
-                imageUrl: content.contentImageUrl,
+                imageUrl: content.videoThumbnailUrl,
                 fit: BoxFit.contain,
                 memCacheWidth: 600,
                 memCacheHeight: 340,

@@ -145,7 +145,7 @@ class MainContentTopicRepository
       // Buscar todos e filtrar por URL
       final allItems = await getAll();
       final foundItem =
-          allItems.where((item) => item.contentUrl == url).firstOrNull;
+          allItems.where((item) => item.videoUrl == url).firstOrNull;
 
       print(
         "🔍 [MainContentTopicRepository] Busca por URL '$url': ${foundItem != null ? 'encontrado' : 'não encontrado'}",

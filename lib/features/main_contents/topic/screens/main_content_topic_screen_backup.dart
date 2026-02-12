@@ -214,7 +214,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: CachedNetworkImage(
-              imageUrl: content.contentImageUrl,
+              imageUrl: content.videoThumbnailUrl,
               width: 80,
               height: 80,
               fit: BoxFit.cover,

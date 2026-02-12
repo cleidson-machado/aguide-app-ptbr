@@ -1,48 +1,132 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
 
+import 'dart:convert';
 import 'package:portugal_guide/app/core/base/base_model.dart';
 
-/// Model da camada de domínio usado pela UI/ViewModel
-/// Mantém nomes adaptados para o contexto da aplicação Flutter
+/// Model da camada de domínio - Entidade completa
+/// Contém TODOS os atributos retornados pela API REST
+/// Representa a entidade de domínio completa do sistema
 class MainContentTopicModel implements BaseModel {
   @override
   final String id;
 
+  // Informações básicas do conteúdo
   final String title;
-  final String subtitle;
   final String description;
-  final String contentImageUrl;
-  final String contentUrl;
-  final String contentType;
+  
+  // URLs de mídia
+  final String videoUrl;
+  final String videoThumbnailUrl;
+  
+  // Metadados temporais
+  final String publishedAt; // ISO 8601 format
+  final String createdAt;
+  final String updatedAt;
+  
+  // Informações do canal
+  final String? channelId;
+  final String? channelOwnerLinkId;
+  final String channelName;
+  
+  // Tipo e categoria
+  final String type; // VIDEO, ARTICLE, etc.
+  final String categoryId;
+  final String categoryName;
+  final String? tags; // Pode ser null em alguns itens
+  
+  // Informações de vídeo
+  final int durationSeconds;
+  final String durationIso; // ISO 8601 duration (PT10M4S)
+  final String definition; // "hd", "sd"
+  final bool caption;
+  
+  // Métricas de engajamento
+  final int viewCount;
+  final int likeCount;
+  final int commentCount;
+  
+  // Configurações de idioma
+  final String? defaultLanguage;
+  final String? defaultAudioLanguage;
 
   MainContentTopicModel({
     required this.id,
     required this.title,
-    required this.subtitle,
     required this.description,
-    required this.contentImageUrl,
-    required this.contentUrl,
-    required this.contentType,
+    required this.videoUrl,
+    required this.videoThumbnailUrl,
+    required this.publishedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.channelId,
+    this.channelOwnerLinkId,
+    required this.channelName,
+    required this.type,
+    required this.categoryId,
+    required this.categoryName,
+    this.tags,
+    required this.durationSeconds,
+    required this.durationIso,
+    required this.definition,
+    required this.caption,
+    required this.viewCount,
+    required this.likeCount,
+    required this.commentCount,
+    this.defaultLanguage,
+    this.defaultAudioLanguage,
   });
 
   MainContentTopicModel copyWith({
     String? id,
     String? title,
-    String? subtitle,
     String? description,
-    String? contentImageUrl,
-    String? contentUrl,
-    String? contentType,
+    String? videoUrl,
+    String? videoThumbnailUrl,
+    String? publishedAt,
+    String? createdAt,
+    String? updatedAt,
+    String? channelId,
+    String? channelOwnerLinkId,
+    String? channelName,
+    String? type,
+    String? categoryId,
+    String? categoryName,
+    String? tags,
+    int? durationSeconds,
+    String? durationIso,
+    String? definition,
+    bool? caption,
+    int? viewCount,
+    int? likeCount,
+    int? commentCount,
+    String? defaultLanguage,
+    String? defaultAudioLanguage,
   }) {
     return MainContentTopicModel(
       id: id ?? this.id,
       title: title ?? this.title,
-      subtitle: subtitle ?? this.subtitle,
       description: description ?? this.description,
-      contentImageUrl: contentImageUrl ?? this.contentImageUrl,
-      contentUrl: contentUrl ?? this.contentUrl,
-      contentType: contentType ?? this.contentType,
+      videoUrl: videoUrl ?? this.videoUrl,
+      videoThumbnailUrl: videoThumbnailUrl ?? this.videoThumbnailUrl,
+      publishedAt: publishedAt ?? this.publishedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      channelId: channelId ?? this.channelId,
+      channelOwnerLinkId: channelOwnerLinkId ?? this.channelOwnerLinkId,
+      channelName: channelName ?? this.channelName,
+      type: type ?? this.type,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      tags: tags ?? this.tags,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      durationIso: durationIso ?? this.durationIso,
+      definition: definition ?? this.definition,
+      caption: caption ?? this.caption,
+      viewCount: viewCount ?? this.viewCount,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      defaultLanguage: defaultLanguage ?? this.defaultLanguage,
+      defaultAudioLanguage: defaultAudioLanguage ?? this.defaultAudioLanguage,
     );
   }
 
@@ -51,26 +135,58 @@ class MainContentTopicModel implements BaseModel {
     return <String, dynamic>{
       'id': id,
       'title': title,
-      'subtitle': subtitle,
       'description': description,
-      'contentImageUrl': contentImageUrl,
-      'contentUrl': contentUrl,
-      'contentType': contentType,
+      'videoUrl': videoUrl,
+      'videoThumbnailUrl': videoThumbnailUrl,
+      'publishedAt': publishedAt,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'channelId': channelId,
+      'channelOwnerLinkId': channelOwnerLinkId,
+      'channelName': channelName,
+      'type': type,
+      'categoryId': categoryId,
+      'categoryName': categoryName,
+      'tags': tags,
+      'durationSeconds': durationSeconds,
+      'durationIso': durationIso,
+      'definition': definition,
+      'caption': caption,
+      'viewCount': viewCount,
+      'likeCount': likeCount,
+      'commentCount': commentCount,
+      'defaultLanguage': defaultLanguage,
+      'defaultAudioLanguage': defaultAudioLanguage,
     };
   }
 
+  /// Deserializa JSON da API REST
   factory MainContentTopicModel.fromMap(Map<String, dynamic> map) {
     return MainContentTopicModel(
       id: map['id'] as String,
       title: map['title'] as String,
-      subtitle:
-          map['channelName'] as String, // Mapeia channelName para subtitle
       description: map['description'] as String,
-      contentImageUrl:
-          map['thumbnailUrl']
-              as String, // Mapeia thumbnailUrl para contentImageUrl
-      contentUrl: map['url'] as String, // Mapeia url para contentUrl
-      contentType: map['type'] as String, // Mapeia type para contentType
+      videoUrl: map['videoUrl'] as String,
+      videoThumbnailUrl: map['videoThumbnailUrl'] as String,
+      publishedAt: map['publishedAt'] as String,
+      createdAt: map['createdAt'] as String,
+      updatedAt: map['updatedAt'] as String,
+      channelId: map['channelId'] as String?,
+      channelOwnerLinkId: map['channelOwnerLinkId'] as String?,
+      channelName: map['channelName'] as String,
+      type: map['type'] as String,
+      categoryId: map['categoryId'] as String,
+      categoryName: map['categoryName'] as String,
+      tags: map['tags'] as String?,
+      durationSeconds: map['durationSeconds'] as int,
+      durationIso: map['durationIso'] as String,
+      definition: map['definition'] as String,
+      caption: map['caption'] as bool,
+      viewCount: map['viewCount'] as int,
+      likeCount: map['likeCount'] as int,
+      commentCount: map['commentCount'] as int,
+      defaultLanguage: map['defaultLanguage'] as String?,
+      defaultAudioLanguage: map['defaultAudioLanguage'] as String?,
     );
   }
 
@@ -83,7 +199,7 @@ class MainContentTopicModel implements BaseModel {
 
   @override
   String toString() {
-    return 'MainContentTopicModel(id: $id, title: $title, subtitle: $subtitle, description: $description, contentImageUrl: $contentImageUrl, contentUrl: $contentUrl, contentType: $contentType)';
+    return 'MainContentTopicModel(id: $id, title: $title, channelName: $channelName, type: $type, viewCount: $viewCount)';
   }
 
   @override
@@ -92,21 +208,21 @@ class MainContentTopicModel implements BaseModel {
 
     return other.id == id &&
         other.title == title &&
-        other.subtitle == subtitle &&
         other.description == description &&
-        other.contentImageUrl == contentImageUrl &&
-        other.contentUrl == contentUrl &&
-        other.contentType == contentType;
+        other.videoUrl == videoUrl &&
+        other.videoThumbnailUrl == videoThumbnailUrl &&
+        other.channelName == channelName &&
+        other.type == type;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
         title.hashCode ^
-        subtitle.hashCode ^
         description.hashCode ^
-        contentImageUrl.hashCode ^
-        contentUrl.hashCode ^
-        contentType.hashCode;
+        videoUrl.hashCode ^
+        videoThumbnailUrl.hashCode ^
+        channelName.hashCode ^
+        type.hashCode;
   }
 }
