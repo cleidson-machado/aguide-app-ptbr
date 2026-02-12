@@ -145,7 +145,6 @@ flutter clean && \
 rm -rf .dart_tool && \
 rm -rf android/.gradle android/build android/app/build && \
 rm -rf ios/Pods ios/Podfile.lock ios/.symlinks && \
-rm -rf macos/Pods macos/Podfile.lock && \
 flutter pub get
 
 # Se estiver no macOS, reinstalar Pods do iOS
