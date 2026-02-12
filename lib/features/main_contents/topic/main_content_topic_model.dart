@@ -67,9 +67,9 @@ class MainContentTopicModel implements BaseModel {
           map['channelName'] as String, // Mapeia channelName para subtitle
       description: map['description'] as String,
       contentImageUrl:
-          map['thumbnailUrl']
-              as String, // Mapeia thumbnailUrl para contentImageUrl
-      contentUrl: map['url'] as String, // Mapeia url para contentUrl
+          map['videoThumbnailUrl']
+              as String, // Mapeia videoThumbnailUrl para contentImageUrl
+      contentUrl: map['videoUrl'] as String, // Mapeia videoUrl para contentUrl
       contentType: map['type'] as String, // Mapeia type para contentType
     );
   }
