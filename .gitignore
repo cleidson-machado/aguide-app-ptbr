@@ -47,3 +47,10 @@ app.*.map.json
 # Temp Local IA File Generatated by LocalAI
 x_temp_files/
 
+# Platform-specific (mobile-only project)
+# Ignora arquivos gerados para plataformas não suportadas
+/linux/
+/macos/
+/windows/
+/web/
+
