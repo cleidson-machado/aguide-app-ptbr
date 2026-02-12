@@ -14,7 +14,7 @@ class UserRepository extends GenCrudRepository<UserModel>
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: EnvKeyHelperConfig.ourQuarkusRestApi,
+        baseUrl: EnvKeyHelperConfig.mocApi2,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );

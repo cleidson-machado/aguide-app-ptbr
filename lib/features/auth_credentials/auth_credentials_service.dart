@@ -19,7 +19,7 @@ class AuthCredentialsService {
   final http.Client client;
   
   // Usar variável de ambiente específica para autenticação
-  static String get baseUrl => EnvKeyHelperConfig.ourQuarkusRestApi;
+  static String get baseUrl => EnvKeyHelperConfig.mocApi3Auth;
 
   AuthCredentialsService(this.client);
 
