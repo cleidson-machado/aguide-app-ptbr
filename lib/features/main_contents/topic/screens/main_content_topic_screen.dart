@@ -294,25 +294,69 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Botão Call
-                SizedBox(
-                  width: double.infinity,
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    color: CupertinoColors.activeBlue,
-                    borderRadius: BorderRadius.circular(10),
-                    onPressed: () {
-                      // TODO: Implementar ação do botão
-                    },
-                    child: const Text(
-                      'QUERO VER AGORA!!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.white,
+                // Botões de ação (Play, Detalhes, Autoria)
+                Row(
+                  children: [
+                    // Botão PLAY (Azul)
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        color: const Color(0xFF4A90E2),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação de PLAY
+                        },
+                        child: const Text(
+                          'PLAY',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    // Botão DETALHES (Laranja)
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        color: const Color(0xFFF39C12),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação de DETALHES
+                        },
+                        child: const Text(
+                          'DETALHES',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Botão AUTORIA (Verde)
+                    Expanded(
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        color: const Color(0xFF27AE60),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          // TODO: Implementar ação de AUTORIA
+                        },
+                        child: const Text(
+                          'AUTORIA',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
