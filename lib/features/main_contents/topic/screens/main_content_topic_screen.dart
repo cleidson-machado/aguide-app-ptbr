@@ -260,9 +260,34 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
               ),
             ),
           ),
+          // Botão de destaque - Autoria Reconhecida
+          Padding(
+            padding: const EdgeInsets.fromLTRB(3, 3, 3, 0),
+            child: CupertinoButton(
+              // minimumSize: controla o tamanho mínimo do botão (padrão iOS: 44px)
+              // Definindo Size.zero para remover restrição e adaptar ao conteúdo + padding
+              minimumSize: Size.zero,
+              // Padding interno: controla espaço entre texto e borda do botão
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              color: const Color(0xFFB71C1C),
+              borderRadius: BorderRadius.circular(5),
+              onPressed: () {
+                // TODO: Implementar ação de autoria reconhecida
+              },
+              child: const Text(
+                'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: CupertinoColors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
           // Conteúdo do card
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
             child: Column(
               children: [
                 // Título e descrição
