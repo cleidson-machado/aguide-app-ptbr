@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
@@ -23,6 +24,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
+  
+  // Estado do ToggleButtons (single-select): apenas um botão ativo por vez
+  final List<bool> _selectedButtons = [false, true, false];
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -305,7 +309,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
                       content.description,
                       style: const TextStyle(
@@ -318,72 +322,90 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                // Botões de ação (Play, Detalhes, Autoria)
-                Row(
-                  children: [
-                    // Botão PLAY (Azul)
-                    Expanded(
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        color: const Color(0xFF4A90E2),
-                        borderRadius: BorderRadius.circular(10),
-                        onPressed: () {
+              ],
+            ),
+          ),
+          // Botões de ação - ToggleButtons fora do padding principal
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Calcula largura disponível e divide por 3 botões
+                final buttonWidth = (constraints.maxWidth - 6) / 3; // -6 para compensar borders
+                return Center(
+                  child: ToggleButtons(
+                    isSelected: _selectedButtons,
+                    onPressed: (int index) {
+                      setState(() {
+                        // Single-select: desmarcar todos e marcar apenas o clicado
+                        for (int i = 0; i < _selectedButtons.length; i++) {
+                          _selectedButtons[i] = i == index;
+                        }
+                      });
+                      
+                      // Ações baseadas no botão selecionado
+                      switch (index) {
+                        case 0:
                           // TODO: Implementar ação de PLAY
-                        },
-                        child: const Text(
+                          if (kDebugMode) debugPrint('🎬 PLAY selecionado');
+                          break;
+                        case 1:
+                          // TODO: Implementar ação de DETALHES
+                          if (kDebugMode) debugPrint('📋 DETALHES selecionado');
+                          break;
+                        case 2:
+                          // TODO: Implementar ação de AUTORIA
+                          if (kDebugMode) debugPrint('✍️ AUTORIA selecionado');
+                          break;
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    borderWidth: 1.5,
+                    selectedColor: CupertinoColors.white,
+                    fillColor: const Color(0xFFE57373),
+                    color: const Color(0xFFE57373),
+                    borderColor: const Color(0xFFE0E0E0),
+                    selectedBorderColor: const Color(0xFFE57373),
+                    constraints: BoxConstraints(
+                      minHeight: 28,
+                      minWidth: buttonWidth,
+                      maxWidth: buttonWidth,
+                    ),
+                    children: const [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
                           'PLAY',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: CupertinoColors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Botão DETALHES (Laranja)
-                    Expanded(
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        color: const Color(0xFFF39C12),
-                        borderRadius: BorderRadius.circular(10),
-                        onPressed: () {
-                          // TODO: Implementar ação de DETALHES
-                        },
-                        child: const Text(
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
                           'DETALHES',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: CupertinoColors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Botão AUTORIA (Verde)
-                    Expanded(
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        color: const Color(0xFF27AE60),
-                        borderRadius: BorderRadius.circular(10),
-                        onPressed: () {
-                          // TODO: Implementar ação de AUTORIA
-                        },
-                        child: const Text(
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
                           'AUTORIA',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: CupertinoColors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
