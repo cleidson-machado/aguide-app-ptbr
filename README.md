@@ -228,7 +228,66 @@ flutter emulators --launch <emulator_id>
 
 ---
 
-## 📝 Convenções de Código
+## � Configuração do Google Sign-In
+
+### 🔑 Android SHA-1 Fingerprints
+
+O Google Sign-In no Android requer SHA-1/SHA-256 fingerprints do keystore para autenticação OAuth.
+
+#### Debug SHA-1 (Desenvolvimento)
+
+```bash
+# Obter SHA-1 do debug keystore
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA1:"
+
+# Obter SHA-1 e SHA-256
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep -E "SHA1:|SHA256:"
+```
+
+**SHA-1 Debug Atual:**
+```
+C5:65:B7:12:FC:07:65:A2:8E:B4:5D:B1:EA:66:AF:81:76:57:28:77
+```
+
+#### Release SHA-1 (Produção)
+
+```bash
+# Criar keystore de release (se não existir)
+keytool -genkey -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+
+# Obter SHA-1 do release keystore
+keytool -list -v -keystore android/app/upload-keystore.jks -alias upload | grep -E "SHA1:|SHA256:"
+```
+
+#### 🍎 iOS - Bundle ID (Não Usa SHA-1)
+
+**Importante:** iOS **NÃO** usa SHA-1 para OAuth. iOS usa:
+- ✅ **Bundle ID:** `com.aguide.portugalGuide`
+- ✅ **iOS Client ID** do Google Cloud Console
+- ✅ **iOS URL Scheme** (gerado automaticamente pelo Google)
+
+```bash
+# Verificar Bundle ID do iOS
+cat ios/Runner/Info.plist | grep -A 1 "CFBundleIdentifier"
+```
+
+### 📚 Onde Usar os SHA-1s
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com)
+2. Selecione seu projeto
+3. Vá em: **APIs e Serviços** > **Credenciais**
+4. Crie **ID do cliente OAuth 2.0** do tipo **Android**
+5. Adicione:
+   - **Package name:** `br.com.aguideptbr.portugal_guide`
+   - **SHA-1:** Cole o fingerprint apropriado (debug ou release)
+
+**📄 Documentação Completa:**
+- [Configuração Google OAuth](x_temp_files/CONFIGURACAO_GOOGLE_OAUTH.md)
+- [SHA-1 Fingerprints Detalhados](x_temp_files/ANDROID_SHA1_FINGERPRINTS.md)
+
+---
+
+## �📝 Convenções de Código
 
 Este projeto segue as [diretrizes oficiais do Flutter](https://docs.flutter.dev/testing/code-analysis) e [Effective Dart](https://dart.dev/guides/language/effective-dart).
 

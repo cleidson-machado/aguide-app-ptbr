@@ -7,7 +7,7 @@ import 'package:portugal_guide/features/auth_google/auth_google_model.dart';
 /// ⚠️ NÃO usar em produção
 /// ⚠️ Desabilitar quando tiver Client IDs reais do Google Cloud Console
 class AuthGoogleMockService {
-  static const bool _enableMock = true; // 🔴 Alterar para false quando tiver IDs reais
+  static const bool _enableMock = false; // ✅ DESATIVADO - Usando Client IDs reais do Google (13/02/2026)
 
   /// Simula autenticação com Google (retorna dados fake)
   Future<AuthGoogleUserData> signInWithGoogle() async {

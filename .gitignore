@@ -44,6 +44,12 @@ app.*.map.json
 /android/app/release
 .env
 
+# Google OAuth Credentials (NEVER commit these!)
+client_secret*.json
+client_*.plist
+google-services.json
+GoogleService-Info.plist
+
 # Temp Local IA File Generatated by LocalAI
 x_temp_files/
 
