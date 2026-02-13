@@ -7,6 +7,8 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
 import 'package:portugal_guide/features/auth_credentials/screens/auth_credentials_forgot_pass_screen.dart';
+import 'package:portugal_guide/features/auth_google/auth_google_model.dart';
+import 'package:portugal_guide/features/auth_google/auth_google_view_model.dart';
 
 class AuthCredentialsLoginScreen extends StatefulWidget {
   const AuthCredentialsLoginScreen({super.key});
@@ -17,6 +19,7 @@ class AuthCredentialsLoginScreen extends StatefulWidget {
 
 class _AuthCredentialsLoginScreenState extends State<AuthCredentialsLoginScreen> {
   final AuthCredentialsLoginViewModel _viewModel = injector<AuthCredentialsLoginViewModel>();
+  final AuthGoogleViewModel _googleViewModel = injector<AuthGoogleViewModel>();
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   bool _isPasswordVisible = false;
@@ -42,6 +45,7 @@ class _AuthCredentialsLoginScreenState extends State<AuthCredentialsLoginScreen>
     _passwordController.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
+    _googleViewModel.dispose();
     super.dispose();
   }
 
@@ -294,17 +298,8 @@ class _AuthCredentialsLoginScreenState extends State<AuthCredentialsLoginScreen>
                             ),
                           ),
 
-                          // Botões sociais
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _socialButton("G", CupertinoColors.destructiveRed),
-                              const SizedBox(width: 16),
-                              _socialButton("", CupertinoColors.black),
-                              const SizedBox(width: 16),
-                              _socialButton("f", CupertinoColors.systemBlue),
-                            ],
-                          ),
+                          // Botão Google Sign-In
+                          _buildGoogleSignInButton(),
                         ],
                       ),
                     ),
@@ -330,30 +325,110 @@ class _AuthCredentialsLoginScreenState extends State<AuthCredentialsLoginScreen>
     );
   }
 
-  // Método para criar botões sociais
-  Widget _socialButton(String label, Color color) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: _viewModel.isLoading
-          ? null
-          : () {
-              // Ação social login
-            },
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 24,
+  /// Botão de login com Google
+  Widget _buildGoogleSignInButton() {
+    return AnimatedBuilder(
+      animation: _googleViewModel,
+      builder: (context, child) {
+        final bool isAnyLoading = _viewModel.isLoading || _googleViewModel.isLoading;
+        
+        return CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: isAnyLoading ? null : _handleGoogleSignIn,
+          child: Container(
+            width: double.infinity,
+            height: 50,
+            decoration: BoxDecoration(
               color: CupertinoColors.white,
-              fontWeight: FontWeight.bold,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: CupertinoColors.systemGrey4,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.systemGrey.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_googleViewModel.isLoading)
+                  const CupertinoActivityIndicator()
+                else ...[
+                  // Ícone Google (usando emoji temporariamente)
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: CupertinoColors.destructiveRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'G',
+                        style: GoogleFonts.lato(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: CupertinoColors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _googleViewModel.isLoading 
+                        ? "Autenticando..." 
+                        : "Continue with Google",
+                    style: GoogleFonts.lato(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.black,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  /// Handler para login com Google
+  Future<void> _handleGoogleSignIn() async {
+    // Limpar erros anteriores
+    _googleViewModel.clearError();
+    
+    // Executar login
+    await _googleViewModel.signInWithGoogle();
+    
+    if (!mounted) return;
+    
+    // Verificar resultado
+    if (_googleViewModel.state == OAuthState.success) {
+      if (kDebugMode) {
+        print('✅ [AuthCredentialsLoginScreen] Login Google bem-sucedido, navegando...');
+      }
+      
+      // Navegar para tela principal
+      if (!_isNavigating) {
+        _isNavigating = true;
+        Modular.to.pushReplacementNamed(AppRoutes.main).then((_) {
+          _isNavigating = false;
+        }).catchError((error) {
+          if (kDebugMode) {
+            print('❌ [AuthCredentialsLoginScreen] Erro ao navegar: $error');
+          }
+          _isNavigating = false;
+        });
+      }
+    } else if (_googleViewModel.errorMessage != null) {
+      // Mostrar erro
+      _showErrorDialog(_googleViewModel.errorMessage!);
+    }
   }
 }
