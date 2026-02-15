@@ -40,6 +40,7 @@ dependencies:
   logger: ^2.5.0                    ############################ Logger para exibir logs coloridos e formatados no console para debug.
   flutter_launcher_icons: ^0.14.4   ############################ Para gerar ícones de aplicativo para Android e iOS a partir de uma imagem base.
   shared_preferences: ^2.5.3        ############################ Para armazenamento local de dados simples (chave-valor), como tokens de autenticação e preferências do usuário.
+  google_sign_in: ^6.2.1            ############################ Para autenticação com Google OAuth 2.0 e acesso a APIs Google (YouTube, etc.)
 
 dev_dependencies:
   # TESTES E QUALIDADE DE CÓDIGO

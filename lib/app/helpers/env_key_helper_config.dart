@@ -44,4 +44,12 @@ class EnvKeyHelperConfig {
   static String get sentryDsn => dotenv.env['SENTRY_DSN'] ?? '';
   static String get stripePublicKey => dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
   static String get mapboxApiKey => dotenv.env['MAPBOX_API_KEY'] ?? '';
+
+  // Google OAuth
+  static String get googleClientIdAndroid =>
+      dotenv.env['GOOGLE_CLIENT_ID_ANDROID'] ?? '';
+  static String get googleClientIdIOS => 
+      dotenv.env['GOOGLE_CLIENT_ID_IOS'] ?? '';
+  static String get googleClientIdWeb => 
+      dotenv.env['GOOGLE_CLIENT_ID_WEB'] ?? '';
 }

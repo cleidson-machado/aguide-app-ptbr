@@ -8,25 +8,17 @@ Este é um projeto **Flutter 3.x+ com Dart 3.x** seguindo arquitetura MVVM (Mode
 lib/
 ├── app/
 │   ├── core/
-│   │   ├── auth/                     # Gerenciamento de autenticação
-│   │   ├── config/                   # Injeção de dependência (injector.dart)
-│   │   ├── repositories/             # Interfaces genéricas de repositório
-│   │   └── base/                     # Classes base compartilhadas
-│   ├── helpers/                      # Helpers (EnvKeyHelperConfig, etc.)
-│   ├── routing/                      # Rotas (flutter_modular)
-│   ├── routing_guards/               # Guards de autenticação
-│   ├── theme/                        # Temas e estilos
+│   │   ├── config/         # Injeção de dependência, rotas
+│   │   └── constants/      # Constantes globais
 │   └── app_custom_main_widget.dart
 ├── features/               # Funcionalidades por domínio (ORGANIZAÇÃO PRINCIPAL)
 │   ├── main_contents/
 │   │   ├── topic/
 │   │   │   ├── screens/
-│   │   │   │   └── main_content_topic_screen.dart         # View (UI)
-│   │   │   ├── main_content_topic_view_model.dart          # ViewModel (lógica)
-│   │   │   ├── main_content_topic_model.dart               # Model (dados)
-│   │   │   ├── main_content_topic_repository.dart          # Repository (implementação)
-│   │   │   ├── main_content_topic_repository_interface.dart # Repository (contrato)
-│   │   │   └── sorting/                                    # Serviços auxiliares
+│   │   │   │   └── main_content_topic_screen.dart    # View (UI)
+│   │   │   ├── main_content_topic_view_model.dart     # ViewModel (lógica)
+│   │   │   ├── main_content_topic_model.dart          # Model (dados)
+│   │   │   └── main_content_topic_service.dart        # Service (API)
 │   │   └── [outra-feature]/
 │   └── [outro-modulo]/
 ├── resources/              # Recursos globais
@@ -44,7 +36,7 @@ lib/
 - **Arquivos de Produção e Estrutura:** O agente tem permissão total para criar e editar arquivos essenciais na raiz do projeto, como `pubspec.yaml`, `analysis_options.yaml`, `Dockerfile`, `.gitignore`, e arquivos de configuração Flutter/Dart.
 - **Código Fonte:** A pasta `lib/` é o core do projeto. O agente deve manipular, criar ou refatorar módulos dentro desta pasta conforme as solicitações de desenvolvimento.
 - **Arquivos Temporários e de Rascunho (REGRA CRÍTICA):**
-  - **Local Obrigatório:** `x_temp_files/` (criar se não existir)
+  - **Local Obrigatório:** `x_temp_files/`
   - Os arquivos de **testes** devem seguir o padrão `test/features/[NOME_DA_FEATURE]/[NOME_ARQUIVO]_test.dart`, ou seja, salvar testes na estrutura correta dentro de `test/`, respeitando a organização por features do projeto.
   - Os rascunhos de documentação (`*.md`), arquivos de texto para manipulação de dados, JSONs de exemplo ou logs de debug gerados pelo agente **DEVEM** ser criados exclusivamente dentro de `x_temp_files/`.
   - **Proibição:** Nunca criar arquivos de "suporte ao raciocínio" ou "testes rápidos" na raiz do projeto. Se não for um arquivo de configuração oficial (`.yaml`, `.json`, `.dart` de produção) ou código de produção, ele pertence à `x_temp_files/`.
@@ -54,119 +46,8 @@ lib/
 1. **Identificação de Escopo:** Antes de criar um arquivo, o agente deve classificar:
    - *É essencial para o funcionamento do app ou build?* (Ex: `pubspec.yaml`, `main.dart`, configs) → **Raiz ou lib/**.
    - *É um teste unitário/widget?* → **test/features/[feature]/**.
-   - *É um rascunho, dump JSON, log de erro ou arquivo auxiliar?* → **x_temp_files/** (criar diretório se não existir).
+   - *É um rascunho, dump JSON, log de erro ou arquivo auxiliar?* → **x_temp_files/**.
 2. **Limpeza Automática:** Ao sugerir arquivos de análise temporária, o agente deve nomeá-los como `x_temp_files/analise_[recurso].md` ou `x_temp_files/debug_[feature].json` por padrão.
-
----
-
-## 🏗️ Padrão de Arquitetura: MVVM + Repository Pattern
-
-### Repository Pattern (Interface + Implementação)
-
-Este projeto utiliza o **Repository Pattern** para abstrair a camada de dados:
-
-**Estrutura Obrigatória:**
-```dart
-// 1. Interface (Contrato) - Define o "O QUE" fazer
-// Localização: lib/features/[feature]/[feature]_repository_interface.dart
-abstract class MainContentTopicRepositoryInterface 
-    extends GenCrudRepositoryInterface<MainContentTopicModel> {
-  Future<List<MainContentTopicModel>> searchByTitle(String title);
-  Future<MainContentTopicModel?> findByUrl(String url);
-  Future<List<MainContentTopicModel>> getAllPaged({
-    required int page,
-    required int size,
-    String? sortField,
-    String? sortOrder,
-  });
-}
-
-// 2. Implementação Concreta - Define o "COMO" fazer
-// Localização: lib/features/[feature]/[feature]_repository.dart
-class MainContentTopicRepository implements MainContentTopicRepositoryInterface {
-  final http.Client _client;
-  
-  @override
-  Future<List<MainContentTopicModel>> getAllPaged({
-    required int page,
-    required int size,
-    String? sortField,
-    String? sortOrder,
-  }) async {
-    // Implementação real com chamadas HTTP
-  }
-}
-```
-
-**Benefícios:**
-- **Testabilidade:** ViewModels podem usar mocks da interface
-- **Dependency Inversion:** Código depende de abstrações, não de implementações concretas
-- **Flexibilidade:** Trocar implementação (ex: API → Local DB) sem afetar ViewModel
-
-**Integração com GetIt (Dependency Injection):**
-```dart
-// lib/app/core/config/injector.dart
-injector.registerLazySingleton<MainContentTopicRepositoryInterface>(
-  () => MainContentTopicRepository(), // Implementação concreta
-);
-
-injector.registerFactory<MainContentTopicViewModel>(
-  () => MainContentTopicViewModel(
-    repository: injector<MainContentTopicRepositoryInterface>(), // Injeta interface
-  ),
-);
-```
-
-**Interfaces Genéricas Disponíveis:**
-- `GenCrudRepositoryInterface<T>`: CRUD básico (Create, Read, Update, Delete)
-- Localização: `lib/app/core/repositories/`
-
----
-
-## 🧭 Sistema de Rotas (Flutter Modular)
-
-### Configuração de Rotas
-
-Este projeto usa **flutter_modular** para gerenciamento de rotas e navegação:
-
-**Arquivo Central:** `lib/app/routing/app_route_module.dart`
-
-```dart
-class AppRouteModule extends Module {
-  @override
-  void routes(RouteManager r) {
-    final routes = {
-      AppRoutes.initial: const AuthCredentialsLoginScreen(),
-      AppRoutes.main: const HomeContentTabScreen(),
-      AppRoutes.login: const AuthCredentialsLoginScreen(),
-      AppRoutes.register: const AuthCredentialsRegisterScreen(),
-    };
-
-    CustomRouteManager.setupRoutes(
-      routes: routes,
-      routeManager: r,
-      guards: AppRoutes.basicAuthGuardGroupsTest, // Guards de autenticação
-    );
-  }
-}
-```
-
-**Navegação:**
-```dart
-// Navegar para rota
-Modular.to.navigate(AppRoutes.main);
-
-// Navegar com argumentos
-Modular.to.navigate('${AppRoutes.profile}?userId=123');
-
-// Voltar
-Modular.to.pop();
-```
-
-**Route Guards:**
-- Localização: `lib/app/routing_guards/`
-- Usadas para proteger rotas que exigem autenticação
-- Exemplo: Redirecionar para login se token inválido
 
 ---
 
@@ -231,34 +112,7 @@ Quando finalizar uma feature desenvolvida primariamente em iOS:
 [ ] flutter build ios --debug (build iOS OK)
 ```
 
-**💡 Scripts Automatizados Disponíveis:**
-
-Este projeto inclui scripts shell para automação de verificação de build:
-
-```bash
-# Verificação completa Android (clean, deps, analyze, build)
-./android_build_check.sh
-
-# Verificação completa iOS (clean, deps, pods, analyze, build)
-./ios_build_check.sh
-```
-
-Esses scripts executam automaticamente:
-- ✅ `flutter clean`
-- ✅ `flutter pub get`
-- ✅ `flutter analyze`
-- ✅ `pod install` (iOS)
-- ✅ `flutter build apk --debug` (Android)
-- ✅ `flutter build ios --debug` (iOS)
-- ✅ Validação de ambiente (Java, Gradle, etc.)
-
-**Quando Usar:**
-- Antes de fazer push de features grandes
-- Após adicionar/atualizar dependências
-- Antes de criar Pull Requests
-- Quando suspeitar de problemas de build
-
-**A IA deve sugerir estes scripts automaticamente** quando:
+**A IA deve sugerir este checklist automaticamente** quando:
 - Detectar múltiplas mudanças em `pubspec.yaml`
 - Identificar sessão longa de desenvolvimento (> 5 arquivos modificados)
 - Antes de comandos `git commit` com mudanças em dependências
@@ -286,13 +140,7 @@ Manter atualizado em `x_temp_files/ANDROID_BUILD_ISSUES.md`:
 - Conflitos Gradle resolvidos
 - Versões de dependências que causaram problemas
 
-**Nota:** O diretório `x_temp_files/` deve ser criado quando necessário (não existe por padrão).
-
-#### 6. Referência de Comandos Flutter
-
-Para lista completa de comandos de build, limpeza e manutenção, consulte: **[FLUTTER_BUILD_COMMANDS.md](../FLUTTER_BUILD_COMMANDS.md)** na raiz do projeto.
-
-#### 7. Sinais de Alerta para Intervenção Imediata
+#### 6. Sinais de Alerta para Intervenção Imediata
 
 🚨 **PARAR e AVISAR o desenvolvedor** se:
 - Versão de pacote requer Dart SDK > 3.8.0
@@ -450,13 +298,9 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
 ### 3. Services (Camada de Dados)
 - Localização: `lib/features/[feature]/`
-- **NOTA:** Este projeto prioriza o **Repository Pattern** (interface + implementação) sobre Services diretos
-- Services continuam existindo para casos específicos (ex: AuthCredentialsService)
 - Responsável por chamadas HTTP, cache, etc.
 - Usar `http` ou `dio` para requisições
 - Tratar exceções e retornar tipos específicos
-
-**Exemplo de Service (caso não use Repository):**
 
 ```dart
 class MainContentTopicService {

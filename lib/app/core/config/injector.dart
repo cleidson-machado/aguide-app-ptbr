@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
+import 'package:portugal_guide/features/auth_google/auth_google_service.dart';
+import 'package:portugal_guide/features/auth_google/auth_google_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
@@ -33,6 +35,17 @@ Future<void> setupDependencies() async {
   injector.registerFactory<AuthCredentialsLoginViewModel>(
     () => AuthCredentialsLoginViewModel(
       service: injector<AuthCredentialsService>(),
+      tokenManager: injector<AuthTokenManager>(),
+    ),
+  );
+
+  //### For Google OAuth Authentication ###
+  injector.registerLazySingleton<AuthGoogleService>(
+    () => AuthGoogleService.defaultInstance(),
+  );
+  injector.registerFactory<AuthGoogleViewModel>(
+    () => AuthGoogleViewModel(
+      service: injector<AuthGoogleService>(),
       tokenManager: injector<AuthTokenManager>(),
     ),
   );

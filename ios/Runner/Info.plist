@@ -45,5 +45,31 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- ============================================ -->
+	<!-- Google Sign-In Configuration (REQUIRED)    -->
+	<!-- ============================================ -->
+	<!-- ATENÇÃO: Substitua os valores abaixo pelos Client IDs reais -->
+	<!-- obtidos no Google Cloud Console após configuração           -->
+	<!-- Guia: x_temp_files/CONFIGURACAO_GOOGLE_OAUTH.md            -->
+	
+	<!-- Client ID do Google OAuth (iOS) -->
+	<!-- Gerado em: 13/02/2026 -->
+	<key>GIDClientID</key>
+	<string>819754490775-kq3i6vhut788qh9uiht42cbai5cgd117.apps.googleusercontent.com</string>
+	
+	<!-- URL Scheme para callback do Google OAuth -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Reversed Client ID para Google OAuth -->
+				<string>com.googleusercontent.apps.819754490775-kq3i6vhut788qh9uiht42cbai5cgd117</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
