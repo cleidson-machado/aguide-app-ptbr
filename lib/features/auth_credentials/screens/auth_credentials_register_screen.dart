@@ -15,6 +15,7 @@ class _AuthCredentialsRegisterScreenState extends State<AuthCredentialsRegisterS
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: Text(
           "Sign up - Plus",
           style: GoogleFonts.lato(fontWeight: FontWeight.bold),

@@ -149,6 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: Text('AI Chat'), // Title for the navigation bar
       ),
       backgroundColor:

@@ -30,6 +30,7 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
