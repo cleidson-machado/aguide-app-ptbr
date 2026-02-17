@@ -8,7 +8,10 @@ class AuthGoogleLoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text("Home")),
+      navigationBar: const CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
+        middle: Text("Home"),
+      ),
       child: Center(
         child: Text(data ?? "Nenhum dado recebido no AuthGoogleLoginScreen!!"),
       ),

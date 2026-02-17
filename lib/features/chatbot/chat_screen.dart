@@ -58,6 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context, controller, child) {
         return CupertinoPageScaffold(
           navigationBar: const CupertinoNavigationBar(
+            transitionBetweenRoutes: false,
             middle: Text('AI Chat (MVC)'),
           ),
           child: SafeArea(

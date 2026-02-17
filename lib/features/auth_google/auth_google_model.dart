@@ -7,6 +7,12 @@ class AuthGoogleUserData {
   final String? accessToken; // Token OAuth Google
   final String? idToken; // ID Token JWT do Google
   final List<String> scopes; // Escopos autorizados
+  
+  // YouTube Data
+  final String? youtubeUserId; // YouTube User ID (sem prefixo UC, ex: AW0lk_gWgAjclw3EXT_hmg)
+  final String? youtubeChannelId; // YouTube Channel ID (com prefixo UC, ex: UCAW0lk_gWgAjclw3EXT_hmg)
+  final String? youtubeChannelTitle; // Nome do canal YouTube
+  final bool hasYouTubeChannel; // Se possui canal YouTube
 
   const AuthGoogleUserData({
     required this.id,
@@ -16,6 +22,10 @@ class AuthGoogleUserData {
     this.accessToken,
     this.idToken,
     this.scopes = const [],
+    this.youtubeUserId,
+    this.youtubeChannelId,
+    this.youtubeChannelTitle,
+    this.hasYouTubeChannel = false,
   });
 
   /// Extrai primeiro nome do displayName
@@ -34,7 +44,7 @@ class AuthGoogleUserData {
   }
 
   @override
-  String toString() => 'AuthGoogleUserData(id: $id, email: $email, name: $displayName)';
+  String toString() => 'AuthGoogleUserData(id: $id, email: $email, name: $displayName, youtubeUserId: $youtubeUserId, youtubeChannelId: $youtubeChannelId)';
 }
 
 /// Request para enviar dados OAuth do Google ao backend
@@ -46,6 +56,9 @@ class AuthGoogleOAuthRequest {
   final String oauthId; // Google User ID
   final String accessToken; // Token OAuth do Google
   final String? idToken; // ID Token JWT
+  final String? youtubeUserId; // YouTube User ID (sem UC)
+  final String? youtubeChannelId; // YouTube Channel ID (com UC)
+  final String? youtubeChannelTitle; // Título do canal YouTube
 
   const AuthGoogleOAuthRequest({
     required this.email,
@@ -55,6 +68,9 @@ class AuthGoogleOAuthRequest {
     required this.oauthId,
     required this.accessToken,
     this.idToken,
+    this.youtubeUserId,
+    this.youtubeChannelId,
+    this.youtubeChannelTitle,
   });
 
   Map<String, dynamic> toJson() {
@@ -71,6 +87,16 @@ class AuthGoogleOAuthRequest {
     }
     if (idToken != null && idToken!.isNotEmpty) {
       json['idToken'] = idToken;
+    }
+    // ✅ Adicionar dados YouTube ao backend
+    if (youtubeUserId != null && youtubeUserId!.isNotEmpty) {
+      json['youtubeUserId'] = youtubeUserId;
+    }
+    if (youtubeChannelId != null && youtubeChannelId!.isNotEmpty) {
+      json['youtubeChannelId'] = youtubeChannelId;
+    }
+    if (youtubeChannelTitle != null && youtubeChannelTitle!.isNotEmpty) {
+      json['youtubeChannelTitle'] = youtubeChannelTitle;
     }
 
     return json;

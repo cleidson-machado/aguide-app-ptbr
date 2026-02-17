@@ -90,6 +90,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: const Text(">> Perfil de Consumidor - Default <<"),
         trailing: GestureDetector(
           onTap: () {

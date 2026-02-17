@@ -45,6 +45,7 @@ class _AuthCredentialsForgotPassScreenState extends State<AuthCredentialsForgotP
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: Text(
           "Forgot Password - Plus",
           style: GoogleFonts.lato(fontWeight: FontWeight.bold),
