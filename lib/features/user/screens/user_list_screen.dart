@@ -43,6 +43,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
           return CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
+              transitionBetweenRoutes: false,
               middle: Text(
                 AppLocalizations.of(context)!.userSimpleListViewTitle,
               ),

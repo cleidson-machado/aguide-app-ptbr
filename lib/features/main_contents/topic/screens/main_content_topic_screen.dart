@@ -92,6 +92,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [

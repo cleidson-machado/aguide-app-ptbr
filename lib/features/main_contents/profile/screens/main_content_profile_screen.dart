@@ -29,6 +29,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
+        transitionBetweenRoutes: false,
         middle: Text(">> Lista Contatos para Ambos <<"),
       ),
       child: SingleChildScrollView(
