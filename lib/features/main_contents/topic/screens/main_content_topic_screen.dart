@@ -24,9 +24,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
-  
-  // Estado do ToggleButtons (single-select): apenas um botão ativo por vez
-  final List<bool> _selectedButtons = [false, true, false];
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -335,28 +332,25 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 final buttonWidth = (constraints.maxWidth - 6) / 3; // -6 para compensar borders
                 return Center(
                   child: ToggleButtons(
-                    isSelected: _selectedButtons,
+                    isSelected: viewModel.getToggleButtonState(content.id),
                     onPressed: (int index) {
-                      setState(() {
-                        // Single-select: desmarcar todos e marcar apenas o clicado
-                        for (int i = 0; i < _selectedButtons.length; i++) {
-                          _selectedButtons[i] = i == index;
-                        }
-                      });
+                      // Atualiza estado no ViewModel (individualizado por item)
+                      viewModel.updateToggleButtonState(content.id, index);
                       
                       // Ações baseadas no botão selecionado
                       switch (index) {
                         case 0:
                           // TODO: Implementar ação de PLAY
-                          if (kDebugMode) debugPrint('🎬 PLAY selecionado');
+                          if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
                           break;
                         case 1:
                           // TODO: Implementar ação de DETALHES
-                          if (kDebugMode) debugPrint('📋 DETALHES selecionado');
+                          if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
                           break;
                         case 2:
-                          // TODO: Implementar ação de AUTORIA
-                          if (kDebugMode) debugPrint('✍️ AUTORIA selecionado');
+                          // Exibe modal Cupertino com informações de autoria
+                          if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
+                          _showAutoriaModal(context, content);
                           break;
                       }
                     },
@@ -411,6 +405,149 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Exibe modal Cupertino com informações de autoria do conteúdo
+  /// Mostra título e nome do canal centralizados
+  void _showAutoriaModal(BuildContext context, MainContentTopicModel content) {
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true, // Permite fechar clicando fora
+      builder: (BuildContext dialogContext) {
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: CupertinoColors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Cabeçalho com ícone e botão de fechar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Icon(
+                        CupertinoIcons.person_crop_circle,
+                        size: 28,
+                        color: Color(0xFFE57373),
+                      ),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minSize: 30,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          size: 28,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Título
+                  const Text(
+                    'AUTORIA',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFB71C1C),
+                      letterSpacing: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  // Divisor
+                  Container(
+                    height: 1,
+                    color: CupertinoColors.systemGrey5,
+                  ),
+                  const SizedBox(height: 20),
+                  // Título do conteúdo
+                  const Text(
+                    'TÍTULO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.systemGrey,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    content.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.black,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 24),
+                  // Nome do canal
+                  const Text(
+                    'CANAL',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.systemGrey,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    content.channelName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFE57373),
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 24),
+                  // Botão de fechar
+                  SizedBox(
+                    width: double.infinity,
+                    child: CupertinoButton(
+                      color: const Color(0xFFE57373),
+                      borderRadius: BorderRadius.circular(12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text(
+                        'Fechar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: CupertinoColors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

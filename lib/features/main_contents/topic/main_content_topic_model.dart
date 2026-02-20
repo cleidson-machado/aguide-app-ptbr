@@ -48,6 +48,9 @@ class MainContentTopicModel implements BaseModel {
   // Configurações de idioma
   final String? defaultLanguage;
   final String? defaultAudioLanguage;
+  
+  // Hash de validação (pode conter strings longas até 512 caracteres)
+  final String? validationHash;
 
   MainContentTopicModel({
     required this.id,
@@ -74,6 +77,7 @@ class MainContentTopicModel implements BaseModel {
     required this.commentCount,
     this.defaultLanguage,
     this.defaultAudioLanguage,
+    this.validationHash,
   });
 
   MainContentTopicModel copyWith({
@@ -101,6 +105,7 @@ class MainContentTopicModel implements BaseModel {
     int? commentCount,
     String? defaultLanguage,
     String? defaultAudioLanguage,
+    String? validationHash,
   }) {
     return MainContentTopicModel(
       id: id ?? this.id,
@@ -127,6 +132,7 @@ class MainContentTopicModel implements BaseModel {
       commentCount: commentCount ?? this.commentCount,
       defaultLanguage: defaultLanguage ?? this.defaultLanguage,
       defaultAudioLanguage: defaultAudioLanguage ?? this.defaultAudioLanguage,
+      validationHash: validationHash ?? this.validationHash,
     );
   }
 
@@ -157,6 +163,7 @@ class MainContentTopicModel implements BaseModel {
       'commentCount': commentCount,
       'defaultLanguage': defaultLanguage,
       'defaultAudioLanguage': defaultAudioLanguage,
+      'validationHash': validationHash,
     };
   }
 
@@ -187,6 +194,7 @@ class MainContentTopicModel implements BaseModel {
       commentCount: map['commentCount'] as int,
       defaultLanguage: map['defaultLanguage'] as String?,
       defaultAudioLanguage: map['defaultAudioLanguage'] as String?,
+      validationHash: map['validationHash'] as String?,
     );
   }
 
