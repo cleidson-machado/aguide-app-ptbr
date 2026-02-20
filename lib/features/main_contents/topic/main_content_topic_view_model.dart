@@ -30,6 +30,9 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool _isManualFilterActive =
       false; // Flag para saber se filtro manual está ativo
 
+  // ===== Estado de ToggleButtons individuais por item =====
+  final Map<String, List<bool>> _toggleButtonStates = {};
+
   // ===== Getters públicos =====
   List<MainContentTopicModel> get contents => _contents;
   bool get isLoading => _isLoading;
@@ -40,6 +43,36 @@ class MainContentTopicViewModel extends ChangeNotifier {
   int get currentPage => _currentPage;
   MainContentSortCriteria? get currentSortCriteria => _currentSortCriteria;
   bool get isManualFilterActive => _isManualFilterActive;
+
+  // ===== Gerenciamento de ToggleButtons por item =====
+  
+  /// Obtém o estado dos botões para um item específico
+  /// Retorna [false, true, false] (DETALHES selecionado) como padrão
+  List<bool> getToggleButtonState(String contentId) {
+    return _toggleButtonStates.putIfAbsent(
+      contentId,
+      () => [false, true, false], // Padrão: DETALHES selecionado
+    );
+  }
+
+  /// Atualiza o estado dos botões para um item específico
+  /// Single-select: apenas um botão pode estar ativo por vez
+  void updateToggleButtonState(String contentId, int selectedIndex) {
+    final currentState = getToggleButtonState(contentId);
+    
+    // Single-select: desmarcar todos e marcar apenas o selecionado
+    for (int i = 0; i < currentState.length; i++) {
+      currentState[i] = i == selectedIndex;
+    }
+    
+    _toggleButtonStates[contentId] = currentState;
+    notifyListeners(); // Notifica apenas o item específico
+  }
+
+  /// Limpa estados de botões (útil ao recarregar lista)
+  void clearToggleButtonStates() {
+    _toggleButtonStates.clear();
+  }
 
   // ===== Ações =====
   Future<void> loadAllContents() async {
@@ -227,6 +260,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
       await loadPagedContents();
       return;
     }
+    clearToggleButtonStates(); // Limpa estados ao buscar
     _setLoading(true);
     try {
       final items = await _repository.searchByTitle(title);
@@ -248,6 +282,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _contents.clear();
     _hasMorePages = true;
     _error = null;
+    clearToggleButtonStates(); // Limpa estados de botões ao recarregar
     await loadPagedContents();
   }
 
@@ -272,6 +307,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _currentPage = 1;
     _hasMorePages = true;
     _contents = [];
+    clearToggleButtonStates(); // Limpa estados de botões ao aplicar filtro
     _setLoading(true);
 
     try {
@@ -313,6 +349,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
       );
     }
     _isManualFilterActive = false;
+    clearToggleButtonStates(); // Limpa estados de botões ao resetar
     await loadPagedContents(); // Carrega com estratégia randômica
   }
 
