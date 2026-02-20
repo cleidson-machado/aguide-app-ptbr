@@ -205,6 +205,52 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
+  /// Widget do botão de validação de autoria
+  /// Avaliação individual e isolada por item (evita cache incorreto)
+  //TODO --> AINDA COMM ERROS DE CACHE EXIBE MAIS REGISTROS EM AZUL DO QUE O ESPERADO... REVER!!!
+  Widget _buildValidationButton(MainContentTopicModel content) {
+    // ✅ DEBUG: Log do validationHash para verificar valores
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [ValidationButton] ID: ${content.id}, validationHash: ${content.validationHash ?? "NULL"}',
+      );
+    }
+
+    // Determina cor e texto baseado no validationHash
+    final bool hasValidation = content.validationHash != null && content.validationHash!.isNotEmpty;
+    final Color buttonColor = hasValidation ? const Color(0xFFB71C1C) : const Color(0xFF1565C0);
+    final String buttonText = hasValidation
+        ? 'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!'
+        : 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(3, 3, 3, 0),
+      child: CupertinoButton(
+        minimumSize: Size.zero,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        color: buttonColor,
+        borderRadius: BorderRadius.circular(5),
+        onPressed: () {
+          // TODO: Implementar ação de validação de autoria
+          if (kDebugMode) {
+            debugPrint(
+              '🎯 [ValidationButton] Clicado - ID: ${content.id}, hasValidation: $hasValidation',
+            );
+          }
+        },
+        child: Text(
+          buttonText,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: CupertinoColors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
   Widget _buildContentCard(MainContentTopicModel content) {
     return Container(
       key: ValueKey('content_${content.id}'),
@@ -263,36 +309,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
           // Botão de destaque - Validação de Autoria (Dinâmico)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(3, 3, 3, 0),
-            child:
-                Builder(
-                  builder: (context) {
-                    final buttonConfig = viewModel.getValidationButtonConfig(content);
-                    return CupertinoButton(
-                      // minimumSize: controla o tamanho mínimo do botão (padrão iOS: 44px)
-                      // Definindo Size.zero para remover restrição e adaptar ao conteúdo + padding
-                      minimumSize: Size.zero,
-                      // Padding interno: controla espaço entre texto e borda do botão
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                      color: buttonConfig.backgroundColor,
-                      borderRadius: BorderRadius.circular(5),
-                      onPressed: () {
-                        // TODO: Implementar ação de validação de autoria
-                      },
-                      child: Text(
-                        buttonConfig.text,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: CupertinoColors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  },
-                ),
-          ),
+          _buildValidationButton(content),
           // Conteúdo do card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
