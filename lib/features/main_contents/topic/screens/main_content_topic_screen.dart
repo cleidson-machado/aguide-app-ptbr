@@ -115,8 +115,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
         ),
       ),
-      child: AnimatedBuilder(
-        animation: viewModel,
+      child: ListenableBuilder(
+        listenable: viewModel,
         builder: (context, child) {
           return Stack(
             children: [
@@ -190,10 +190,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 }
 
                 final content = viewModel.contents[index];
-                // Key única baseada no ID do conteúdo para otimizar rebuilds
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: _buildContentCard(content),
+                // Widget isolado com key única para evitar cache de estado visual
+                return MainContentCard(
+                  key: ValueKey('card_${content.id}_${content.validationHash ?? "null"}'),
+                  content: content,
+                  viewModel: viewModel,
                 );
               },
               childCount:
@@ -206,9 +207,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   }
 
   /// Widget do botão de validação de autoria
-  /// Avaliação individual e isolada por item (evita cache incorreto)
-  //TODO --> AINDA COMM ERROS DE CACHE EXIBE MAIS REGISTROS EM AZUL DO QUE O ESPERADO... REVER!!!
-  Widget _buildValidationButton(MainContentTopicModel content) {
+  /// ✅ CORRIGIDO: Renderização individual e isolada por item
+  static Widget _buildValidationButton(MainContentTopicModel content) {
     // ✅ DEBUG: Log do validationHash para verificar valores
     if (kDebugMode) {
       debugPrint(
@@ -217,8 +217,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     }
 
     // Determina cor e texto baseado no validationHash
-    final bool hasValidation = content.validationHash != null && content.validationHash!.isNotEmpty;
-    final Color buttonColor = hasValidation ? const Color(0xFFB71C1C) : const Color(0xFF1565C0);
+    // ✅ REGRA: validationHash != null → AZUL (Autoria Reconhecida)
+    // ✅ REGRA: validationHash == null → VERMELHO (Sem Autoria)
+    final bool hasValidation = content.validationHash != null && 
+                               content.validationHash!.trim().isNotEmpty;
+    final Color buttonColor = hasValidation 
+        ? const Color(0xFF1565C0)  // ✅ Azul para validado
+        : const Color(0xFFB71C1C); // ✅ Vermelho para não validado
     final String buttonText = hasValidation
         ? 'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!'
         : 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!';
@@ -251,9 +256,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
-  Widget _buildContentCard(MainContentTopicModel content) {
+  static Widget _buildContentCard(
+    MainContentTopicModel content,
+    MainContentTopicViewModel viewModel,
+  ) {
     return Container(
-      key: ValueKey('content_${content.id}'),
       decoration: BoxDecoration(
         color: CupertinoColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -309,7 +316,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
           // Botão de destaque - Validação de Autoria (Dinâmico)
-          _buildValidationButton(content),
+          _MainContentTopicScreenState._buildValidationButton(content),
           // Conteúdo do card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
@@ -373,7 +380,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                         case 2:
                           // Exibe modal Cupertino com informações de autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
-                          _showAutoriaModal(context, content);
+                          _MainContentTopicScreenState._showAutoriaModal(context, content);
                           break;
                       }
                     },
@@ -433,7 +440,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
   /// Exibe modal Cupertino com informações de autoria do conteúdo
   /// Mostra título e nome do canal centralizados
-  void _showAutoriaModal(BuildContext context, MainContentTopicModel content) {
+  static void _showAutoriaModal(BuildContext context, MainContentTopicModel content) {
     showCupertinoDialog(
       context: context,
       barrierDismissible: true, // Permite fechar clicando fora
@@ -885,5 +892,34 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         }
       }
     });
+  }
+}
+
+/// ✅ Widget Isolado para Card de Conteúdo
+/// Separado do State principal para evitar rebuilds massivos causados por AnimatedBuilder
+/// Cada card só reconstrói quando seus próprios dados (content) mudam
+class MainContentCard extends StatelessWidget {
+  final MainContentTopicModel content;
+  final MainContentTopicViewModel viewModel;
+
+  const MainContentCard({
+    super.key,
+    required this.content,
+    required this.viewModel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ DEBUG: Log de renderização para verificar rebuilds desnecessários
+    if (kDebugMode) {
+      debugPrint(
+        '🎨 [MainContentCard] Renderizando card ID: ${content.id}, validationHash: ${content.validationHash ?? "NULL"}',
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: _MainContentTopicScreenState._buildContentCard(content, viewModel),
+    );
   }
 }
