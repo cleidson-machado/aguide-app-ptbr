@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
@@ -353,9 +354,40 @@ class MainContentTopicViewModel extends ChangeNotifier {
     await loadPagedContents(); // Carrega com estratégia randômica
   }
 
+  // ===== Configuração do Botão de Validação =====
+  
+  /// Retorna a configuração do botão de validação baseado no validationHash
+  /// - Se validationHash != null: Botão vermelho "VIDEO OU CANAL - COM AUTORIA RECONHECIDA!"
+  /// - Se validationHash == null: Botão azul escuro "ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!"
+  ValidationButtonConfig getValidationButtonConfig(MainContentTopicModel content) {
+    if (content.validationHash != null && content.validationHash!.isNotEmpty) {
+      return const ValidationButtonConfig(
+        text: 'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!',
+        backgroundColor: Color(0xFFB71C1C), // Vermelho escuro
+      );
+    } else {
+      return const ValidationButtonConfig(
+        text: 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!',
+        backgroundColor: Color(0xFF1565C0), // Azul escuro (Material Blue 800)
+      );
+    }
+  }
+
   // ===== Helpers internos =====
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
+}
+
+/// Configuração do botão de validação de autoria
+/// Encapsula texto e cor de fundo baseado no estado do validationHash
+class ValidationButtonConfig {
+  final String text;
+  final Color backgroundColor;
+
+  const ValidationButtonConfig({
+    required this.text,
+    required this.backgroundColor,
+  });
 }
