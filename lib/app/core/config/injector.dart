@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_error_handler.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_service.dart';
@@ -29,6 +30,12 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<AuthTokenManager>(
     () => AuthTokenManager(injector<SharedPreferences>()),
   );
+  
+  // Registrar AuthErrorHandler (depende de AuthTokenManager)
+  injector.registerLazySingleton<AuthErrorHandler>(
+    () => AuthErrorHandler(injector<AuthTokenManager>()),
+  );
+  
   injector.registerLazySingleton<AuthCredentialsService>(
     () => AuthCredentialsService(injector<http.Client>()),
   );

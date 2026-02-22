@@ -1,18 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
-
-/// Exceção customizada para erros de autenticação
-class AuthException implements Exception {
-  final String message;
-  final int? statusCode;
-
-  AuthException(this.message, {this.statusCode});
-
-  @override
-  String toString() => message;
-}
 
 /// Service responsável por fazer requisições de autenticação à API
 class AuthCredentialsService {

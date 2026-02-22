@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
@@ -153,12 +156,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     }
 
     if (viewModel.error != null) {
-      return Center(
-        child: Text(
-          viewModel.error!,
-          style: const TextStyle(color: CupertinoColors.systemRed),
-        ),
-      );
+      // ✅ NOVO: UI amigável para erros
+      return _buildErrorView(viewModel.error!, viewModel.isAuthError);
     }
 
     if (viewModel.contents.isEmpty) {
@@ -456,7 +455,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           child: Text(
             content.title,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Color(0xFFB71C1C),
             ),
@@ -889,10 +888,10 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                         Expanded(
                           child: Text(
                             content.validationHash != null && content.validationHash!.isNotEmpty
-                                ? 'Vídeo com Autoria Reconhecida e Validada'
-                                : 'Vídeo sem validação de autoria reconhecida',
+                                ? 'Vídeo COM Autoria Reconhecida!'
+                                : 'Vídeo SEM autoria reconhecida',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: content.validationHash != null && content.validationHash!.isNotEmpty
                                   ? const Color(0xFF1565C0)
@@ -940,7 +939,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancelar'),
+          child: const Text('Sair'),
         ),
       ),
     );
@@ -1000,23 +999,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implementar visualização de detalhes
-              if (kDebugMode) {
-                debugPrint('📋 Ver Detalhes - Conteúdo ID: ${content.id}');
-              }
-            },
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.info_circle_fill, size: 20),
-                SizedBox(width: 8),
-                Text('Ver Detalhes de Autoria'),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
               // TODO: Implementar reivindicação de direitos
               if (kDebugMode) {
                 debugPrint('⚖️ Reivindicar Direitos - ID: ${content.id}');
@@ -1057,7 +1039,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancelar'),
+          child: const Text('Sair'),
         ),
       ),
     );
@@ -1212,6 +1194,99 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  /// ✅ NOVO: Widget de erro amigável com suporte a reautenticação
+  /// Exibe mensagem clara e ação apropriada baseado no tipo de erro
+  Widget _buildErrorView(Exception error, bool isAuthError) {
+    final String message = viewModel.errorMessage ?? 'Erro desconhecido';
+    final IconData icon = isAuthError 
+        ? CupertinoIcons.lock_shield_fill 
+        : CupertinoIcons.exclamationmark_triangle_fill;
+    
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Ícone do erro
+            Icon(
+              icon,
+              size: 64,
+              color: isAuthError 
+                  ? CupertinoColors.systemOrange 
+                  : CupertinoColors.systemRed,
+            ),
+            const SizedBox(height: 24),
+            
+            // Mensagem amigável
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 16,
+                color: CupertinoColors.black,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            
+            // Botão de ação (reautenticar ou tentar novamente)
+            if (isAuthError) ...[
+              // Botão de reautenticação para erros de auth
+              CupertinoButton.filled(
+                onPressed: () {
+                  if (kDebugMode) {
+                    debugPrint('🔐 [MainContentTopicScreen] Redirecionando para login');
+                  }
+                  Modular.to.navigate(AppRoutes.login);
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(CupertinoIcons.arrow_right_circle_fill),
+                    SizedBox(width: 8),
+                    Text('Fazer Login Novamente'),
+                  ],
+                ),
+              ),
+            ] else ...[
+              // Botão de tentar novamente para outros erros
+              CupertinoButton.filled(
+                onPressed: () {
+                  if (kDebugMode) {
+                    debugPrint('🔄 [MainContentTopicScreen] Tentando recarregar');
+                  }
+                  viewModel.refreshContents();
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(CupertinoIcons.refresh),
+                    SizedBox(width: 8),
+                    Text('Tentar Novamente'),
+                  ],
+                ),
+              ),
+            ],
+            
+            // Link de ajuda/suporte (opcional)
+            if (error is NetworkException) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Dica: Verifique sua conexão Wi-Fi ou dados móveis',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CupertinoColors.systemGrey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1423,7 +1498,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('Cancelar'),
+              child: const Text('Sair'),
             ),
           ),
     );

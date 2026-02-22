@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_error_handler.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
@@ -9,14 +12,18 @@ import 'package:portugal_guide/features/main_contents/topic/sorting/main_content
 
 class MainContentTopicViewModel extends ChangeNotifier {
   final MainContentTopicRepositoryInterface _repository;
+  late final AuthErrorHandler _errorHandler;
 
   MainContentTopicViewModel({MainContentTopicRepositoryInterface? repository})
-    : _repository = repository ?? MainContentTopicRepository();
+    : _repository = repository ?? MainContentTopicRepository() {
+    // Inicializar error handler com token manager do injector
+    _errorHandler = injector<AuthErrorHandler>();
+  }
 
   // ===== Estado =====
   List<MainContentTopicModel> _contents = [];
   bool _isLoading = false;
-  String? _error;
+  Exception? _error; // ✅ MUDANÇA: Armazenar Exception ao invés de String
   bool _isInitialized = false; // Flag para controlar se já foi inicializado
 
   // ===== Estado de Paginação =====
@@ -37,7 +44,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
   // ===== Getters públicos =====
   List<MainContentTopicModel> get contents => _contents;
   bool get isLoading => _isLoading;
-  String? get error => _error;
+  Exception? get error => _error; // ✅ MUDANÇA: Retornar Exception
+  String? get errorMessage =>
+      _error != null ? AuthErrorHandler.getUserFriendlyMessage(_error!) : null;
+  bool get isAuthError =>
+      _error != null ? AuthErrorHandler.isAuthError(_error!) : false;
   bool get isInitialized => _isInitialized;
   bool get hasMorePages => _hasMorePages;
   bool get isLoadingMore => _isLoadingMore;
@@ -85,7 +96,14 @@ class MainContentTopicViewModel extends ChangeNotifier {
       _contents = items;
       _error = null;
     } catch (e) {
-      _error = "Erro ao carregar conteúdos: $e";
+      // ✅ NOVO: Usar error handler para converter em exception amigável
+      _error = _errorHandler.handleError(e, context: 'loadAllContents');
+      if (kDebugMode) {
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadAllContents()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
+      }
     }
     _setLoading(false);
   }
@@ -153,11 +171,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
         }
       }
     } catch (e) {
-      _error = "Erro ao carregar conteúdos: $e";
+      // ✅ NOVO: Usar error handler para converter em exception amigável
+      _error = _errorHandler.handleError(e, context: 'loadPagedContents');
       if (kDebugMode) {
-        debugPrint(
-          "❌ [MainContentTopicViewModel] Erro em loadPagedContents(): $e",
-        );
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadPagedContents()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
     _setLoading(false);
@@ -246,9 +266,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
       _error = null;
     } catch (e) {
-      _error = "Erro ao carregar próxima página: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'loadNextPage');
       if (kDebugMode) {
-        debugPrint("❌ [MainContentTopicViewModel] Erro em loadNextPage(): $e");
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadNextPage()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
 
@@ -268,7 +292,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
       _contents = items;
       _error = null;
     } catch (e) {
-      _error = "Erro na busca: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'searchContents');
+      if (kDebugMode && _error is AuthException) {
+        debugPrint((_error as AuthException).toTechnicalString());
+      }
     }
     _setLoading(false);
   }
@@ -333,9 +361,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      _error = "Erro ao aplicar filtro: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'applyManualFilter');
       if (kDebugMode) {
-        debugPrint("❌ [MainContentTopicViewModel] Erro ao aplicar filtro: $e");
+        debugPrint("❌ [MainContentTopicViewModel] Erro ao aplicar filtro");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
 

@@ -5,6 +5,7 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_http_interceptor.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 
@@ -20,6 +21,7 @@ class MainContentTopicRepository
       );
 
   /// Configurações customizadas do Dio para esse Repository
+  /// ✅ Usa AuthHttpInterceptor global para tratamento centralizado de auth
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
@@ -28,28 +30,14 @@ class MainContentTopicRepository
       ),
     );
 
+    // ✅ NOVO: Interceptor global de autenticação
+    final tokenManager = injector<AuthTokenManager>();
+    final devToken = EnvKeyHelperConfig.tokenKeyForMocApi2;
+
     dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // Obter token do AuthTokenManager
-          final tokenManager = injector<AuthTokenManager>();
-          final userToken = tokenManager.getToken();
-          
-          // ✅ FALLBACK: Usar token de desenvolvimento do .env se não houver token de usuário
-          final devToken = EnvKeyHelperConfig.tokenKeyForMocApi2;
-          final authToken = (userToken != null && userToken.isNotEmpty) ? userToken : devToken;
-          
-          if (authToken.isNotEmpty) {
-            print('🔑 [MainContentTopicRepository] Token obtido: ${authToken.substring(0, 20)}...');
-            print('📝 [MainContentTopicRepository] Origem: ${userToken != null && userToken.isNotEmpty ? "USUÁRIO AUTENTICADO" : "DEV TOKEN (.env)"}');
-            options.headers['Authorization'] = 'Bearer $authToken';
-            print('✅ [MainContentTopicRepository] Header Authorization adicionado');
-          } else {
-            print('⚠️ [MainContentTopicRepository] ERRO: Nenhum token disponível (nem usuário nem .env)!');
-          }
-          
-          return handler.next(options);
-        },
+      AuthHttpInterceptor(
+        tokenManager,
+        fallbackToken: devToken,
       ),
     );
 
