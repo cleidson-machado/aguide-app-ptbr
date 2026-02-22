@@ -374,13 +374,14 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                           if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
                           break;
                         case 1:
-                          // TODO: Implementar ação de DETALHES
+                          // Exibe modal de detalhes
                           if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
+                          _MainContentTopicScreenState._showDetailsActionSheet(context, content);
                           break;
                         case 2:
-                          // Exibe modal Cupertino com informações de autoria
+                          // Exibe modal de autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
-                          _MainContentTopicScreenState._showAutoriaModal(context, content);
+                          _MainContentTopicScreenState._showAuthorshipActionSheet(context, content);
                           break;
                       }
                     },
@@ -438,146 +439,780 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
-  /// Exibe modal Cupertino com informações de autoria do conteúdo
-  /// Mostra título e nome do canal centralizados
-  static void _showAutoriaModal(BuildContext context, MainContentTopicModel content) {
-    showCupertinoDialog(
+  /// Exibe modal de detalhes com informações sobre o conteúdo
+  static Future<dynamic> _showDetailsActionSheet(
+    BuildContext context,
+    MainContentTopicModel content,
+  ) {
+    // ✅ RESPONSIVIDADE: Calcular altura máxima baseada na tela
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxModalHeight = screenHeight * 0.6; // 60% da altura da tela
+    
+    return showCupertinoModalPopup(
       context: context,
-      barrierDismissible: true, // Permite fechar clicando fora
-      builder: (BuildContext dialogContext) {
-        return Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: CupertinoColors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+      builder: (BuildContext context) => CupertinoActionSheet(
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            content.title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFB71C1C),
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cabeçalho com ícone e botão de fechar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Icon(
-                        CupertinoIcons.person_crop_circle,
-                        size: 28,
-                        color: Color(0xFFE57373),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+
+        //YYYYY Conteúdo scrollável com informações dinâmicas
+        message: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: maxModalHeight,
+            minHeight: 200, // Altura mínima garantida
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Thumbnail
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: content.videoThumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 160,
+                        color: CupertinoColors.systemGrey6,
+                        child: const Center(child: CupertinoActivityIndicator()),
                       ),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(30, 30),
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: const Icon(
-                          CupertinoIcons.xmark_circle_fill,
-                          size: 28,
-                          color: CupertinoColors.systemGrey,
+                      errorWidget: (context, url, error) => Container(
+                        height: 160,
+                        color: CupertinoColors.systemGrey6,
+                        child: const Icon(CupertinoIcons.photo, size: 60),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Descrição com "mostrar mais/menos"
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _ExpandableDescription(description: content.description),
+                ),
+                const SizedBox(height: 20),
+                
+                // Divisor
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  height: 1,
+                  color: CupertinoColors.systemGrey5,
+                ),
+                const SizedBox(height: 20),
+                
+                // Informações do canal e categoria
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildInfoRow(
+                    icon: CupertinoIcons.person_circle_fill,
+                    label: 'Canal',
+                    value: content.channelName,
+                    iconColor: const Color(0xFFE57373),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildInfoRow(
+                    icon: CupertinoIcons.folder_fill,
+                    label: 'Categoria',
+                    value: content.categoryName,
+                    iconColor: const Color(0xFF64B5F6),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Duração e data
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildInfoRow(
+                          icon: CupertinoIcons.time,
+                          label: 'Duração',
+                          value: _formatDuration(content.durationSeconds),
+                          iconColor: const Color(0xFF81C784),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildInfoRow(
+                          icon: CupertinoIcons.calendar,
+                          label: 'Publicado',
+                          value: _formatDate(content.publishedAt),
+                          iconColor: const Color(0xFFFFB74D),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Título
-                  const Text(
-                    'AUTORIA',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFB71C1C),
-                      letterSpacing: 1.2,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  // Divisor
-                  Container(
-                    height: 1,
-                    color: CupertinoColors.systemGrey5,
-                  ),
-                  const SizedBox(height: 20),
-                  // Título do conteúdo
-                  const Text(
-                    'TÍTULO',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.systemGrey,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    content.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.black,
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 24),
-                  // Nome do canal
-                  const Text(
-                    'CANAL',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.systemGrey,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    content.channelName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFE57373),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 24),
-                  // Botão de fechar
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton(
-                      color: const Color(0xFFE57373),
-                      borderRadius: BorderRadius.circular(12),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text(
-                        'Fechar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: CupertinoColors.white,
-                        ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Métricas de engajamento
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF3E5F5), Color(0xFFE1F5FE)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: CupertinoColors.systemGrey5,
+                        width: 1,
                       ),
                     ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'MÉTRICAS DE ENGAJAMENTO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: CupertinoColors.systemGrey,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildMetric(
+                              icon: CupertinoIcons.eye_fill,
+                              value: _formatNumber(content.viewCount),
+                              label: 'Views',
+                              color: const Color(0xFF9575CD),
+                            ),
+                            Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                            _buildMetric(
+                              icon: CupertinoIcons.hand_thumbsup_fill,
+                              value: _formatNumber(content.likeCount),
+                              label: 'Likes',
+                              color: const Color(0xFFE57373),
+                            ),
+                            Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                            _buildMetric(
+                              icon: CupertinoIcons.chat_bubble_fill,
+                              value: _formatNumber(content.commentCount),
+                              label: 'Comentários',
+                              color: const Color(0xFF4FC3F7),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Seção de Tags
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'TAGS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: CupertinoColors.systemGrey,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Tags (se houver) ou aviso (se não houver)
+                      if (content.tags != null && content.tags!.trim().isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: content.tags!
+                              .split(',')
+                              .map((tag) => Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 200, // Largura máxima para cada tag
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE3F2FD),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: const Color(0xFF90CAF9),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      tag.trim(),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF1976D2),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ))
+                              .toList(),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFFB74D),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                CupertinoIcons.tag,
+                                size: 18,
+                                color: Color(0xFFEF6C00),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Nenhuma tag disponível para este conteúdo',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFEF6C00).withValues(alpha: 0.9),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Informações técnicas
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE1F5FE), Color(0xFFF3E5F5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: CupertinoColors.systemGrey5,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'INFORMAÇÕES TÉCNICAS',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: CupertinoColors.systemGrey,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildTechInfo(
+                              icon: CupertinoIcons.play_rectangle_fill,
+                              value: content.type,
+                              label: 'Tipo',
+                              color: const Color(0xFF7E57C2),
+                            ),
+                            Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                            _buildTechInfo(
+                              icon: CupertinoIcons.tv_fill,
+                              value: content.definition.toUpperCase(),
+                              label: 'Qualidade',
+                              color: content.definition.toLowerCase() == 'hd'
+                                  ? const Color(0xFF26A69A)
+                                  : const Color(0xFFBDBDBD),
+                            ),
+                            Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                            _buildTechInfo(
+                              icon: CupertinoIcons.textformat,
+                              value: content.caption ? 'SIM' : 'NÃO',
+                              label: 'Legendas',
+                              color: content.caption 
+                                  ? const Color(0xFFFF7043)
+                                  : const Color(0xFFBDBDBD),
+                            ),
+                          ],
+                        ),
+                        if (content.defaultLanguage != null || content.defaultAudioLanguage != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: CupertinoColors.white.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                if (content.defaultLanguage != null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          CupertinoIcons.globe,
+                                          size: 14,
+                                          color: Color(0xFF5C6BC0),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            'Idioma: ${content.defaultLanguage}',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF5C6BC0),
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (content.defaultAudioLanguage != null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          CupertinoIcons.speaker_2_fill,
+                                          size: 14,
+                                          color: Color(0xFF66BB6A),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            'Áudio: ${content.defaultAudioLanguage}',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF66BB6A),
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Status de validação
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: content.validationHash != null && content.validationHash!.isNotEmpty
+                          ? const Color(0xFFE3F2FD)
+                          : const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: content.validationHash != null && content.validationHash!.isNotEmpty
+                            ? const Color(0xFF1565C0)
+                            : const Color(0xFFB71C1C),
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          content.validationHash != null && content.validationHash!.isNotEmpty
+                              ? CupertinoIcons.checkmark_seal_fill
+                              : CupertinoIcons.exclamationmark_triangle_fill,
+                          color: content.validationHash != null && content.validationHash!.isNotEmpty
+                              ? const Color(0xFF1565C0)
+                              : const Color(0xFFB71C1C),
+                          size: 32,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            content.validationHash != null && content.validationHash!.isNotEmpty
+                                ? 'Vídeo com Autoria Reconhecida e Validada'
+                                : 'Vídeo sem validação de autoria reconhecida',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: content.validationHash != null && content.validationHash!.isNotEmpty
+                                  ? const Color(0xFF1565C0)
+                                  : const Color(0xFFB71C1C),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        //YYYYY
+        
+        // Botão de compartilhar como action
+        actions: <CupertinoActionSheetAction>[
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar compartilhamento
+              if (kDebugMode) {
+                debugPrint('📤 Compartilhar Conteúdo');
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.share, size: 20, color: CupertinoColors.activeBlue),
+                SizedBox(width: 8),
+                Text(
+                  'Compartilhar',
+                  style: TextStyle(color: CupertinoColors.activeBlue),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancelar'),
+        ),
+      ),
+    );
+  }
+
+  /// Exibe modal de autoria com opções de validação e monetização
+  static Future<dynamic> _showAuthorshipActionSheet(
+    BuildContext context,
+    MainContentTopicModel content,
+  ) {
+    return showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => CupertinoActionSheet(
+        title: const Text(
+          'Validação de Autoria',
+          style: TextStyle(fontSize: 14),
+        ),
+        message: const Text(
+          'Escolha uma opção para validar ou monetizar este conteúdo',
+          style: TextStyle(fontSize: 12),
+        ),
+        actions: <CupertinoActionSheetAction>[
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar validação de autoria
+              if (kDebugMode) {
+                debugPrint('🔐 Validar Autoria - Conteúdo ID: ${content.id}');
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.checkmark_seal_fill, size: 20),
+                SizedBox(width: 8),
+                Text('Validar Autoria'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar monetização
+              if (kDebugMode) {
+                debugPrint('💰 Monetizar Conteúdo - ID: ${content.id}');
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.money_dollar_circle_fill, size: 20),
+                SizedBox(width: 8),
+                Text('Monetizar Agora'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar visualização de detalhes
+              if (kDebugMode) {
+                debugPrint('📋 Ver Detalhes - Conteúdo ID: ${content.id}');
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.info_circle_fill, size: 20),
+                SizedBox(width: 8),
+                Text('Ver Detalhes de Autoria'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implementar reivindicação de direitos
+              if (kDebugMode) {
+                debugPrint('⚖️ Reivindicar Direitos - ID: ${content.id}');
+              }
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.hand_raised_fill, size: 20),
+                SizedBox(width: 8),
+                Text('Reivindicar Direitos'),
+              ],
+            ),
+          ),
+          if (content.validationHash != null && content.validationHash!.isNotEmpty)
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.pop(context);
+                // TODO: Implementar compartilhamento de certificado
+                if (kDebugMode) {
+                  debugPrint('📤 Compartilhar Certificado - ID: ${content.id}');
+                }
+              },
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(CupertinoIcons.share, size: 20, color: CupertinoColors.activeBlue),
+                  SizedBox(width: 8),
+                  Text(
+                    'Compartilhar Certificado',
+                    style: TextStyle(color: CupertinoColors.activeBlue),
                   ),
                 ],
               ),
             ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancelar'),
+        ),
+      ),
+    );
+  }
+
+  /// Formata duração em segundos para formato legível (ex: 10:25, 1:30:45)
+  static String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else {
+      return '${minutes}m ${secs}s';
+    }
+  }
+
+  /// Formata data ISO 8601 para formato legível (ex: 22 Fev 2026)
+  static String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate);
+      final months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  /// Formata números grandes (ex: 1.5M, 250K, 1.2K)
+  static String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toString();
+    }
+  }
+
+  /// Constrói linha de informação com ícone e texto
+  static Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color iconColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: iconColor),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemGrey,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: CupertinoColors.black,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+
+  /// Constrói widget de métrica com ícone, valor e label
+  static Widget _buildMetric({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: CupertinoColors.systemGrey,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Constrói widget de informação técnica com ícone, valor e label
+  static Widget _buildTechInfo({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: CupertinoColors.systemGrey,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -920,6 +1555,56 @@ class MainContentCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: _MainContentTopicScreenState._buildContentCard(content, viewModel),
+    );
+  }
+}
+
+/// Widget de descrição expansível com "mostrar mais/menos"
+/// Limita a 5 linhas quando recolhido e expande completamente quando solicitado
+class _ExpandableDescription extends StatefulWidget {
+  final String description;
+
+  const _ExpandableDescription({required this.description});
+
+  @override
+  State<_ExpandableDescription> createState() => _ExpandableDescriptionState();
+}
+
+class _ExpandableDescriptionState extends State<_ExpandableDescription> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          widget.description,
+          style: const TextStyle(
+            fontSize: 15,
+            color: CupertinoColors.systemGrey,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: _isExpanded ? null : 5,
+          overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+            });
+          },
+          child: Text(
+            _isExpanded ? '( mostrar menos )' : '( mostrar mais )',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF1976D2),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

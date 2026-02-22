@@ -33,15 +33,19 @@ class MainContentTopicRepository
         onRequest: (options, handler) {
           // Obter token do AuthTokenManager
           final tokenManager = injector<AuthTokenManager>();
-          final token = tokenManager.getToken();
+          final userToken = tokenManager.getToken();
           
-          print('🔑 [MainContentTopicRepository] Token obtido: ${token?.substring(0, 20) ?? "null"}...');
+          // ✅ FALLBACK: Usar token de desenvolvimento do .env se não houver token de usuário
+          final devToken = EnvKeyHelperConfig.tokenKeyForMocApi2;
+          final authToken = (userToken != null && userToken.isNotEmpty) ? userToken : devToken;
           
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          if (authToken.isNotEmpty) {
+            print('🔑 [MainContentTopicRepository] Token obtido: ${authToken.substring(0, 20)}...');
+            print('📝 [MainContentTopicRepository] Origem: ${userToken != null && userToken.isNotEmpty ? "USUÁRIO AUTENTICADO" : "DEV TOKEN (.env)"}');
+            options.headers['Authorization'] = 'Bearer $authToken';
             print('✅ [MainContentTopicRepository] Header Authorization adicionado');
           } else {
-            print('⚠️ [MainContentTopicRepository] Token não encontrado!');
+            print('⚠️ [MainContentTopicRepository] ERRO: Nenhum token disponível (nem usuário nem .env)!');
           }
           
           return handler.next(options);
