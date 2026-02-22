@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
@@ -30,6 +31,9 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool _isManualFilterActive =
       false; // Flag para saber se filtro manual está ativo
 
+  // ===== Estado de ToggleButtons individuais por item =====
+  final Map<String, List<bool>> _toggleButtonStates = {};
+
   // ===== Getters públicos =====
   List<MainContentTopicModel> get contents => _contents;
   bool get isLoading => _isLoading;
@@ -40,6 +44,36 @@ class MainContentTopicViewModel extends ChangeNotifier {
   int get currentPage => _currentPage;
   MainContentSortCriteria? get currentSortCriteria => _currentSortCriteria;
   bool get isManualFilterActive => _isManualFilterActive;
+
+  // ===== Gerenciamento de ToggleButtons por item =====
+  
+  /// Obtém o estado dos botões para um item específico
+  /// Retorna [false, true, false] (DETALHES selecionado) como padrão
+  List<bool> getToggleButtonState(String contentId) {
+    return _toggleButtonStates.putIfAbsent(
+      contentId,
+      () => [false, true, false], // Padrão: DETALHES selecionado
+    );
+  }
+
+  /// Atualiza o estado dos botões para um item específico
+  /// Single-select: apenas um botão pode estar ativo por vez
+  void updateToggleButtonState(String contentId, int selectedIndex) {
+    final currentState = getToggleButtonState(contentId);
+    
+    // Single-select: desmarcar todos e marcar apenas o selecionado
+    for (int i = 0; i < currentState.length; i++) {
+      currentState[i] = i == selectedIndex;
+    }
+    
+    _toggleButtonStates[contentId] = currentState;
+    notifyListeners(); // Notifica apenas o item específico
+  }
+
+  /// Limpa estados de botões (útil ao recarregar lista)
+  void clearToggleButtonStates() {
+    _toggleButtonStates.clear();
+  }
 
   // ===== Ações =====
   Future<void> loadAllContents() async {
@@ -227,6 +261,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
       await loadPagedContents();
       return;
     }
+    clearToggleButtonStates(); // Limpa estados ao buscar
     _setLoading(true);
     try {
       final items = await _repository.searchByTitle(title);
@@ -248,6 +283,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _contents.clear();
     _hasMorePages = true;
     _error = null;
+    clearToggleButtonStates(); // Limpa estados de botões ao recarregar
     await loadPagedContents();
   }
 
@@ -272,6 +308,7 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _currentPage = 1;
     _hasMorePages = true;
     _contents = [];
+    clearToggleButtonStates(); // Limpa estados de botões ao aplicar filtro
     _setLoading(true);
 
     try {
@@ -313,7 +350,27 @@ class MainContentTopicViewModel extends ChangeNotifier {
       );
     }
     _isManualFilterActive = false;
+    clearToggleButtonStates(); // Limpa estados de botões ao resetar
     await loadPagedContents(); // Carrega com estratégia randômica
+  }
+
+  // ===== Configuração do Botão de Validação =====
+  
+  /// Retorna a configuração do botão de validação baseado no validationHash
+  /// - Se validationHash != null: Botão vermelho "VIDEO OU CANAL - COM AUTORIA RECONHECIDA!"
+  /// - Se validationHash == null: Botão azul escuro "ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!"
+  ValidationButtonConfig getValidationButtonConfig(MainContentTopicModel content) {
+    if (content.validationHash != null && content.validationHash!.isNotEmpty) {
+      return const ValidationButtonConfig(
+        text: 'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!',
+        backgroundColor: Color(0xFFB71C1C), // Vermelho escuro
+      );
+    } else {
+      return const ValidationButtonConfig(
+        text: 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!',
+        backgroundColor: Color(0xFF1565C0), // Azul escuro (Material Blue 800)
+      );
+    }
   }
 
   // ===== Helpers internos =====
@@ -321,4 +378,16 @@ class MainContentTopicViewModel extends ChangeNotifier {
     _isLoading = value;
     notifyListeners();
   }
+}
+
+/// Configuração do botão de validação de autoria
+/// Encapsula texto e cor de fundo baseado no estado do validationHash
+class ValidationButtonConfig {
+  final String text;
+  final Color backgroundColor;
+
+  const ValidationButtonConfig({
+    required this.text,
+    required this.backgroundColor,
+  });
 }

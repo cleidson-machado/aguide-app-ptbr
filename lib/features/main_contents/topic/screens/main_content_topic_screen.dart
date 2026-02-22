@@ -24,9 +24,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
-  
-  // Estado do ToggleButtons (single-select): apenas um botão ativo por vez
-  final List<bool> _selectedButtons = [false, true, false];
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -118,8 +115,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
         ),
       ),
-      child: AnimatedBuilder(
-        animation: viewModel,
+      child: ListenableBuilder(
+        listenable: viewModel,
         builder: (context, child) {
           return Stack(
             children: [
@@ -193,10 +190,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 }
 
                 final content = viewModel.contents[index];
-                // Key única baseada no ID do conteúdo para otimizar rebuilds
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: _buildContentCard(content),
+                // Widget isolado com key única para evitar cache de estado visual
+                return MainContentCard(
+                  key: ValueKey('card_${content.id}_${content.validationHash ?? "null"}'),
+                  content: content,
+                  viewModel: viewModel,
                 );
               },
               childCount:
@@ -208,9 +206,61 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
-  Widget _buildContentCard(MainContentTopicModel content) {
+  /// Widget do botão de validação de autoria
+  /// ✅ CORRIGIDO: Renderização individual e isolada por item
+  static Widget _buildValidationButton(MainContentTopicModel content) {
+    // ✅ DEBUG: Log do validationHash para verificar valores
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [ValidationButton] ID: ${content.id}, validationHash: ${content.validationHash ?? "NULL"}',
+      );
+    }
+
+    // Determina cor e texto baseado no validationHash
+    // ✅ REGRA: validationHash != null → AZUL (Autoria Reconhecida)
+    // ✅ REGRA: validationHash == null → VERMELHO (Sem Autoria)
+    final bool hasValidation = content.validationHash != null && 
+                               content.validationHash!.trim().isNotEmpty;
+    final Color buttonColor = hasValidation 
+        ? const Color(0xFF1565C0)  // ✅ Azul para validado
+        : const Color(0xFFB71C1C); // ✅ Vermelho para não validado
+    final String buttonText = hasValidation
+        ? 'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!'
+        : 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(3, 3, 3, 0),
+      child: CupertinoButton(
+        minimumSize: Size.zero,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        color: buttonColor,
+        borderRadius: BorderRadius.circular(5),
+        onPressed: () {
+          // TODO: Implementar ação de validação de autoria
+          if (kDebugMode) {
+            debugPrint(
+              '🎯 [ValidationButton] Clicado - ID: ${content.id}, hasValidation: $hasValidation',
+            );
+          }
+        },
+        child: Text(
+          buttonText,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: CupertinoColors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildContentCard(
+    MainContentTopicModel content,
+    MainContentTopicViewModel viewModel,
+  ) {
     return Container(
-      key: ValueKey('content_${content.id}'),
       decoration: BoxDecoration(
         color: CupertinoColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -265,31 +315,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
               ),
             ),
           ),
-          // Botão de destaque - Autoria Reconhecida
-          Padding(
-            padding: const EdgeInsets.fromLTRB(3, 3, 3, 0),
-            child: CupertinoButton(
-              // minimumSize: controla o tamanho mínimo do botão (padrão iOS: 44px)
-              // Definindo Size.zero para remover restrição e adaptar ao conteúdo + padding
-              minimumSize: Size.zero,
-              // Padding interno: controla espaço entre texto e borda do botão
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              color: const Color(0xFFB71C1C),
-              borderRadius: BorderRadius.circular(5),
-              onPressed: () {
-                // TODO: Implementar ação de autoria reconhecida
-              },
-              child: const Text(
-                'VIDEO OU CANAL - COM AUTORIA RECONHECIDA!',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: CupertinoColors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
+          // Botão de destaque - Validação de Autoria (Dinâmico)
+          _MainContentTopicScreenState._buildValidationButton(content),
           // Conteúdo do card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
@@ -335,28 +362,25 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 final buttonWidth = (constraints.maxWidth - 6) / 3; // -6 para compensar borders
                 return Center(
                   child: ToggleButtons(
-                    isSelected: _selectedButtons,
+                    isSelected: viewModel.getToggleButtonState(content.id),
                     onPressed: (int index) {
-                      setState(() {
-                        // Single-select: desmarcar todos e marcar apenas o clicado
-                        for (int i = 0; i < _selectedButtons.length; i++) {
-                          _selectedButtons[i] = i == index;
-                        }
-                      });
+                      // Atualiza estado no ViewModel (individualizado por item)
+                      viewModel.updateToggleButtonState(content.id, index);
                       
                       // Ações baseadas no botão selecionado
                       switch (index) {
                         case 0:
                           // TODO: Implementar ação de PLAY
-                          if (kDebugMode) debugPrint('🎬 PLAY selecionado');
+                          if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
                           break;
                         case 1:
                           // TODO: Implementar ação de DETALHES
-                          if (kDebugMode) debugPrint('📋 DETALHES selecionado');
+                          if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
                           break;
                         case 2:
-                          // TODO: Implementar ação de AUTORIA
-                          if (kDebugMode) debugPrint('✍️ AUTORIA selecionado');
+                          // Exibe modal Cupertino com informações de autoria
+                          if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
+                          _MainContentTopicScreenState._showAutoriaModal(context, content);
                           break;
                       }
                     },
@@ -411,6 +435,149 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Exibe modal Cupertino com informações de autoria do conteúdo
+  /// Mostra título e nome do canal centralizados
+  static void _showAutoriaModal(BuildContext context, MainContentTopicModel content) {
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true, // Permite fechar clicando fora
+      builder: (BuildContext dialogContext) {
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: CupertinoColors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Cabeçalho com ícone e botão de fechar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Icon(
+                        CupertinoIcons.person_crop_circle,
+                        size: 28,
+                        color: Color(0xFFE57373),
+                      ),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(30, 30),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          size: 28,
+                          color: CupertinoColors.systemGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Título
+                  const Text(
+                    'AUTORIA',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFB71C1C),
+                      letterSpacing: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  // Divisor
+                  Container(
+                    height: 1,
+                    color: CupertinoColors.systemGrey5,
+                  ),
+                  const SizedBox(height: 20),
+                  // Título do conteúdo
+                  const Text(
+                    'TÍTULO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.systemGrey,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    content.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.black,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 24),
+                  // Nome do canal
+                  const Text(
+                    'CANAL',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.systemGrey,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    content.channelName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFE57373),
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 24),
+                  // Botão de fechar
+                  SizedBox(
+                    width: double.infinity,
+                    child: CupertinoButton(
+                      color: const Color(0xFFE57373),
+                      borderRadius: BorderRadius.circular(12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text(
+                        'Fechar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: CupertinoColors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -725,5 +892,34 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         }
       }
     });
+  }
+}
+
+/// ✅ Widget Isolado para Card de Conteúdo
+/// Separado do State principal para evitar rebuilds massivos causados por AnimatedBuilder
+/// Cada card só reconstrói quando seus próprios dados (content) mudam
+class MainContentCard extends StatelessWidget {
+  final MainContentTopicModel content;
+  final MainContentTopicViewModel viewModel;
+
+  const MainContentCard({
+    super.key,
+    required this.content,
+    required this.viewModel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ DEBUG: Log de renderização para verificar rebuilds desnecessários
+    if (kDebugMode) {
+      debugPrint(
+        '🎨 [MainContentCard] Renderizando card ID: ${content.id}, validationHash: ${content.validationHash ?? "NULL"}',
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: _MainContentTopicScreenState._buildContentCard(content, viewModel),
+    );
   }
 }
