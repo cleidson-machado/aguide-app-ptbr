@@ -9,6 +9,8 @@ import 'package:portugal_guide/features/auth_google/auth_google_view_model.dart'
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
@@ -73,6 +75,11 @@ Future<void> setupDependencies() async {
     () => MainContentTopicViewModel(
       repository: injector<MainContentTopicRepositoryInterface>(),
     ),
+  );
+
+  //### For Ownership (Content Verification) ###
+  injector.registerLazySingleton<OwnershipRepositoryInterface>(
+    () => OwnershipRepository(),
   );
 }
 

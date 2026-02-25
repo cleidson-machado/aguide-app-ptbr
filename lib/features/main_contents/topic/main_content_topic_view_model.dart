@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_error_handler.dart';
 import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_criteria.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_service.dart';
@@ -401,6 +404,80 @@ class MainContentTopicViewModel extends ChangeNotifier {
       return const ValidationButtonConfig(
         text: 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!',
         backgroundColor: Color(0xFF1565C0), // Azul escuro (Material Blue 800)
+      );
+    }
+  }
+
+  // ===== Ownership (Verificação de Autoria) =====
+  
+  /// Verifica se o usuário logado é dono do conteúdo especificado
+  /// 
+  /// Retorna [OwnershipResult] com informações sobre a verificação:
+  /// - Se `isOwner = true`: usuário é dono, modal pode ser exibida
+  /// - Se `isOwner = false`: usuário NÃO é dono, exibir mensagem de alerta
+  /// 
+  /// [contentId] - ID do conteúdo a verificar
+  Future<OwnershipResult> checkContentOwnership(String contentId) async {
+    if (kDebugMode) {
+      debugPrint('🔍 [MainContentTopicViewModel] Verificando ownership do conteúdo');
+      debugPrint('   Content ID: $contentId');
+    }
+
+    try {
+      // Obter userId do token JWT
+      final tokenManager = injector<AuthTokenManager>();
+      final userId = tokenManager.getUserId();
+
+      if (userId == null || userId.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('❌ [MainContentTopicViewModel] Erro: userId não encontrado no token');
+        }
+        
+        return OwnershipResult.notOwner(
+          OwnershipErrorModel(
+            error: 'INVALID_TOKEN',
+            message: 'Token de autenticação inválido. Faça login novamente.',
+            timestamp: DateTime.now().toIso8601String(),
+          ),
+        );
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ [MainContentTopicViewModel] User ID extraído: $userId');
+      }
+
+      // Chamar repository para verificar ownership
+      final ownershipRepo = injector<OwnershipRepositoryInterface>();
+      final result = await ownershipRepo.checkContentOwnership(
+        userId: userId,
+        contentId: contentId,
+      );
+
+      if (result.isOwner) {
+        if (kDebugMode) {
+          debugPrint('✅ [MainContentTopicViewModel] Ownership confirmado!');
+          debugPrint('   Conteúdos verificados: ${result.contents?.length ?? 0}');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('❌ [MainContentTopicViewModel] Ownership não confirmado');
+          debugPrint('   Erro: ${result.error?.error}');
+          debugPrint('   Mensagem: ${result.error?.message}');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [MainContentTopicViewModel] Erro ao verificar ownership: $e');
+      }
+      
+      return OwnershipResult.notOwner(
+        OwnershipErrorModel(
+          error: 'UNEXPECTED_ERROR',
+          message: 'Erro inesperado ao verificar autoria. Tente novamente.',
+          timestamp: DateTime.now().toIso8601String(),
+        ),
       );
     }
   }

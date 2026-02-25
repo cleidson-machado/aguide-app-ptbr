@@ -9,6 +9,7 @@ import 'package:portugal_guide/app/core/auth/auth_exception.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -378,9 +379,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                           _MainContentTopicScreenState._showDetailsActionSheet(context, content);
                           break;
                         case 2:
-                          // Exibe modal de autoria
+                          // Verificar ownership antes de exibir modal de autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
-                          _MainContentTopicScreenState._showAuthorshipActionSheet(context, content);
+                          _MainContentTopicScreenState._handleAuthorshipCheck(context, content, viewModel);
                           break;
                       }
                     },
@@ -469,7 +470,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         message: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: maxModalHeight,
-            minHeight: 200, // Altura mínima garantida
+            minHeight: 250, // Altura mínima garantida
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -909,7 +910,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
         ),
-        //YYYYY
         
         // Botão de compartilhar como action
         actions: <CupertinoActionSheetAction>[
@@ -945,96 +945,460 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
+  //YYYYY Conteúdo scrollável com informações dinâmicas -FIM
+
+  /// Verifica ownership e decide se abre modal ou exibe mensagem de alerta
+  static Future<void> _handleAuthorshipCheck(
+    BuildContext context,
+    MainContentTopicModel content,
+    MainContentTopicViewModel viewModel,
+  ) async {
+    // Exibir loading enquanto verifica
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const CupertinoAlertDialog(
+        content: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CupertinoActivityIndicator(radius: 14),
+              SizedBox(height: 16),
+              Text(
+                'Verificando autoria...',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Verificar ownership via API
+      final result = await viewModel.checkContentOwnership(content.id);
+
+      // Fechar loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (!context.mounted) return;
+
+      if (result.isOwner) {
+        // ✅ É DONO: Abrir modal de autoria com dados de ownership
+        if (result.contents != null && result.contents!.isNotEmpty) {
+          await _showAuthorshipActionSheet(
+            context, 
+            content,
+            result.contents!.first, // Passa dados de ownership
+          );
+        } else {
+          // Fallback: não deveria acontecer, mas trata caso não tenha dados
+          _showOwnershipDeniedMessage(
+            context,
+            'Erro: Dados de ownership não encontrados.',
+          );
+        }
+      } else {
+        // ❌ NÃO É DONO: Exibir mensagem de alerta
+        final message = result.error?.message ?? 
+                        'Este conteúdo não pertence ao usuário logado';
+        _showOwnershipDeniedMessage(context, message);
+      }
+    } catch (e) {
+      // Fechar loading dialog em caso de erro
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (kDebugMode) {
+        debugPrint('❌ [_handleAuthorshipCheck] Erro: $e');
+      }
+
+      if (context.mounted) {
+        _showOwnershipDeniedMessage(
+          context,
+          'Erro ao verificar autoria. Tente novamente.',
+        );
+      }
+    }
+  }
+
   /// Exibe modal de autoria com opções de validação e monetização
+  /// Recebe dados reais do endpoint de ownership para exibir informações verificadas
   static Future<dynamic> _showAuthorshipActionSheet(
     BuildContext context,
     MainContentTopicModel content,
+    OwnershipContentModel ownership,
   ) {
+    // Formatar data de verificação
+    String formattedVerifiedAt = 'N/A';
+    try {
+      final verifiedDate = DateTime.parse(ownership.verifiedAt);
+      formattedVerifiedAt = '${verifiedDate.day}/${verifiedDate.month}/${verifiedDate.year} ${verifiedDate.hour.toString().padLeft(2, '0')}:${verifiedDate.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Erro ao formatar data de verificação: $e');
+      }
+    }
+
+    // Hash de validação abreviado (primeiros 16 caracteres)
+    final shortHash = ownership.validationHash.length > 16 
+        ? '${ownership.validationHash.substring(0, 16)}...' 
+        : ownership.validationHash;
+
+  //ZZZZ - Modal de autoria com informações reais e opções de ação - INÍCIO
     return showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
-        title: const Text(
-          'Validação de Autoria',
-          style: TextStyle(fontSize: 14),
-        ),
-        message: const Text(
-          'Escolha uma opção para validar ou monetizar este conteúdo',
-          style: TextStyle(fontSize: 12),
-        ),
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implementar validação de autoria
-              if (kDebugMode) {
-                debugPrint('🔐 Validar Autoria - Conteúdo ID: ${content.id}');
-              }
-            },
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.checkmark_seal_fill, size: 20),
-                SizedBox(width: 8),
-                Text('Validar Autoria'),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implementar monetização
-              if (kDebugMode) {
-                debugPrint('💰 Monetizar Conteúdo - ID: ${content.id}');
-              }
-            },
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.money_dollar_circle_fill, size: 20),
-                SizedBox(width: 8),
-                Text('Monetizar Agora'),
-              ],
-            ),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implementar reivindicação de direitos
-              if (kDebugMode) {
-                debugPrint('⚖️ Reivindicar Direitos - ID: ${content.id}');
-              }
-            },
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.hand_raised_fill, size: 20),
-                SizedBox(width: 8),
-                Text('Reivindicar Direitos'),
-              ],
-            ),
-          ),
-          if (content.validationHash != null && content.validationHash!.isNotEmpty)
-            CupertinoActionSheetAction(
-              onPressed: () {
-                Navigator.pop(context);
-                // TODO: Implementar compartilhamento de certificado
-                if (kDebugMode) {
-                  debugPrint('📤 Compartilhar Certificado - ID: ${content.id}');
-                }
-              },
-              child: const Row(
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Status de verificação com ícone
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(CupertinoIcons.share, size: 20, color: CupertinoColors.activeBlue),
-                  SizedBox(width: 8),
-                  Text(
-                    'Compartilhar Certificado',
-                    style: TextStyle(color: CupertinoColors.activeBlue),
+                  Icon(
+                    ownership.verified 
+                        ? CupertinoIcons.checkmark_seal_fill 
+                        : CupertinoIcons.exclamationmark_triangle_fill,
+                    color: ownership.verified 
+                        ? CupertinoColors.systemGreen 
+                        : CupertinoColors.systemOrange,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      ownership.verified 
+                          ? 'Conteúdo Auditado!' 
+                          : 'Verificação Pendente!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: ownership.verified 
+                            ? CupertinoColors.systemBlue 
+                            : CupertinoColors.systemPink,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
                   ),
                 ],
               ),
-            ),
-        ],
+              const SizedBox(height: 16),
+              // Canal verificado
+              RichText(
+                textAlign: TextAlign.center,
+                softWrap: true,
+                overflow: TextOverflow.visible,
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                  children: [
+                    const TextSpan(
+                      text: 'CANAL: ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: CupertinoColors.black,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ownership.channelName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: CupertinoColors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        message: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Data de verificação - Card
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)], //KKKK
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CupertinoColors.systemIndigo,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.calendar,
+                      size: 42,
+                      color: Color(0xFF1565C0),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'VERIFICADO EM',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: CupertinoColors.systemGrey,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formattedVerifiedAt,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              
+              // Hash de validação - Card
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)], //KKKK
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CupertinoColors.systemIndigo,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.lock_shield_fill,
+                      size: 42,
+                      color: Color(0xFF1565C0),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'HASH DE VALIDAÇÃO',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: CupertinoColors.systemGrey,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      shortHash,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.black,
+                        fontFamily: 'Courier',
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              
+              // ID de ownership - Card
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)], //KKKK
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CupertinoColors.systemIndigo,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.number_circle_fill,
+                      size: 42,
+                      color: Color(0xFF1565C0),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'HASH de PROPRIEDADE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: CupertinoColors.systemGrey,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${ownership.ownershipId.substring(0, 13)}...',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.black,
+                        fontFamily: 'Courier',
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              
+              // Mensagem de parabéns - Card
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)], //KKKK
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CupertinoColors.systemIndigo,
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.money_dollar_circle_fill,
+                      size: 60,
+                      color: Color(0xFF1565C0),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'CONTEÚDO CAPITALIZADO',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: CupertinoColors.darkBackgroundGray,
+                        letterSpacing: 0.8,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: CupertinoColors.black,
+                          height: 1.6,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Este conteúdo é ',
+                          ),
+                          TextSpan(
+                            text: 'PROPRIETÁRIO ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: CupertinoColors.systemPink,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'e está ',
+                          ),
+                          TextSpan(
+                            text: 'PROTEGIDO ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: CupertinoColors.systemPink,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'por nossa tecnologia de validação.\n\n',
+                          ),
+                          TextSpan(
+                            text: 'Você pode gerenciar seus ',
+                          ),
+                          TextSpan(
+                            text: 'GANHOS ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: CupertinoColors.systemPink,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'e os ',
+                          ),
+                          TextSpan(
+                            text: 'DIREITOS AUTORAIS ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: CupertinoColors.systemPink,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'deste conteúdo em seu ',
+                          ),
+                          TextSpan(
+                            text: 'painel de controle',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontStyle: FontStyle.italic,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         cancelButton: CupertinoActionSheetAction(
           onPressed: () {
             Navigator.pop(context);
@@ -1044,6 +1408,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       ),
     );
   }
+  //ZZZZ - Modal de autoria com informações reais e opções de ação - FIM
 
   /// Formata duração em segundos para formato legível (ex: 10:25, 1:30:45)
   static String _formatDuration(int seconds) {
@@ -1116,6 +1481,47 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Constrói linha de informação de ownership (para modal)
+  static Widget _buildOwnershipInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: CupertinoColors.systemBlue),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                fontSize: 12,
+                color: CupertinoColors.black,
+              ),
+              children: [
+                TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ),
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: CupertinoColors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -1602,6 +2008,264 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         }
       }
     });
+  }
+
+  /// Exibe mensagem de alerta quando usuário NÃO é dono do conteúdo
+  /// Layout melhorado com explicação detalhada e opções de ação
+  static void _showOwnershipDeniedMessage(BuildContext context, String message) {
+    // Usar mensagem padrão se a mensagem da API for genérica
+    final useDefaultMessage = message.contains('não pertence') || 
+                              message.contains('not found') ||
+                              message.contains('NOT_FOUND');
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        // Calcular largura proporcional à tela (90% da largura)
+        final screenWidth = MediaQuery.of(context).size.width;
+        final dialogWidth = screenWidth * 0.9;
+        
+        return Center(
+          child: Container(
+            width: dialogWidth,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: CupertinoColors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Título com ícone de alerta
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemPink.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.exclamationmark_triangle_fill,
+                          color: CupertinoColors.systemPink,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'AUTORIA de Vinculação Indisponível...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: CupertinoColors.systemPink,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Conteúdo com mensagem explicativa formatada com RichText
+                Container(
+                  margin: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: useDefaultMessage
+                      ? RichText(
+                          textAlign: TextAlign.center,
+                          text: const TextSpan(
+                            style: TextStyle(
+                              fontSize: 15,
+                              height: 1.6,
+                              color: CupertinoColors.black,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            children: [
+                              // Primeiro parágrafo - Saudação e problema
+                              TextSpan(
+                                text: 'Olá! Sentimos muito!\n',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: CupertinoColors.systemBlue
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Nosso sistema não conseguiu associar este conteúdo à sua conta ',
+                              ),
+                              TextSpan(
+                                text: 'Google / YouTube',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1565C0),
+                                ),
+                              ),
+                              TextSpan(text: '.\n\n'),
+                              
+                              // Segundo parágrafo - Instruções
+                              TextSpan(
+                                text: 'Por favor, tente novamente fazendo:\n',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              TextSpan(text: '• Logout da sua conta atual\n'),
+                              TextSpan(text: '• Limpando o cache do aplicativo\n'),
+                              TextSpan(text: '• Efetuando um novo login\n\n'),
+                              
+                              // Terceiro parágrafo - Alternativa
+                              TextSpan(
+                                text: 'Caso o esse comportamento persista, utilize a opção ',
+                              ),
+                              TextSpan(
+                                text: '"REGISTRO AVANÇADO"',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: CupertinoColors.activeBlue,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' para que nossa equipe analise novamente, em detalhes, o vínculo desse conteúdo à sua conta.',
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(
+                          message,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: CupertinoColors.black,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                ),
+                
+                // Divisor
+                Container(
+                  height: 0.5,
+                  color: CupertinoColors.separator,
+                ),
+                
+                // Botão "REGISTRO AVANÇADO" (azul)
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    // TODO: Implementar navegação para tela de registro avançado
+                    if (kDebugMode) {
+                      debugPrint('📋 [OwnershipDenied] REGISTRO AVANÇADO solicitado');
+                    }
+                    
+                    // Placeholder: exibir mensagem temporária
+                    showCupertinoDialog(
+                      context: context,
+                      builder: (context) => CupertinoAlertDialog(
+                        title: const Text('Em Desenvolvimento'),
+                        content: const Text(
+                          'A funcionalidade de Registro Avançado estará disponível em breve. '
+                          'Nossa equipe analisará manualmente o vínculo do conteúdo.',
+                        ),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.doc_text_fill,
+                        size: 18,
+                        color: CupertinoColors.activeBlue,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'REGISTRO AVANÇADO',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: CupertinoColors.activeBlue,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Divisor
+                Container(
+                  height: 0.5,
+                  color: CupertinoColors.separator,
+                ),
+                
+                // Botão "TENTAR NOVAMENTE" (vermelho/rosa)
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    if (kDebugMode) {
+                      debugPrint('🔄 [OwnershipDenied] TENTAR NOVAMENTE selecionado');
+                    }
+                    
+                    // Sugerir logout/login
+                    showCupertinoDialog(
+                      context: context,
+                      builder: (context) => CupertinoAlertDialog(
+                        title: const Text('Reautenticação Recomendada'),
+                        content: const Text(
+                          'Para melhores resultados:\n\n'
+                          '1. Faça logout da sua conta atual\n'
+                          '2. Limpe o cache do aplicativo (opcional)\n'
+                          '3. Faça login novamente\n'
+                          '4. Tente verificar a autoria novamente',
+                        ),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Entendi'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'TENTAR NOVAMENTE',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE57373), // Rosa/vermelho claro
+                          fontSize: 15,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        CupertinoIcons.refresh_circled_solid,
+                        size: 18,
+                        color: Color(0xFFE57373),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
