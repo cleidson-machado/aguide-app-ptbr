@@ -446,7 +446,8 @@ class MainContentTopicViewModel extends ChangeNotifier {
         debugPrint('✅ [MainContentTopicViewModel] User ID extraído: $userId');
       }
 
-      // Chamar repository para verificar ownership
+      // 📍 CONSUMO DO ENDPOINT: GET /api/v1/ownership/user/{userId}/content
+      // Chama repository que faz a requisição HTTP para verificar ownership
       final ownershipRepo = injector<OwnershipRepositoryInterface>();
       final result = await ownershipRepo.checkContentOwnership(
         userId: userId,

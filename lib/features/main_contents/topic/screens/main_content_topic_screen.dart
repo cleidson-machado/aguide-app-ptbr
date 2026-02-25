@@ -976,7 +976,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
 
     try {
-      // Verificar ownership via API
+      // 📍 PONTO DE CONSUMO DO ENDPOINT: GET /api/v1/ownership/user/{userId}/content
+      // Verifica se usuário é dono do conteúdo antes de permitir ações de autoria
       final result = await viewModel.checkContentOwnership(content.id);
 
       // Fechar loading dialog
@@ -1335,14 +1336,14 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                             text: 'Este conteúdo é ',
                           ),
                           TextSpan(
-                            text: 'PROPRIETÁRIO ',
+                            text: 'PROPRIETÁRIO',
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               color: CupertinoColors.systemPink,
                             ),
                           ),
                           TextSpan(
-                            text: 'e está ',
+                            text: '\n e está ',
                           ),
                           TextSpan(
                             text: 'PROTEGIDO ',
@@ -1352,7 +1353,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                             ),
                           ),
                           TextSpan(
-                            text: 'por nossa tecnologia de validação.\n\n',
+                            text: 'por nossa \n tecnologia de validação.\n\n',
                           ),
                           TextSpan(
                             text: 'Você pode gerenciar seus ',
@@ -1481,47 +1482,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Constrói linha de informação de ownership (para modal)
-  static Widget _buildOwnershipInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: CupertinoColors.systemBlue),
-        const SizedBox(width: 8),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 12,
-                color: CupertinoColors.black,
-              ),
-              children: [
-                TextSpan(
-                  text: '$label ',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
-                TextSpan(
-                  text: value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: CupertinoColors.black,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ],
@@ -2101,7 +2061,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                 text: 'Nosso sistema não conseguiu associar este conteúdo à sua conta ',
                               ),
                               TextSpan(
-                                text: 'Google / YouTube',
+                                text: '\n Google / YouTube',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF1565C0),
@@ -2125,7 +2085,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                 text: 'Caso o esse comportamento persista, utilize a opção ',
                               ),
                               TextSpan(
-                                text: '"REGISTRO AVANÇADO"',
+                                text: '\n "REGISTRO AVANÇADO"',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -2133,7 +2093,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                 ),
                               ),
                               TextSpan(
-                                text: ' para que nossa equipe analise novamente, em detalhes, o vínculo desse conteúdo à sua conta.',
+                                text: '\n para que nossa equipe analise novamente, em detalhes, o vínculo desse conteúdo à sua conta.',
                               ),
                             ],
                           ),

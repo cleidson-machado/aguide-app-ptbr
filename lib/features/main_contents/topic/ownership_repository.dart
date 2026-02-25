@@ -43,6 +43,8 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
     return dio;
   }
 
+  // 📍 ENDPOINT CONSUMIDO: GET /api/v1/ownership/user/{userId}/content
+  // Retorna lista de conteúdos verificados do usuário
   @override
   Future<OwnershipResult> checkContentOwnership({
     required String userId,
@@ -127,6 +129,8 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
     }
   }
 
+  // 📍 ENDPOINT CONSUMIDO: GET /api/v1/ownership/user/{userId}/content
+  // Retorna TODOS os conteúdos verificados do usuário
   @override
   Future<OwnershipResult> getUserVerifiedContents({
     required String userId,

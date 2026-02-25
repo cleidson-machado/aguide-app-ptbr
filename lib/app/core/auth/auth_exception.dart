@@ -1,6 +1,8 @@
 /// Exceções customizadas para autenticação
 /// Evita expor stacktraces técnicos ao usuário final
 
+// ignore_for_file: dangling_library_doc_comments
+
 /// Exception genérica de autenticação
 class AuthException implements Exception {
   final String message;
