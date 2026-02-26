@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 

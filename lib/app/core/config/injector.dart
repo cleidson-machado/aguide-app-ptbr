@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_error_handler.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_login_view_model.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_service.dart';
@@ -8,9 +9,14 @@ import 'package:portugal_guide/features/auth_google/auth_google_view_model.dart'
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
+import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository.dart';
+import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository_interface.dart';
+import 'package:portugal_guide/features/user_verified_content/user_verified_content_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final injector =
@@ -29,6 +35,12 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<AuthTokenManager>(
     () => AuthTokenManager(injector<SharedPreferences>()),
   );
+  
+  // Registrar AuthErrorHandler (depende de AuthTokenManager)
+  injector.registerLazySingleton<AuthErrorHandler>(
+    () => AuthErrorHandler(injector<AuthTokenManager>()),
+  );
+  
   injector.registerLazySingleton<AuthCredentialsService>(
     () => AuthCredentialsService(injector<http.Client>()),
   );
@@ -65,6 +77,21 @@ Future<void> setupDependencies() async {
   injector.registerFactory<MainContentTopicViewModel>(
     () => MainContentTopicViewModel(
       repository: injector<MainContentTopicRepositoryInterface>(),
+    ),
+  );
+
+  //### For Ownership (Content Verification) ###
+  injector.registerLazySingleton<OwnershipRepositoryInterface>(
+    () => OwnershipRepository(),
+  );
+
+  //### For User Verified Content (Wizard) ###
+  injector.registerLazySingleton<UserVerifiedContentRepositoryInterface>(
+    () => UserVerifiedContentRepository(),
+  );
+  injector.registerFactory<UserVerifiedContentViewModel>(
+    () => UserVerifiedContentViewModel(
+      repository: injector<UserVerifiedContentRepositoryInterface>(),
     ),
   );
 }

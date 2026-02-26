@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Classe responsável por gerenciar o armazenamento e recuperação do token de autenticação
@@ -61,5 +62,51 @@ class AuthTokenManager {
       return 'Bearer $token';
     }
     return null;
+  }
+
+  /// Decodifica o JWT e retorna o payload como Map
+  /// Retorna null se o token for inválido ou não existir
+  Map<String, dynamic>? decodeToken() {
+    try {
+      final token = getToken();
+      if (token == null || token.isEmpty) return null;
+
+      // JWT formato: {header}.{payload}.{signature}
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      // Decodificar payload (parte central do JWT)
+      final payload = parts[1];
+      
+      // Normalizar base64 (adicionar padding se necessário)
+      var normalizedPayload = payload.replaceAll('-', '+').replaceAll('_', '/');
+      while (normalizedPayload.length % 4 != 0) {
+        normalizedPayload += '=';
+      }
+
+      // Decodificar de base64 e converter para Map
+      final decodedBytes = base64Url.decode(normalizedPayload);
+      final decodedString = utf8.decode(decodedBytes);
+      final Map<String, dynamic> decodedPayload = jsonDecode(decodedString);
+
+      return decodedPayload;
+    } catch (e) {
+      // Se houver erro ao decodificar, retornar null
+      return null;
+    }
+  }
+
+  /// Extrai o userId do token JWT
+  /// Retorna null se o token não existir ou não contiver userId
+  String? getUserId() {
+    final payload = decodeToken();
+    if (payload == null) return null;
+
+    // Tentar diferentes chaves comuns para userId
+    // (pode variar dependendo da implementação do backend)
+    return payload['userId'] as String? ??
+           payload['user_id'] as String? ??
+           payload['id'] as String? ??
+           payload['sub'] as String?; // 'sub' é padrão JWT para subject (user identifier)
   }
 }

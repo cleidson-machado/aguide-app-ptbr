@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
 import 'package:portugal_guide/util/oauth_debug_logger.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
-import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_model.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_mock_service.dart';
 
@@ -40,7 +40,7 @@ class AuthGoogleService {
   ];
 
   // Usar variável de ambiente para autenticação
-  static String get baseUrl => EnvKeyHelperConfig.mocApi3Auth;
+  static String get baseUrl => EnvKeyHelperConfig.apiBaseUrl;
 
   AuthGoogleService(this._googleSignIn, this._httpClient);
 
