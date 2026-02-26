@@ -1,22 +1,32 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_error_handler.dart';
+import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_criteria.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_service.dart';
 
 class MainContentTopicViewModel extends ChangeNotifier {
   final MainContentTopicRepositoryInterface _repository;
+  late final AuthErrorHandler _errorHandler;
 
   MainContentTopicViewModel({MainContentTopicRepositoryInterface? repository})
-    : _repository = repository ?? MainContentTopicRepository();
+    : _repository = repository ?? MainContentTopicRepository() {
+    // Inicializar error handler com token manager do injector
+    _errorHandler = injector<AuthErrorHandler>();
+  }
 
   // ===== Estado =====
   List<MainContentTopicModel> _contents = [];
   bool _isLoading = false;
-  String? _error;
+  Exception? _error; // ✅ MUDANÇA: Armazenar Exception ao invés de String
   bool _isInitialized = false; // Flag para controlar se já foi inicializado
 
   // ===== Estado de Paginação =====
@@ -37,7 +47,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
   // ===== Getters públicos =====
   List<MainContentTopicModel> get contents => _contents;
   bool get isLoading => _isLoading;
-  String? get error => _error;
+  Exception? get error => _error; // ✅ MUDANÇA: Retornar Exception
+  String? get errorMessage =>
+      _error != null ? AuthErrorHandler.getUserFriendlyMessage(_error!) : null;
+  bool get isAuthError =>
+      _error != null ? AuthErrorHandler.isAuthError(_error!) : false;
   bool get isInitialized => _isInitialized;
   bool get hasMorePages => _hasMorePages;
   bool get isLoadingMore => _isLoadingMore;
@@ -85,7 +99,14 @@ class MainContentTopicViewModel extends ChangeNotifier {
       _contents = items;
       _error = null;
     } catch (e) {
-      _error = "Erro ao carregar conteúdos: $e";
+      // ✅ NOVO: Usar error handler para converter em exception amigável
+      _error = _errorHandler.handleError(e, context: 'loadAllContents');
+      if (kDebugMode) {
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadAllContents()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
+      }
     }
     _setLoading(false);
   }
@@ -153,11 +174,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
         }
       }
     } catch (e) {
-      _error = "Erro ao carregar conteúdos: $e";
+      // ✅ NOVO: Usar error handler para converter em exception amigável
+      _error = _errorHandler.handleError(e, context: 'loadPagedContents');
       if (kDebugMode) {
-        debugPrint(
-          "❌ [MainContentTopicViewModel] Erro em loadPagedContents(): $e",
-        );
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadPagedContents()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
     _setLoading(false);
@@ -246,9 +269,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
 
       _error = null;
     } catch (e) {
-      _error = "Erro ao carregar próxima página: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'loadNextPage');
       if (kDebugMode) {
-        debugPrint("❌ [MainContentTopicViewModel] Erro em loadNextPage(): $e");
+        debugPrint("❌ [MainContentTopicViewModel] Erro em loadNextPage()");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
 
@@ -268,7 +295,11 @@ class MainContentTopicViewModel extends ChangeNotifier {
       _contents = items;
       _error = null;
     } catch (e) {
-      _error = "Erro na busca: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'searchContents');
+      if (kDebugMode && _error is AuthException) {
+        debugPrint((_error as AuthException).toTechnicalString());
+      }
     }
     _setLoading(false);
   }
@@ -333,9 +364,13 @@ class MainContentTopicViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      _error = "Erro ao aplicar filtro: $e";
+      // ✅ NOVO: Usar error handler
+      _error = _errorHandler.handleError(e, context: 'applyManualFilter');
       if (kDebugMode) {
-        debugPrint("❌ [MainContentTopicViewModel] Erro ao aplicar filtro: $e");
+        debugPrint("❌ [MainContentTopicViewModel] Erro ao aplicar filtro");
+        if (_error is AuthException) {
+          debugPrint((_error as AuthException).toTechnicalString());
+        }
       }
     }
 
@@ -369,6 +404,81 @@ class MainContentTopicViewModel extends ChangeNotifier {
       return const ValidationButtonConfig(
         text: 'ESTE VÍDEO É SEU? MONETIZE AGORA MESMO!',
         backgroundColor: Color(0xFF1565C0), // Azul escuro (Material Blue 800)
+      );
+    }
+  }
+
+  // ===== Ownership (Verificação de Autoria) =====
+  
+  /// Verifica se o usuário logado é dono do conteúdo especificado
+  /// 
+  /// Retorna [OwnershipResult] com informações sobre a verificação:
+  /// - Se `isOwner = true`: usuário é dono, modal pode ser exibida
+  /// - Se `isOwner = false`: usuário NÃO é dono, exibir mensagem de alerta
+  /// 
+  /// [contentId] - ID do conteúdo a verificar
+  Future<OwnershipResult> checkContentOwnership(String contentId) async {
+    if (kDebugMode) {
+      debugPrint('🔍 [MainContentTopicViewModel] Verificando ownership do conteúdo');
+      debugPrint('   Content ID: $contentId');
+    }
+
+    try {
+      // Obter userId do token JWT
+      final tokenManager = injector<AuthTokenManager>();
+      final userId = tokenManager.getUserId();
+
+      if (userId == null || userId.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('❌ [MainContentTopicViewModel] Erro: userId não encontrado no token');
+        }
+        
+        return OwnershipResult.notOwner(
+          OwnershipErrorModel(
+            error: 'INVALID_TOKEN',
+            message: 'Token de autenticação inválido. Faça login novamente.',
+            timestamp: DateTime.now().toIso8601String(),
+          ),
+        );
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ [MainContentTopicViewModel] User ID extraído: $userId');
+      }
+
+      // 📍 CONSUMO DO ENDPOINT: GET /api/v1/ownership/user/{userId}/content
+      // Chama repository que faz a requisição HTTP para verificar ownership
+      final ownershipRepo = injector<OwnershipRepositoryInterface>();
+      final result = await ownershipRepo.checkContentOwnership(
+        userId: userId,
+        contentId: contentId,
+      );
+
+      if (result.isOwner) {
+        if (kDebugMode) {
+          debugPrint('✅ [MainContentTopicViewModel] Ownership confirmado!');
+          debugPrint('   Conteúdos verificados: ${result.contents?.length ?? 0}');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('❌ [MainContentTopicViewModel] Ownership não confirmado');
+          debugPrint('   Erro: ${result.error?.error}');
+          debugPrint('   Mensagem: ${result.error?.message}');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [MainContentTopicViewModel] Erro ao verificar ownership: $e');
+      }
+      
+      return OwnershipResult.notOwner(
+        OwnershipErrorModel(
+          error: 'UNEXPECTED_ERROR',
+          message: 'Erro inesperado ao verificar autoria. Tente novamente.',
+          timestamp: DateTime.now().toIso8601String(),
+        ),
       );
     }
   }

@@ -129,7 +129,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     if (viewModel.error != null) {
       return Center(
         child: Text(
-          viewModel.error!,
+          viewModel.errorMessage ?? 'Erro desconhecido',
           style: const TextStyle(color: CupertinoColors.systemRed),
         ),
       );

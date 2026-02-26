@@ -5,6 +5,7 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/repositories/gen_crud_repository.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/auth/auth_http_interceptor.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_repository_interface.dart';
 
@@ -20,32 +21,23 @@ class MainContentTopicRepository
       );
 
   /// Configurações customizadas do Dio para esse Repository
+  /// ✅ Usa AuthHttpInterceptor global para tratamento centralizado de auth
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: EnvKeyHelperConfig.mocApi2,
+        baseUrl: EnvKeyHelperConfig.apiBaseUrl,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );
 
+    // ✅ NOVO: Interceptor global de autenticação
+    final tokenManager = injector<AuthTokenManager>();
+    final devToken = EnvKeyHelperConfig.tokenKeyForMocApi2;
+
     dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // Obter token do AuthTokenManager
-          final tokenManager = injector<AuthTokenManager>();
-          final token = tokenManager.getToken();
-          
-          print('🔑 [MainContentTopicRepository] Token obtido: ${token?.substring(0, 20) ?? "null"}...');
-          
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-            print('✅ [MainContentTopicRepository] Header Authorization adicionado');
-          } else {
-            print('⚠️ [MainContentTopicRepository] Token não encontrado!');
-          }
-          
-          return handler.next(options);
-        },
+      AuthHttpInterceptor(
+        tokenManager,
+        fallbackToken: devToken,
       ),
     );
 

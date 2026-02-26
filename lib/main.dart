@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
 
 final logger = Logger(); // Instância global do Logger
-const String envFileName = ".env.dev";
+const String envFileName = ".env.prod";
 
 // ########### Ignora erros de certificado SSL... deixe aqui apenas para testes locais, não use em produção! --- INICO
 class MyHttpOverrides extends HttpOverrides {
