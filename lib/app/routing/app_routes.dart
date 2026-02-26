@@ -6,6 +6,7 @@ abstract class AppRoutes {
   static const String main = '/home'; // Tela principal após login
   static const String login = '/login';
   static const String register = '/register';
+  static const String userVerifiedContentWizard = '/user-verified-content/wizard'; // Wizard de verificação de conteúdo
   static const String admin = '/admin';
   static const String sales = '/sales';
   static const String salesProfile = '/sales/profile';

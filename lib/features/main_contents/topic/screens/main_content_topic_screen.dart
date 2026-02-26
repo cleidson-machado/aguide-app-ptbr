@@ -208,7 +208,10 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
   /// Widget do botão de validação de autoria
   /// ✅ CORRIGIDO: Renderização individual e isolada por item
-  static Widget _buildValidationButton(MainContentTopicModel content) {
+  static Widget _buildValidationButton(
+    BuildContext context,
+    MainContentTopicModel content,
+  ) {
     // ✅ DEBUG: Log do validationHash para verificar valores
     if (kDebugMode) {
       debugPrint(
@@ -236,11 +239,17 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         color: buttonColor,
         borderRadius: BorderRadius.circular(5),
         onPressed: () {
-          // TODO: Implementar ação de validação de autoria
-          if (kDebugMode) {
-            debugPrint(
-              '🎯 [ValidationButton] Clicado - ID: ${content.id}, hasValidation: $hasValidation',
-            );
+          if (hasValidation) {
+            // ✅ Botão AZUL: Mostra modal informativo
+            _showValidatedContentDialog(context, content);
+          } else {
+            // ✅ Botão VERMELHO: Navega para o wizard de verificação
+            if (kDebugMode) {
+              debugPrint(
+                '🎯 [ValidationButton] Navegando para wizard - ID: ${content.id}',
+              );
+            }
+            Modular.to.navigate(AppRoutes.userVerifiedContentWizard);
           }
         },
         child: Text(
@@ -256,7 +265,98 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
+  /// Exibe modal informativo para conteúdo já validado
+  static void _showValidatedContentDialog(
+    BuildContext context,
+    MainContentTopicModel content,
+  ) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.checkmark_seal_fill,
+              color: Color(0xFF1565C0),
+              size: 28,
+            ),
+            SizedBox(width: 8),
+            Text('Conteúdo Validado'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            const Text(
+              'Este conteúdo já está vinculado e validado como pertencente ao criador.',
+              style: TextStyle(fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Benefícios Ativos:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBenefitRow('Autoria reconhecida publicamente'),
+                  _buildBenefitRow('Monetização ativa'),
+                  _buildBenefitRow('Suporte prioritário'),
+                  _buildBenefitRow('Estatísticas detalhadas'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendi'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget auxiliar para exibir itens de benefício
+  static Widget _buildBenefitRow(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(
+            CupertinoIcons.checkmark_circle_fill,
+            color: Color(0xFF4CAF50),
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Widget _buildContentCard(
+    BuildContext context,
     MainContentTopicModel content,
     MainContentTopicViewModel viewModel,
   ) {
@@ -316,7 +416,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
           // Botão de destaque - Validação de Autoria (Dinâmico)
-          _MainContentTopicScreenState._buildValidationButton(content),
+          _MainContentTopicScreenState._buildValidationButton(context, content),
           // Conteúdo do card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
@@ -1378,7 +1478,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                             ),
                           ),
                           TextSpan(
-                            text: 'deste conteúdo em seu ',
+                            text: 'deste conteúdo \n em seu ',
                           ),
                           TextSpan(
                             text: 'painel de controle',
@@ -2253,7 +2353,7 @@ class MainContentCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: _MainContentTopicScreenState._buildContentCard(content, viewModel),
+      child: _MainContentTopicScreenState._buildContentCard(context, content, viewModel),
     );
   }
 }
