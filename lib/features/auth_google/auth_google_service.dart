@@ -40,7 +40,7 @@ class AuthGoogleService {
   ];
 
   // Usar variável de ambiente para autenticação
-  static String get baseUrl => EnvKeyHelperConfig.mocApi3Auth;
+  static String get baseUrl => EnvKeyHelperConfig.apiBaseUrl;
 
   AuthGoogleService(this._googleSignIn, this._httpClient);
 

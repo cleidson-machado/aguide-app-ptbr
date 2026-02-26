@@ -9,7 +9,7 @@ class AuthCredentialsService {
   final http.Client client;
   
   // Usar variável de ambiente específica para autenticação
-  static String get baseUrl => EnvKeyHelperConfig.mocApi3Auth;
+  static String get baseUrl => EnvKeyHelperConfig.apiBaseUrl;
 
   AuthCredentialsService(this.client);
 

@@ -25,7 +25,7 @@ class MainContentTopicRepository
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: EnvKeyHelperConfig.mocApi2,
+        baseUrl: EnvKeyHelperConfig.apiBaseUrl,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
       ),
     );

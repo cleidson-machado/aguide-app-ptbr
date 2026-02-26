@@ -123,6 +123,173 @@ injector.registerFactory<MainContentTopicViewModel>(
 
 ---
 
+## 🔄 DRY (Don't Repeat Yourself) - Evitar Duplicação
+
+### ⚠️ Princípio Fundamental
+
+**Clean Code:** Toda informação deve ter uma **representação única e autoritativa** no sistema.
+
+**SOLID (Open/Closed):** Código deve ser **aberto para extensão**, mas **fechado para modificação** desnecessária.
+
+### 🚨 Problema Comum: Endpoints Duplicados
+
+```dart
+// ❌ ERRADO - Violação de DRY
+class OwnershipRepository {
+  Future<Result> checkOwnership(String userId) async {
+    final endpoint = '/ownership/user/$userId/content'; // Duplicado
+    final response = await _dio.get(endpoint);
+    // ...
+  }
+
+  Future<Result> getUserContents(String userId) async {
+    final endpoint = '/ownership/user/$userId/content'; // Duplicado
+    final response = await _dio.get(endpoint);
+    // ...
+  }
+}
+```
+
+**Problemas:**
+- 🚨 Mudança de URL requer edição em **múltiplos lugares**
+- 🚨 Risco de **inconsistência** (esquecer de atualizar um local)
+- 🚨 Dificulta **testes unitários** (endpoint não é mockável)
+- 🚨 Viola **Single Source of Truth**
+
+### ✅ Solução: Método Helper Privado
+
+```dart
+// ✅ CORRETO - Princípio DRY aplicado
+class OwnershipRepository {
+  /// Helper privado: Constrói endpoint de ownership (Single Source of Truth)
+  String _buildOwnershipEndpoint(String userId) {
+    return '/ownership/user/$userId/content';
+  }
+
+  Future<Result> checkOwnership(String userId) async {
+    final endpoint = _buildOwnershipEndpoint(userId);
+    final response = await _dio.get(endpoint);
+    // ...
+  }
+
+  Future<Result> getUserContents(String userId) async {
+    final endpoint = _buildOwnershipEndpoint(userId);
+    final response = await _dio.get(endpoint);
+    // ...
+  }
+}
+```
+
+**Benefícios:**
+- ✅ **DRY Compliance:** Endpoint definido em 1 único lugar
+- ✅ **Manutenibilidade:** Mudanças exigem 1 edição apenas
+- ✅ **Testabilidade:** Método mockável em testes
+- ✅ **Legibilidade:** Nome descritivo documenta propósito
+- ✅ **Consistência:** Impossível ter endpoints divergentes
+
+### 🎯 Outros Casos de Duplicação Comuns
+
+#### 1. Strings de Validação
+
+```dart
+// ❌ ERRADO
+if (email.isEmpty || !email.contains('@')) { /* ... */ }
+if (email.isEmpty || !email.contains('@')) { /* ... */ }
+
+// ✅ CORRETO
+bool _isValidEmail(String email) => email.isNotEmpty && email.contains('@');
+if (_isValidEmail(email)) { /* ... */ }
+```
+
+#### 2. Códigos HTTP
+
+```dart
+// ❌ ERRADO
+if (response.statusCode == 200) { /* ... */ }
+if (response.statusCode == 200) { /* ... */ }
+
+// ✅ CORRETO - Constantes nomeadas
+class HttpStatus {
+  static const int ok = 200;
+  static const int notFound = 404;
+}
+if (response.statusCode == HttpStatus.ok) { /* ... */ }
+```
+
+#### 3. Mensagens de Erro
+
+```dart
+// ❌ ERRADO
+throw Exception('Erro ao carregar dados');
+throw Exception('Erro ao carregar dados');
+
+// ✅ CORRETO - Classe ErrorMessages centralizada
+class ErrorMessages {
+  static const String loadDataError = 'Erro ao carregar dados';
+}
+throw Exception(ErrorMessages.loadDataError);
+```
+
+#### 4. Query Parameters Repetidos
+
+```dart
+// ❌ ERRADO
+final url1 = '$baseUrl?page=$page&size=$size&sort=title';
+final url2 = '$baseUrl?page=$page&size=$size&sort=date';
+
+// ✅ CORRETO - Método helper
+Map<String, dynamic> _buildPaginationParams(int page, int size, String sort) {
+  return {'page': page, 'size': size, 'sort': sort};
+}
+```
+
+### 📋 Checklist: Detectar Duplicação
+
+Antes de fazer commit, perguntar:
+- [ ] Este endpoint/URL já existe em outro método?
+- [ ] Esta string literal aparece em mais de 1 lugar?
+- [ ] Esta validação é repetida em múltiplos métodos?
+- [ ] Estas constantes numéricas são usadas sem nome descritivo?
+- [ ] Este trecho de código tem lógica idêntica em outro local?
+
+### 🚨 Regras Obrigatórias
+
+**SEMPRE:**
+- Criar método helper privado para strings/endpoints duplicados
+- Usar constantes nomeadas para valores mágicos (magic numbers/strings)
+- Centralizar mensagens de erro em classes utilitárias
+- Nomear métodos helpers de forma descritiva (não apenas `_getEndpoint()`)
+
+**NUNCA:**
+- Copiar/colar código sem refatorar para método reutilizável
+- Usar mesma string literal hardcoded em mais de 1 lugar
+- Ignorar warnings de duplicação em code reviews
+
+### 🎯 Quando Criar Classe Centralizada
+
+Se **3 ou mais repositories** usam o mesmo padrão de endpoint:
+
+```dart
+// lib/app/core/api/api_endpoints.dart
+class ApiEndpoints {
+  static String ownershipContent(String userId) => '/ownership/user/$userId/content';
+  static String contents({int? page, int? size}) {
+    return '/contents${page != null ? "?page=$page&size=$size" : ""}';
+  }
+  static const String users = '/users';
+}
+
+// Uso em repositories
+final endpoint = ApiEndpoints.ownershipContent(userId);
+```
+
+**Vantagens:**
+- Documentação centralizada de todas as rotas da API
+- Facilita mudanças de versionamento (ex: `/api/v2/`)
+- Único ponto de manutenção
+
+---
+
 ## 🧭 Sistema de Rotas (Flutter Modular)
 
 ### Configuração de Rotas
@@ -945,7 +1112,7 @@ static const String baseUrl = 'https://api.aguide-ptbr.com.br/api/v1';
 // ✅ CORRETO - Usar variável de ambiente
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 
-static String get baseUrl => EnvKeyHelperConfig.mocApi2;
+static String get baseUrl => EnvKeyHelperConfig.apiBaseUrl;
 ```
 
 ## Assets e Recursos
@@ -977,6 +1144,8 @@ flutter:
 ❌ Ignorar tratamento de exceções em chamadas assíncronas
 ❌ Logar informações sensíveis (tokens, dados pessoais)
 ❌ Hardcoded strings traduzíveis (usar i18n)
+❌ **Duplicar endpoints, strings literais ou validações (violação DRY)**
+❌ **Usar mesma string hardcoded em múltiplos lugares (criar método helper)**
 ❌ Image.network sem CachedNetworkImage em listas
 ❌ onChanged sem debounce para busca
 ❌ ListView sem keys em itens dinâmicos

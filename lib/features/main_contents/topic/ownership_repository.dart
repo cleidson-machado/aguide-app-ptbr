@@ -19,7 +19,7 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: EnvKeyHelperConfig.mocApi2,
+        baseUrl: EnvKeyHelperConfig.apiBaseUrl,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         validateStatus: (status) {
           // Aceitar tanto 200 (sucesso) quanto 404 (not found)
@@ -43,6 +43,12 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
     return dio;
   }
 
+  /// 🔧 Helper privado: Constrói endpoint de ownership para evitar duplicação (DRY)
+  /// Centraliza a construção da URL seguindo Single Source of Truth
+  String _buildOwnershipEndpoint(String userId) {
+    return '/ownership/user/$userId/content';
+  }
+
   // 📍 ENDPOINT CONSUMIDO: GET /api/v1/ownership/user/{userId}/content
   // Retorna lista de conteúdos verificados do usuário
   @override
@@ -55,7 +61,7 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
     print('   Content ID: $contentId');
 
     try {
-      final endpoint = '/ownership/user/$userId/content';
+      final endpoint = _buildOwnershipEndpoint(userId);
       
       final response = await _dio.get(endpoint);
 
@@ -139,7 +145,7 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
     print('   User ID: $userId');
 
     try {
-      final endpoint = '/ownership/user/$userId/content';
+      final endpoint = _buildOwnershipEndpoint(userId);
       
       final response = await _dio.get(endpoint);
 
