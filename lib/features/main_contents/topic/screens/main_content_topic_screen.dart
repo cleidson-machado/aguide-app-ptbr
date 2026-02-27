@@ -28,6 +28,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
+  double _savedScrollPosition = 0.0; // ✅ Posição do scroll antes de navegar
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -84,6 +85,54 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     _debounce = Timer(const Duration(milliseconds: 500), () {
       viewModel.searchContents(value);
     });
+  }
+
+  /// ✅ Salva a posição atual do scroll antes de navegar
+  void _saveScrollPosition() {
+    if (_scrollController.hasClients) {
+      _savedScrollPosition = _scrollController.position.pixels;
+      if (kDebugMode) {
+        debugPrint('💾 [MainContentTopicScreen] Scroll salvo: $_savedScrollPosition');
+      }
+    }
+  }
+
+  /// ✅ Restaura a posição do scroll após voltar da navegação
+  Future<void> _restoreScrollPosition() async {
+    // Aguarda o frame ser renderizado completamente
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    if (_scrollController.hasClients && _savedScrollPosition > 0) {
+      // Usa animação suave para melhor UX
+      await _scrollController.animateTo(
+        _savedScrollPosition,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      
+      if (kDebugMode) {
+        debugPrint('✅ [MainContentTopicScreen] Scroll restaurado: $_savedScrollPosition');
+      }
+    }
+  }
+
+  /// ✅ Navega para o wizard preservando o estado do scroll
+  Future<void> _navigateToWizardPreservingScroll() async {
+    _saveScrollPosition();
+    
+    if (kDebugMode) {
+      debugPrint('🚀 [MainContentTopicScreen] Navegando para wizard...');
+    }
+    
+    // Navega e aguarda o retorno (bloqueia até voltar)
+    await Modular.to.pushNamed(AppRoutes.userVerifiedContentWizard);
+    
+    if (kDebugMode) {
+      debugPrint('🔙 [MainContentTopicScreen] Retornou do wizard');
+    }
+    
+    // Restaura scroll após voltar
+    await _restoreScrollPosition();
   }
 
   @override
@@ -195,6 +244,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                   key: ValueKey('card_${content.id}_${content.validationHash ?? "null"}'),
                   content: content,
                   viewModel: viewModel,
+                  onNavigateToWizard: _navigateToWizardPreservingScroll, // ✅ Passa callback
                 );
               },
               childCount:
@@ -208,9 +258,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
   /// Widget do botão de validação de autoria
   /// ✅ CORRIGIDO: Renderização individual e isolada por item
+  /// ✅ PRESERVA SCROLL: Recebe callback para navegação que preserva posição
   static Widget _buildValidationButton(
     BuildContext context,
     MainContentTopicModel content,
+    VoidCallback onNavigateToWizard, // ✅ Callback para navegação
   ) {
     // ✅ DEBUG: Log do validationHash para verificar valores
     if (kDebugMode) {
@@ -243,13 +295,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             // ✅ Botão AZUL: Mostra modal informativo
             _showValidatedContentDialog(context, content);
           } else {
-            // ✅ Botão VERMELHO: Navega para o wizard de verificação
+            // ✅ Botão VERMELHO: Navega preservando scroll
             if (kDebugMode) {
               debugPrint(
                 '🎯 [ValidationButton] Navegando para wizard - ID: ${content.id}',
               );
             }
-            Modular.to.navigate(AppRoutes.userVerifiedContentWizard);
+            onNavigateToWizard(); // ✅ Usa callback ao invés de navegação direta
           }
         },
         child: Text(
@@ -359,6 +411,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     BuildContext context,
     MainContentTopicModel content,
     MainContentTopicViewModel viewModel,
+    VoidCallback onNavigateToWizard, // ✅ Callback para navegação
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -416,7 +469,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
           // Botão de destaque - Validação de Autoria (Dinâmico)
-          _MainContentTopicScreenState._buildValidationButton(context, content),
+          _MainContentTopicScreenState._buildValidationButton(
+            context, 
+            content, 
+            onNavigateToWizard, // ✅ Repassa callback
+          ),
           // Conteúdo do card
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
@@ -2335,11 +2392,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 class MainContentCard extends StatelessWidget {
   final MainContentTopicModel content;
   final MainContentTopicViewModel viewModel;
+  final VoidCallback onNavigateToWizard; // ✅ Callback para navegação preservando scroll
 
   const MainContentCard({
     super.key,
     required this.content,
     required this.viewModel,
+    required this.onNavigateToWizard,
   });
 
   @override
@@ -2353,7 +2412,12 @@ class MainContentCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: _MainContentTopicScreenState._buildContentCard(context, content, viewModel),
+      child: _MainContentTopicScreenState._buildContentCard(
+        context, 
+        content, 
+        viewModel,
+        onNavigateToWizard, // ✅ Repassa callback
+      ),
     );
   }
 }
