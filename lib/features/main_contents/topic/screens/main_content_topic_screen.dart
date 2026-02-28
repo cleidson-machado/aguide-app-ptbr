@@ -124,8 +124,19 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       debugPrint('🚀 [MainContentTopicScreen] Navegando para wizard...');
     }
     
-    // Navega e aguarda o retorno (bloqueia até voltar)
-    await Modular.to.pushNamed(AppRoutes.userVerifiedContentWizard);
+    // ╔════════════════════════════════════════════════════════════════════════════╗
+    // ║  🎯 INICIA O FLUXO: IMAGE SLIDER → WIZARD DE VERIFICAÇÃO                   ║
+    // ║                                                                            ║
+    // ║  1️⃣ Image Slider (Promo): user_promo_main_contents_screen.dart            ║
+    // ║     - 3 páginas com imagens promocionais                                   ║
+    // ║     - Ao finalizar, navega automaticamente para o wizard                   ║
+    // ║                                                                            ║
+    // ║  2️⃣ Wizard (Verificação): user_verified_content_wizard_screen.dart        ║
+    // ║     - 3 etapas com formulários                                             ║
+    // ║     - Ocupa tela inteira, fora do padrão de navegação por Tabs            ║
+    // ╚════════════════════════════════════════════════════════════════════════════╝
+    // Navega primeiro para o Image Slider (que depois abre o wizard)
+    await Modular.to.pushNamed(AppRoutes.userPromoSlider);
     
     if (kDebugMode) {
       debugPrint('🔙 [MainContentTopicScreen] Retornou do wizard');
@@ -274,8 +285,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     // Determina cor e texto baseado no validationHash
     // ✅ REGRA: validationHash != null → AZUL (Autoria Reconhecida)
     // ✅ REGRA: validationHash == null → VERMELHO (Sem Autoria)
-    final bool hasValidation = content.validationHash != null && 
-                               content.validationHash!.trim().isNotEmpty;
+    final bool hasValidation = content.validationHash != null && content.validationHash!.trim().isNotEmpty;
     final Color buttonColor = hasValidation 
         ? const Color(0xFF1565C0)  // ✅ Azul para validado
         : const Color(0xFFB71C1C); // ✅ Vermelho para não validado
