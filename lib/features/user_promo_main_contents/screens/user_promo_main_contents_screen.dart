@@ -28,7 +28,7 @@ class UserPromoMainContentsScreen extends StatefulWidget {
 }
 
 class _UserPromoMainContentsScreenState
-    extends State<UserPromoMainContentsScreen> with SingleTickerProviderStateMixin {
+    extends State<UserPromoMainContentsScreen> with TickerProviderStateMixin {
   // Controller para gerenciar a navegação entre páginas
   final PageController _pageController = PageController();
   
@@ -46,6 +46,19 @@ class _UserPromoMainContentsScreenState
   
   // Controller de animação para a barra de progresso
   AnimationController? _progressController;
+  
+  // ╔═══════════════════════════════════════════════════════════════════════╗
+  // ║ CONTROLLERS DOS CÍRCULOS COLORIDOS ANIMADOS - INÍCIO                 ║
+  // ╚═══════════════════════════════════════════════════════════════════════╝
+  AnimationController? _yellowCircleController;      // Círculo amarelo grande
+  AnimationController? _purpleCircleController;      // Círculo roxo grande
+  AnimationController? _orangeCircleController;      // Círculo laranja médio
+  AnimationController? _pinkCircleController;        // Círculo rosa médio
+  AnimationController? _cyanCircleController;        // Círculo cyan médio
+  AnimationController? _lightPurpleCircleController; // Círculo roxo claro médio
+  // ╔═══════════════════════════════════════════════════════════════════════╗
+  // ║ CONTROLLERS DOS CÍRCULOS COLORIDOS ANIMADOS - FIM                    ║
+  // ╚═══════════════════════════════════════════════════════════════════════╝
 
   @override
   void initState() {
@@ -54,6 +67,50 @@ class _UserPromoMainContentsScreenState
       vsync: this,
       duration: const Duration(seconds: 5),
     );
+    
+    // ╔═══════════════════════════════════════════════════════════════════════╗
+    // ║ INICIALIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - INÍCIO               ║
+    // ╚═══════════════════════════════════════════════════════════════════════╝
+    
+    // Animação do círculo amarelo (movimento diagonal lento)
+    _yellowCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+    
+    // Animação do círculo roxo (movimento diagonal oposto, mais rápido)
+    _purpleCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+    
+    // Animação do círculo laranja (órbita próxima)
+    _orangeCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+    
+    // Animação do círculo rosa (órbita próxima)
+    _pinkCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+    
+    // Animação do círculo cyan (órbita próxima)
+    _cyanCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+    
+    // Animação do círculo roxo claro (órbita próxima)
+    _lightPurpleCircleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat(reverse: true);
+    
+    // ╔═══════════════════════════════════════════════════════════════════════╗
+    // ║ INICIALIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - FIM                  ║
+    // ╚═══════════════════════════════════════════════════════════════════════╝
     
     // Inicia a animação da primeira página se for página de abertura
     if (_isOpeningPage(_currentPage)) {
@@ -65,6 +122,12 @@ class _UserPromoMainContentsScreenState
   void dispose() {
     _autoAdvanceTimer?.cancel();
     _progressController?.dispose();
+    _yellowCircleController?.dispose();
+    _purpleCircleController?.dispose();
+    _orangeCircleController?.dispose();
+    _pinkCircleController?.dispose();
+    _cyanCircleController?.dispose();
+    _lightPurpleCircleController?.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -166,7 +229,7 @@ class _UserPromoMainContentsScreenState
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: CupertinoColors.black.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 onPressed: _skipOnboarding,
                 child: const Text(
                   'Pular',
@@ -200,21 +263,16 @@ class _UserPromoMainContentsScreenState
   Widget _buildPage1Opening() {
     return _buildFullScreenImage(
       label: 'Abertura - Estágio 1',
-      assetPath: 'assets/promo/stage1_opening.jpg',
+      assetPath: 'assets/promo/stage1_opening.png',
       backgroundColor: CupertinoColors.white,
     );
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
-  /// PÁGINA 2 - Estágio 1 Mensagem (Texto + Imagem centro)
+  /// PÁGINA 2 - Estágio 1 Mensagem (Texto + Imagem centro com círculos animados)
   /// ═══════════════════════════════════════════════════════════════════════
   Widget _buildPage2Message() {
-    return _buildMessagePage(
-      topText: 'SEU CONTEÚDO É ÓTIMO!\nAGORA FAÇA ELE RENDER!\nMAIS, BEM MAIS!',
-      bottomText: 'TRANSFORME CADA VÍDEO EM\nCRESCIMENTO REAL: MAIS\nINSCRITOS, MAIS FÃS E MAIS\nOPORTUNIDADES DE GANHAR COM\nO QUE VOCÊ JÁ SABE',
-      imageAsset: 'assets/promo/stage1_center_image.jpg',
-      backgroundColor: const Color(0xFF4A90E2), // Azul royal
-    );
+    return _buildPage2MessageWithFloatingCircles();
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
@@ -223,7 +281,7 @@ class _UserPromoMainContentsScreenState
   Widget _buildPage3Opening() {
     return _buildFullScreenImage(
       label: 'Abertura - Estágio 2',
-      assetPath: 'assets/promo/stage2_opening.jpg',
+      assetPath: 'assets/promo/stage2_opening.png',
       backgroundColor: CupertinoColors.systemGreen.withValues(alpha: 0.1),
     );
   }
@@ -246,7 +304,7 @@ class _UserPromoMainContentsScreenState
   Widget _buildPage5Opening() {
     return _buildFullScreenImage(
       label: 'Abertura - Estágio 3',
-      assetPath: 'assets/promo/stage3_opening.jpg',
+      assetPath: 'assets/promo/stage3_opening.png',
       backgroundColor: CupertinoColors.systemOrange.withValues(alpha: 0.1),
     );
   }
@@ -256,7 +314,7 @@ class _UserPromoMainContentsScreenState
   /// ═══════════════════════════════════════════════════════════════════════
   Widget _buildPage6Message() {
     return _buildMessagePage(
-      topText: 'GANHE MAIS POR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA',
+      topText: 'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
       bottomText: 'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
       imageAsset: 'assets/promo/stage3_center_image.jpg',
       backgroundColor: const Color(0xFF4A90E2), // Azul royal (consistência visual)
@@ -272,82 +330,58 @@ class _UserPromoMainContentsScreenState
     required String assetPath,
     required Color backgroundColor,
   }) {
-    // TODO: Adicionar 3 imagens de abertura fullscreen (páginas 1, 3, 5):
-    //       - assets/promo/stage1_opening.jpg (Página 1 - Estágio 1)
-    //       - assets/promo/stage2_opening.jpg (Página 3 - Estágio 2)
-    //       - assets/promo/stage3_opening.jpg (Página 5 - Estágio 3)
-    //       Substituir Container placeholder por: Image.asset(assetPath, fit: BoxFit.cover)
     return Stack(
       children: [
-        // Imagem de fundo (placeholder)
+        // ═══════════════════════════════════════════════════════════════
+        // Fundo com Gradiente
+        // ═══════════════════════════════════════════════════════════════
         Container(
           width: double.infinity,
           height: double.infinity,
-          color: backgroundColor,
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    CupertinoIcons.photo_fill_on_rectangle_fill,
-                    size: 120,
-                    color: CupertinoColors.systemGrey2,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.systemGrey,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 67, 123, 208), // Azul profundo
+                Color.fromARGB(255, 92, 111, 119), // Ciano vibrante
+                Color.fromARGB(255, 213, 198, 118), // Amarelo dourado
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+
+        // ═══════════════════════════════════════════════════════════════
+        // Imagem PNG com Transparência (sobreposta ao gradiente)
+        // ═══════════════════════════════════════════════════════════════
+        Positioned.fill(
+          child: Image.asset(
+            assetPath,
+            fit: BoxFit.cover, // Preenche toda a tela (pode cortar bordas)
+            errorBuilder: (context, error, stackTrace) {
+              // Fallback caso a imagem não carregue
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.exclamationmark_triangle,
+                      size: 60,
+                      color: CupertinoColors.systemRed,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    assetPath,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.systemGrey3,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.systemGrey5,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: CupertinoColors.systemGrey4,
-                        width: 1,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Erro ao carregar:\n$assetPath',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 14,
                       ),
                     ),
-                    child: const Column(
-                      children: [
-                        Text(
-                          '📸 Imagem de Abertura',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: CupertinoColors.systemGrey,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Auto-avança em 5s',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: CupertinoColors.systemGrey2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
 
@@ -480,6 +514,260 @@ class _UserPromoMainContentsScreenState
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PÁGINA 2 ESPECIAL - Com Imagem de Retrato e Círculos Flutuantes
+  /// ═══════════════════════════════════════════════════════════════════════
+  Widget _buildPage2MessageWithFloatingCircles() {
+    const backgroundColor = Color(0xFF4A90E2); // Azul royal
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            backgroundColor,
+            backgroundColor.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Column(
+            children: [
+              // ➤ Texto Superior (Título)
+              const Expanded(
+                flex: 9,
+                child: Center(
+                  child: Text(
+                    'SEU CONTEÚDO \nÉ ÓTIMO!\nAGORA FAÇA\nELE RENDER!\nMAIS, BEM MAIS!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: CupertinoColors.white,
+                      height: 1.2,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ➤ Imagem Central com Círculos Animados (sem sombras)
+              Expanded(
+                flex: 15,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - INÍCIO                ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      
+                      // ═══════════════════════════════════════════════
+                      // Círculo Amarelo (canto superior direito)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _yellowCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: -15 + (_yellowCircleController!.value * 20),
+                            right: -10 + (_yellowCircleController!.value * 15),
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFFC107), // Amarelo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo (canto inferior esquerdo)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _purpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: -10 + (_purpleCircleController!.value * 25),
+                            left: 10 + (_purpleCircleController!.value * 20),
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color.fromARGB(255, 203, 90, 209), // Roxo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Laranja (lado direito médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _orangeCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 100 + (_orangeCircleController!.value * 30),
+                            right: 10 + (_orangeCircleController!.value * 15),
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF6B35), // Laranja vibrante
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Rosa (lado esquerdo superior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _pinkCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 50 + (_pinkCircleController!.value * 25),
+                            left: 20 + (_pinkCircleController!.value * 12),
+                            child: Container(
+                              width: 55,
+                              height: 55,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF69B4), // Rosa pink
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Cyan (lado direito inferior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _cyanCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 50 + (_cyanCircleController!.value * 20),
+                            right: 30 + (_cyanCircleController!.value * 18),
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF00BCD4), // Cyan/Turquesa
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo Claro (lado esquerdo médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _lightPurpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 150 + (_lightPurpleCircleController!.value * 35),
+                            left: 15 + (_lightPurpleCircleController!.value * 10),
+                            child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF9C27B0), // Roxo claro/magenta
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - FIM                   ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 2) - INÍCIO                       ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/promo/stage1_opening_retrato.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: CupertinoColors.systemGrey6,
+                              child: const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.exclamationmark_triangle,
+                                      size: 50,
+                                      color: CupertinoColors.systemRed,
+                                    ),
+                                    SizedBox(height: 12),
+                                    Text(
+                                      'Erro ao carregar\nstage1_opening_retrato.png',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: CupertinoColors.systemGrey2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 2) - FIM                          ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                    ],
+                  ),
+                ),
+              ),
+
+              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+              const Padding(
+                padding: EdgeInsets.only(top: 18, bottom: 20),
+                child: Text(
+                  'TRANSFORME CADA VÍDEO EM\nCRESCIMENTO REAL: MAIS\nINSCRITOS, MAIS FÃS E MAIS\nOPORTUNIDADES DE GANHAR COM\nO QUE VOCÊ JÁ SABE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    fontStyle: FontStyle.italic,
+                    color: CupertinoColors.white,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              
+              // Espaçador flexível para manter dots no lugar
+              const Spacer(),
             ],
           ),
         ),
