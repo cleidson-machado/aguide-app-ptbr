@@ -143,17 +143,21 @@ class _UserPromoMainContentsScreenState
   }
 
   /// Inicia o timer de auto-avanço e animação da barra
-  void _startAutoAdvance() {
+  void _startAutoAdvance({int durationSeconds = 5}) {
     _progressController?.reset();
+    _progressController?.duration = Duration(seconds: durationSeconds);
     _progressController?.forward();
     
     _autoAdvanceTimer?.cancel();
-    _autoAdvanceTimer = Timer(const Duration(seconds: 5), () {
+    _autoAdvanceTimer = Timer(Duration(seconds: durationSeconds), () {
       if (_currentPage < _totalPages - 1 && mounted) {
         _pageController.nextPage(
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
+      } else if (_currentPage == _totalPages - 1 && mounted) {
+        // Última página - finaliza onboarding
+        _handleFinish();
       }
     });
   }
@@ -191,8 +195,11 @@ class _UserPromoMainContentsScreenState
     // Se é página de abertura (0, 2, 4), inicia auto-avanço
     if (_isOpeningPage(index)) {
       _startAutoAdvance();
+    } else if (index == 5) {
+      // Página 6 (última) - auto-avanço de 15 segundos
+      _startAutoAdvance(durationSeconds: 15);
     } else {
-      // Se é página de mensagem (1, 3, 5), cancela auto-avanço
+      // Se é página de mensagem (1, 3), cancela auto-avanço
       _cancelAutoAdvance();
     }
   }
@@ -414,102 +421,6 @@ class _UserPromoMainContentsScreenState
     );
   }
 
-  /// ═══════════════════════════════════════════════════════════════════════
-  /// Widget Reutilizável: Página de Mensagem (Texto + Imagem Centro)
-  /// ═══════════════════════════════════════════════════════════════════════
-  Widget _buildMessagePage({
-    required String topText,
-    required String bottomText,
-    required String imageAsset,
-    required Color backgroundColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            backgroundColor,
-            backgroundColor.withValues(alpha: 0.8),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: Column(
-            children: [
-              // ➤ Texto Superior (Título)
-              Expanded(
-                flex: 3,
-                child: Center(
-                  child: Text(
-                    topText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: CupertinoColors.white,
-                      height: 1.2,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-
-              // ➤ Imagem Central (Placeholder ou Image.asset)
-              Expanded(
-                flex: 4,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: CupertinoColors.white,
-                      width: 8,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CupertinoColors.black.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: _buildCenterImagePlaceholder(imageAsset),
-                  ),
-                ),
-              ),
-
-              // ➤ Texto Inferior (Descrição)
-              Expanded(
-                flex: 3,
-                child: Center(
-                  child: Text(
-                    bottomText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      fontStyle: FontStyle.italic,
-                      color: CupertinoColors.white,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// ═══════════════════════════════════════════════════════════════════════
   /// PÁGINA 2 ESPECIAL - Com Imagem de Retrato e Círculos Flutuantes
@@ -1025,45 +936,50 @@ class _UserPromoMainContentsScreenState
   Widget _buildPage6MessageWithFloatingCircles() {
     const backgroundColor = Color(0xFF4A90E2); // Azul royal
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            backgroundColor,
-            backgroundColor.withValues(alpha: 0.8),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: Column(
-            children: [
-              // ➤ Texto Superior (Título)
-              const Expanded(
-                flex: 9,
-                child: Center(
-                  child: Text(
-                    'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: CupertinoColors.white,
-                      height: 1.2,
-                      letterSpacing: 0.5,
+    return Stack(
+      children: [
+        // ═══════════════════════════════════════════════════════════════
+        // Conteúdo principal da página
+        // ═══════════════════════════════════════════════════════════════
+        Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                backgroundColor,
+                backgroundColor.withValues(alpha: 0.8),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Column(
+                children: [
+                  // ➤ Texto Superior (Título)
+                  const Expanded(
+                    flex: 9,
+                    child: Center(
+                      child: Text(
+                        'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          fontStyle: FontStyle.italic,
+                          color: CupertinoColors.white,
+                          height: 1.2,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-              // ➤ Imagem Central com Círculos Animados (sem sombras)
-              Expanded(
+                  // ➤ Imagem Central com Círculos Animados (sem sombras)
+                  Expanded(
                 flex: 15,
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -1248,65 +1164,69 @@ class _UserPromoMainContentsScreenState
                 ),
               ),
 
-              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
-              const Padding(
-                padding: EdgeInsets.only(top: 18, bottom: 20),
-                child: Text(
-                  'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    fontStyle: FontStyle.italic,
-                    color: CupertinoColors.white,
-                    height: 1.3,
+                  // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+                  const Padding(
+                    padding: EdgeInsets.only(top: 18, bottom: 20),
+                    child: Text(
+                      'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontStyle: FontStyle.italic,
+                        color: CupertinoColors.white,
+                        height: 1.3,
+                      ),
+                    ),
                   ),
-                ),
-              ),
               
-              // Espaçador flexível para manter dots no lugar
-              const Spacer(),
-            ],
+                  // Espaçador flexível para manter dots no lugar
+                  const Spacer(),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+
+        // ═══════════════════════════════════════════════════════════════
+        // Barra de Progresso Animada no Topo (15 segundos)
+        // ═══════════════════════════════════════════════════════════════
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: AnimatedBuilder(
+                animation: _progressController!,
+                builder: (context, child) {
+                  return Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _progressController!.value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.white,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  /// ═══════════════════════════════════════════════════════════════════════
-  /// Placeholder para Imagem Central (nas páginas de mensagem)
-  /// ═══════════════════════════════════════════════════════════════════════
-  Widget _buildCenterImagePlaceholder(String assetPath) {
-    // TODO: Adicionar 3 imagens centrais (páginas 2, 4, 6):
-    //       - assets/promo/stage1_center_image.jpg (Página 2 - Mensagem Estágio 1)
-    //       - assets/promo/stage2_center_image.jpg (Página 4 - Mensagem Estágio 2)
-    //       - assets/promo/stage3_center_image.jpg (Página 6 - Mensagem Estágio 3)
-    //       Substituir Container placeholder por: Image.asset(assetPath, fit: BoxFit.cover)
-    return Container(
-      color: CupertinoColors.systemGrey6,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              CupertinoIcons.photo,
-              size: 60,
-              color: CupertinoColors.systemGrey3,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              assetPath,
-              style: const TextStyle(
-                fontSize: 11,
-                color: CupertinoColors.systemGrey2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   /// ═══════════════════════════════════════════════════════════════════════
   /// Indicadores de Página (Dots) - Mostra 3 estágios (não 6 páginas)
@@ -1318,17 +1238,16 @@ class _UserPromoMainContentsScreenState
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_totalStages, (index) {
         final isActive = index == currentStage;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+        return Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          height: 8,
-          width: isActive ? 24 : 8,
+          height: 10,
+          width: 10,
           decoration: BoxDecoration(
             color:
                 isActive
                     ? CupertinoColors.activeBlue
-                    : CupertinoColors.systemGrey4,
-            borderRadius: BorderRadius.circular(4),
+                    : CupertinoColors.systemGrey2,
+            borderRadius: BorderRadius.circular(5),
           ),
         );
       }),
