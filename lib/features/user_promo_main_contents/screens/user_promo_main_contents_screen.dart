@@ -287,15 +287,10 @@ class _UserPromoMainContentsScreenState
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
-  /// PÁGINA 4 - Estágio 2 Mensagem (Texto + Imagem centro)
+  /// PÁGINA 4 - Estágio 2 Mensagem (Texto + Imagem centro com círculos animados)
   /// ═══════════════════════════════════════════════════════════════════════
   Widget _buildPage4Message() {
-    return _buildMessagePage(
-      topText: 'PARE DE DEPENDER\nSÓ DO "ALGORITMO"\nDO YOUTUBE...',
-      bottomText: 'GANHE CONSISTÊNCIA NO\nCRESCIMENTO: MAIS ALCANCE PARA\nSEUS VÍDEOS E MAIS TRÁFEGO\nRECORRENTE PARA O SEU CANAL.',
-      imageAsset: 'assets/promo/stage2_center_image.jpg',
-      backgroundColor: const Color(0xFF4A90E2), // Azul royal (mesmo da página 2)
-    );
+    return _buildPage4MessageWithFloatingCircles();
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
@@ -310,15 +305,10 @@ class _UserPromoMainContentsScreenState
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
-  /// PÁGINA 6 - Estágio 3 Mensagem (Texto + Imagem centro)
+  /// PÁGINA 6 - Estágio 3 Mensagem (Texto + Imagem centro com círculos animados)
   /// ═══════════════════════════════════════════════════════════════════════
   Widget _buildPage6Message() {
-    return _buildMessagePage(
-      topText: 'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
-      bottomText: 'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
-      imageAsset: 'assets/promo/stage3_center_image.jpg',
-      backgroundColor: const Color(0xFF4A90E2), // Azul royal (consistência visual)
-    );
+    return _buildPage6MessageWithFloatingCircles();
   }
 
   /// ═══════════════════════════════════════════════════════════════════════
@@ -755,6 +745,514 @@ class _UserPromoMainContentsScreenState
                 padding: EdgeInsets.only(top: 18, bottom: 20),
                 child: Text(
                   'TRANSFORME CADA VÍDEO EM\nCRESCIMENTO REAL: MAIS\nINSCRITOS, MAIS FÃS E MAIS\nOPORTUNIDADES DE GANHAR COM\nO QUE VOCÊ JÁ SABE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    fontStyle: FontStyle.italic,
+                    color: CupertinoColors.white,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              
+              // Espaçador flexível para manter dots no lugar
+              const Spacer(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PÁGINA 4 ESPECIAL - Com Imagem de Retrato e Círculos Flutuantes
+  /// ═══════════════════════════════════════════════════════════════════════
+  Widget _buildPage4MessageWithFloatingCircles() {
+    const backgroundColor = Color(0xFF4A90E2); // Azul royal
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            backgroundColor,
+            backgroundColor.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Column(
+            children: [
+              // ➤ Texto Superior (Título)
+              const Expanded(
+                flex: 9,
+                child: Center(
+                  child: Text(
+                    'PARE DE DEPENDER\nSÓ DO "ALGORITMO"\nDO YOUTUBE...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: CupertinoColors.white,
+                      height: 1.2,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ➤ Imagem Central com Círculos Animados (sem sombras)
+              Expanded(
+                flex: 15,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - INÍCIO                ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      
+                      // ═══════════════════════════════════════════════
+                      // Círculo Amarelo (canto superior direito)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _yellowCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: -15 + (_yellowCircleController!.value * 20),
+                            right: -10 + (_yellowCircleController!.value * 15),
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFFC107), // Amarelo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo (canto inferior esquerdo)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _purpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: -10 + (_purpleCircleController!.value * 25),
+                            left: 10 + (_purpleCircleController!.value * 20),
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color.fromARGB(255, 203, 90, 209), // Roxo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Laranja (lado direito médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _orangeCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 100 + (_orangeCircleController!.value * 30),
+                            right: 10 + (_orangeCircleController!.value * 15),
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF6B35), // Laranja vibrante
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Rosa (lado esquerdo superior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _pinkCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 50 + (_pinkCircleController!.value * 25),
+                            left: 20 + (_pinkCircleController!.value * 12),
+                            child: Container(
+                              width: 55,
+                              height: 55,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF69B4), // Rosa pink
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Cyan (lado direito inferior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _cyanCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 50 + (_cyanCircleController!.value * 20),
+                            right: 30 + (_cyanCircleController!.value * 18),
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF00BCD4), // Cyan/Turquesa
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo Claro (lado esquerdo médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _lightPurpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 150 + (_lightPurpleCircleController!.value * 35),
+                            left: 15 + (_lightPurpleCircleController!.value * 10),
+                            child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF9C27B0), // Roxo claro/magenta
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - FIM                   ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 4) - INÍCIO                       ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/promo/stage2_opening_retrato.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: CupertinoColors.systemGrey6,
+                              child: const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.exclamationmark_triangle,
+                                      size: 50,
+                                      color: CupertinoColors.systemRed,
+                                    ),
+                                    SizedBox(height: 12),
+                                    Text(
+                                      'Erro ao carregar\nstage2_opening_retrato.png',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: CupertinoColors.systemGrey2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 4) - FIM                          ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                    ],
+                  ),
+                ),
+              ),
+
+              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+              const Padding(
+                padding: EdgeInsets.only(top: 18, bottom: 20),
+                child: Text(
+                  'GANHE CONSISTÊNCIA NO\nCRESCIMENTO: MAIS ALCANCE PARA\nSEUS VÍDEOS E MAIS TRÁFEGO\nRECORRENTE PARA O SEU CANAL.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    fontStyle: FontStyle.italic,
+                    color: CupertinoColors.white,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              
+              // Espaçador flexível para manter dots no lugar
+              const Spacer(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PÁGINA 6 ESPECIAL - Com Imagem de Retrato e Círculos Flutuantes
+  /// ═══════════════════════════════════════════════════════════════════════
+  Widget _buildPage6MessageWithFloatingCircles() {
+    const backgroundColor = Color(0xFF4A90E2); // Azul royal
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            backgroundColor,
+            backgroundColor.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: Column(
+            children: [
+              // ➤ Texto Superior (Título)
+              const Expanded(
+                flex: 9,
+                child: Center(
+                  child: Text(
+                    'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: CupertinoColors.white,
+                      height: 1.2,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ➤ Imagem Central com Círculos Animados (sem sombras)
+              Expanded(
+                flex: 15,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - INÍCIO                ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      
+                      // ═══════════════════════════════════════════════
+                      // Círculo Amarelo (canto superior direito)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _yellowCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: -15 + (_yellowCircleController!.value * 20),
+                            right: -10 + (_yellowCircleController!.value * 15),
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFFC107), // Amarelo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo (canto inferior esquerdo)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _purpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: -10 + (_purpleCircleController!.value * 25),
+                            left: 10 + (_purpleCircleController!.value * 20),
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color.fromARGB(255, 203, 90, 209), // Roxo vibrante (sem alpha)
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Laranja (lado direito médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _orangeCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 100 + (_orangeCircleController!.value * 30),
+                            right: 10 + (_orangeCircleController!.value * 15),
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF6B35), // Laranja vibrante
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Rosa (lado esquerdo superior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _pinkCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 50 + (_pinkCircleController!.value * 25),
+                            left: 20 + (_pinkCircleController!.value * 12),
+                            child: Container(
+                              width: 55,
+                              height: 55,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFFFF69B4), // Rosa pink
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Cyan (lado direito inferior)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _cyanCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            bottom: 50 + (_cyanCircleController!.value * 20),
+                            right: 30 + (_cyanCircleController!.value * 18),
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF00BCD4), // Cyan/Turquesa
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ═══════════════════════════════════════════════
+                      // Círculo Roxo Claro (lado esquerdo médio)
+                      // ═══════════════════════════════════════════════
+                      AnimatedBuilder(
+                        animation: _lightPurpleCircleController!,
+                        builder: (context, child) {
+                          return Positioned(
+                            top: 150 + (_lightPurpleCircleController!.value * 35),
+                            left: 15 + (_lightPurpleCircleController!.value * 10),
+                            child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF9C27B0), // Roxo claro/magenta
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ RENDERIZAÇÃO DOS CÍRCULOS COLORIDOS ANIMADOS - FIM                   ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 6) - INÍCIO                       ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/promo/stage3_opening_retrato.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: CupertinoColors.systemGrey6,
+                              child: const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.exclamationmark_triangle,
+                                      size: 50,
+                                      color: CupertinoColors.systemRed,
+                                    ),
+                                    SizedBox(height: 12),
+                                    Text(
+                                      'Erro ao carregar\nstage3_opening_retrato.png',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: CupertinoColors.systemGrey2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // ╔═══════════════════════════════════════════════════════════════════════╗
+                      // ║ IMAGEM DA MULHER (CENTRO DA PÁGINA 6) - FIM                          ║
+                      // ╚═══════════════════════════════════════════════════════════════════════╝
+                    ],
+                  ),
+                ),
+              ),
+
+              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+              const Padding(
+                padding: EdgeInsets.only(top: 18, bottom: 20),
+                child: Text(
+                  'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
