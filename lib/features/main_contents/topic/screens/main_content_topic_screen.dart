@@ -163,7 +163,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
             SizedBox(height: 6),
             Text(
-              "| TEMAS - Perfil Consumidor de Conteúdo |",
+              "| TEMAS - Perfil CRIADOR de Conteúdo |",
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
