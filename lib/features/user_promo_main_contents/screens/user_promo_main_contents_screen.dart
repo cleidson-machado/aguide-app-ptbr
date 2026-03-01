@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 
 /// 🎯 Tela de Promoção/Onboarding com 3 Estágios (6 Páginas Internas)
@@ -437,23 +438,23 @@ class _UserPromoMainContentsScreenState
           end: Alignment.bottomCenter,
           colors: [
             backgroundColor,
-            backgroundColor.withValues(alpha: 0.8),
+            const Color.fromARGB(255, 24, 88, 161).withValues(alpha: 1.8),
           ],
         ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
           child: Column(
             children: [
               // ➤ Texto Superior (Título)
-              const Expanded(
+              Expanded(
                 flex: 6,
                 child: Center(
                   child: Text(
                     'OS SEUS VÍDEOS \n E CONTEÚDO JÁ SÃO \n ÓTIMOS! AGORA FAÇA\nELES RENDEREM MAIS...\n MUITO MAIS!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.roboto(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
@@ -652,12 +653,12 @@ class _UserPromoMainContentsScreenState
               ),
 
               // ➤ Texto Inferior (Descrição)
-              const Padding(
-                padding: EdgeInsets.only(top: 8, bottom: 12),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
                 child: Text(
                   'TRANSFORME CADA VÍDEO EM\nCRESCIMENTO REAL: MAIS\nINSCRITOS, MAIS FÃS E MAIS\nOPORTUNIDADES DE GANHAR COM\nO QUE VOCÊ JÁ SABE',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: GoogleFonts.roboto(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     fontStyle: FontStyle.italic,
@@ -691,23 +692,23 @@ class _UserPromoMainContentsScreenState
           end: Alignment.bottomCenter,
           colors: [
             backgroundColor,
-            backgroundColor.withValues(alpha: 0.8),
+            const Color.fromARGB(255, 24, 88, 161).withValues(alpha: 1.8),
           ],
         ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
           child: Column(
             children: [
               // ➤ Texto Superior (Título)
-              const Expanded(
+              Expanded(
                 flex: 6,
                 child: Center(
                   child: Text(
                     'VOCÊ PODE DEIXAR \n DE DEPENDER APENAS \n DO "ALGORITMO" LIMITADO\n DO YOUTUBE E OUTRAS REDES!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.roboto(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
@@ -906,12 +907,12 @@ class _UserPromoMainContentsScreenState
               ),
 
               // ➤ Texto Inferior (Descrição)
-              const Padding(
-                padding: EdgeInsets.only(top: 8, bottom: 12),
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
                 child: Text(
                   'GANHE CONSISTÊNCIA NO\nCRESCIMENTO: MAIS ALCANCE PARA\nSEUS VÍDEOS E MAIS TRÁFEGO\nRECORRENTE PARA O SEU CANAL.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: GoogleFonts.roboto(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     fontStyle: FontStyle.italic,
@@ -950,23 +951,23 @@ class _UserPromoMainContentsScreenState
               end: Alignment.bottomCenter,
               colors: [
                 backgroundColor,
-                backgroundColor.withValues(alpha: 0.8),
+                const Color.fromARGB(255, 24, 88, 161).withValues(alpha: 1.8),
               ],
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               child: Column(
                 children: [
                   // ➤ Texto Superior (Título)
-                  const Expanded(
+                  Expanded(
                     flex: 6,
                     child: Center(
                       child: Text(
                         'VOCÊ VAI GANHAR\nMUITO MAIS POR USUÁRIO\nUTILIZANDO NOSSA TECNOLOGIA\nDE VENDAS E RELACIONAMENTO\nCOM SUA AUDIÊNCIA!',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: GoogleFonts.roboto(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
@@ -1165,12 +1166,12 @@ class _UserPromoMainContentsScreenState
               ),
 
                   // ➤ Texto Inferior (Descrição)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8, bottom: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 12),
                     child: Text(
                       'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: GoogleFonts.roboto(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,
