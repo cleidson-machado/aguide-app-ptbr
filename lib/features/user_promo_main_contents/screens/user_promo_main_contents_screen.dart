@@ -443,18 +443,18 @@ class _UserPromoMainContentsScreenState
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             children: [
               // ➤ Texto Superior (Título)
               const Expanded(
-                flex: 9,
+                flex: 6,
                 child: Center(
                   child: Text(
-                    'SEU CONTEÚDO \nÉ ÓTIMO!\nAGORA FAÇA\nELE RENDER!\nMAIS, BEM MAIS!',
+                    'OS SEUS VÍDEOS \n E CONTEÚDO JÁ SÃO \n ÓTIMOS! AGORA FAÇA\nELES RENDEREM MAIS...\n MUITO MAIS!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
                       color: CupertinoColors.white,
@@ -467,9 +467,9 @@ class _UserPromoMainContentsScreenState
 
               // ➤ Imagem Central com Círculos Animados (sem sombras)
               Expanded(
-                flex: 15,
+                flex: 20,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -651,9 +651,9 @@ class _UserPromoMainContentsScreenState
                 ),
               ),
 
-              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+              // ➤ Texto Inferior (Descrição)
               const Padding(
-                padding: EdgeInsets.only(top: 18, bottom: 20),
+                padding: EdgeInsets.only(top: 8, bottom: 12),
                 child: Text(
                   'TRANSFORME CADA VÍDEO EM\nCRESCIMENTO REAL: MAIS\nINSCRITOS, MAIS FÃS E MAIS\nOPORTUNIDADES DE GANHAR COM\nO QUE VOCÊ JÁ SABE',
                   textAlign: TextAlign.center,
@@ -697,18 +697,18 @@ class _UserPromoMainContentsScreenState
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             children: [
               // ➤ Texto Superior (Título)
               const Expanded(
-                flex: 9,
+                flex: 6,
                 child: Center(
                   child: Text(
-                    'PARE DE DEPENDER\nSÓ DO "ALGORITMO"\nDO YOUTUBE...',
+                    'VOCÊ PODE DEIXAR \n DE DEPENDER APENAS \n DO "ALGORITMO" LIMITADO\n DO YOUTUBE E OUTRAS REDES!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
                       color: CupertinoColors.white,
@@ -721,9 +721,9 @@ class _UserPromoMainContentsScreenState
 
               // ➤ Imagem Central com Círculos Animados (sem sombras)
               Expanded(
-                flex: 15,
+                flex: 20,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -905,9 +905,9 @@ class _UserPromoMainContentsScreenState
                 ),
               ),
 
-              // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+              // ➤ Texto Inferior (Descrição)
               const Padding(
-                padding: EdgeInsets.only(top: 18, bottom: 20),
+                padding: EdgeInsets.only(top: 8, bottom: 12),
                 child: Text(
                   'GANHE CONSISTÊNCIA NO\nCRESCIMENTO: MAIS ALCANCE PARA\nSEUS VÍDEOS E MAIS TRÁFEGO\nRECORRENTE PARA O SEU CANAL.',
                   textAlign: TextAlign.center,
@@ -956,18 +956,18 @@ class _UserPromoMainContentsScreenState
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Column(
                 children: [
                   // ➤ Texto Superior (Título)
                   const Expanded(
-                    flex: 9,
+                    flex: 6,
                     child: Center(
                       child: Text(
-                        'GANHE MAIS\nPOR USUÁRIO\nDIRETO COM QUEM\nTE ACOMPANHA!',
+                        'VOCÊ VAI GANHAR\nMUITO MAIS POR USUÁRIO\nUTILIZANDO NOSSA TECNOLOGIA\nDE VENDAS E RELACIONAMENTO\nCOM SUA AUDIÊNCIA!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
                           color: CupertinoColors.white,
@@ -980,9 +980,9 @@ class _UserPromoMainContentsScreenState
 
                   // ➤ Imagem Central com Círculos Animados (sem sombras)
                   Expanded(
-                flex: 15,
+                flex: 20,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -1164,9 +1164,9 @@ class _UserPromoMainContentsScreenState
                 ),
               ),
 
-                  // ➤ Texto Inferior (Descrição) - Aproximado 18px da imagem
+                  // ➤ Texto Inferior (Descrição)
                   const Padding(
-                    padding: EdgeInsets.only(top: 18, bottom: 20),
+                    padding: EdgeInsets.only(top: 8, bottom: 12),
                     child: Text(
                       'DO VÍDEO AO SERVIÇO: NÓS\nFAZEMOS A PONTE PARA VOCÊ\nFECHAR CONSULTORIAS E\nATENDIMENTOS COM SEU PÚBLICO.',
                       textAlign: TextAlign.center,
