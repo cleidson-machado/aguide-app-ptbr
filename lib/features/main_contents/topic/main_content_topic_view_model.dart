@@ -473,6 +473,8 @@ class MainContentTopicViewModel extends ChangeNotifier {
         debugPrint('❌ [MainContentTopicViewModel] Erro ao verificar ownership: $e');
       }
       
+      //TODO: Melhorar tratamento de erros para diferenciar tipos (network, auth, etc)
+      //É POSSIVEL USAR AS MSN DE RETORNO DA MINHA API REST
       return OwnershipResult.notOwner(
         OwnershipErrorModel(
           error: 'UNEXPECTED_ERROR',

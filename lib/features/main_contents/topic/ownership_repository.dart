@@ -181,6 +181,8 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
         }
       }
       
+      //TODO: Melhorar tratamento de erros para diferenciar tipos (network, auth, etc)
+      //É POSSIVEL USAR AS MSN DE RETORNO DA MINHA API REST
       final error = OwnershipErrorModel(
         error: 'NETWORK_ERROR',
         message: 'Erro ao buscar conteúdos: ${e.message}',
