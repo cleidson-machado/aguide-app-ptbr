@@ -162,37 +162,61 @@ class _UserVerifiedContentWizardScreenState
     );
   }
 
-  /// Indicador de progresso visual
+  /// Indicador de progresso visual com círculos numerados
   Widget _buildProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(viewModel.totalSteps, (index) {
           final isActive = index == viewModel.currentStep;
           final isCompleted = index < viewModel.currentStep;
 
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: index < viewModel.totalSteps - 1 ? 8 : 0,
-              ),
-              child: Column(
+          return Row(
+            children: [
+              // Círculo numerado
+              Column(
                 children: [
                   Container(
-                    height: 6,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
+                      shape: BoxShape.circle,
                       color:
-                          isCompleted || isActive
+                          isActive
                               ? CupertinoColors.activeBlue
-                              : CupertinoColors.systemGrey4,
-                      borderRadius: BorderRadius.circular(3),
+                              : (isCompleted
+                                  ? CupertinoColors.activeBlue.withOpacity(0.2)
+                                  : CupertinoColors.white),
+                      border: Border.all(
+                        color:
+                            isActive || isCompleted
+                                ? CupertinoColors.activeBlue
+                                : CupertinoColors.systemGrey3,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              isActive
+                                  ? CupertinoColors.white
+                                  : (isCompleted
+                                      ? CupertinoColors.activeBlue
+                                      : CupertinoColors.systemGrey),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Etapa ${index + 1}',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight:
                           isActive ? FontWeight.w600 : FontWeight.normal,
                       color:
@@ -203,7 +227,19 @@ class _UserVerifiedContentWizardScreenState
                   ),
                 ],
               ),
-            ),
+
+              // Linha conectora
+              if (index < viewModel.totalSteps - 1)
+                Container(
+                  width: 60,
+                  height: 2,
+                  margin: const EdgeInsets.only(bottom: 30),
+                  color:
+                      isCompleted
+                          ? CupertinoColors.activeBlue
+                          : CupertinoColors.systemGrey4,
+                ),
+            ],
           );
         }),
       ),
@@ -242,35 +278,66 @@ class _UserVerifiedContentWizardScreenState
 
         // Título do conteúdo
         _buildLabel('Título do Conteúdo *'),
-        CupertinoTextField(
+        _buildStyledTextField(
           controller: _titleController,
           placeholder: 'Ex: Guia Completo de Portugal',
+          icon: CupertinoIcons.doc_text,
           onChanged: (value) => viewModel.updateContentInfo(title: value),
-          padding: const EdgeInsets.all(12),
         ),
         const SizedBox(height: 20),
 
         // URL do conteúdo
         _buildLabel('URL do Conteúdo *'),
-        CupertinoTextField(
+        _buildStyledTextField(
           controller: _urlController,
           placeholder: 'Ex: https://youtube.com/watch?v=...',
+          icon: CupertinoIcons.link,
           keyboardType: TextInputType.url,
           onChanged: (value) => viewModel.updateContentInfo(url: value),
-          padding: const EdgeInsets.all(12),
         ),
         const SizedBox(height: 20),
 
         // Tipo de conteúdo
         _buildLabel('Tipo de Conteúdo *'),
-        CupertinoSlidingSegmentedControl<String>(
-          groupValue: viewModel.contentType,
-          onValueChanged: (value) => viewModel.updateContentInfo(type: value),
-          children: const {
-            'video': Text('Vídeo'),
-            'article': Text('Artigo'),
-            'course': Text('Curso'),
-          },
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: CupertinoColors.systemGrey.withOpacity(0.15),
+                offset: const Offset(0, 1),
+                blurRadius: 3,
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: CupertinoColors.black.withOpacity(0.05),
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                spreadRadius: -1,
+              ),
+            ],
+          ),
+          child: CupertinoSlidingSegmentedControl<String>(
+            groupValue: viewModel.contentType,
+            onValueChanged: (value) => viewModel.updateContentInfo(type: value),
+            backgroundColor: CupertinoColors.systemGrey6,
+            thumbColor: CupertinoColors.white,
+            padding: const EdgeInsets.all(4),
+            children: const {
+              'video': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                child: Text('Vídeo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              ),
+              'article': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                child: Text('Artigo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              ),
+              'course': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                child: Text('Curso', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              ),
+            },
+          ),
         ),
         const SizedBox(height: 20),
 
@@ -297,33 +364,72 @@ class _UserVerifiedContentWizardScreenState
 
         // Tipo de prova
         _buildLabel('Tipo de Comprovação *'),
-        CupertinoSlidingSegmentedControl<String>(
-          groupValue: viewModel.proofType,
-          onValueChanged: (value) => viewModel.updateProofInfo(type: value),
-          children: const {
-            'youtube_channel': Text('Canal YouTube'),
-            'domain_ownership': Text('Domínio'),
-            'social_media': Text('Rede Social'),
-          },
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: CupertinoColors.systemGrey.withOpacity(0.15),
+                offset: const Offset(0, 1),
+                blurRadius: 3,
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: CupertinoColors.black.withOpacity(0.05),
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                spreadRadius: -1,
+              ),
+            ],
+          ),
+          child: CupertinoSlidingSegmentedControl<String>(
+            groupValue: viewModel.proofType,
+            onValueChanged: (value) => viewModel.updateProofInfo(type: value),
+            backgroundColor: CupertinoColors.systemGrey6,
+            thumbColor: CupertinoColors.white,
+            padding: const EdgeInsets.all(4),
+            children: const {
+              'youtube_channel': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Text('Canal YouTube', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              ),
+              'domain_ownership': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Text('Domínio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              ),
+              'social_media': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Text('Rede Social', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              ),
+            },
+          ),
         ),
         const SizedBox(height: 20),
 
         // Valor da prova
         _buildLabel(_getProofValueLabel()),
-        CupertinoTextField(
+        _buildStyledTextField(
           controller: _proofValueController,
           placeholder: _getProofValuePlaceholder(),
+          icon: _getProofIcon(),
           onChanged: (value) => viewModel.updateProofInfo(value: value),
-          padding: const EdgeInsets.all(12),
         ),
         const SizedBox(height: 20),
 
         // Dica de ajuda
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: CupertinoColors.systemGrey6,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: CupertinoColors.systemGrey.withOpacity(0.12),
+                offset: const Offset(0, 1),
+                blurRadius: 3,
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -369,25 +475,25 @@ class _UserVerifiedContentWizardScreenState
 
         // Descrição
         _buildLabel('Descrição do Conteúdo *'),
-        CupertinoTextField(
+        _buildStyledTextField(
           controller: _descriptionController,
           placeholder:
               'Descreva brevemente seu conteúdo e por que deseja verificá-lo',
+          icon: CupertinoIcons.text_alignleft,
           maxLines: 5,
           onChanged:
               (value) => viewModel.updateAdditionalInfo(description: value),
-          padding: const EdgeInsets.all(12),
         ),
         const SizedBox(height: 20),
 
         // E-mail de contato
         _buildLabel('E-mail de Contato *'),
-        CupertinoTextField(
+        _buildStyledTextField(
           controller: _emailController,
           placeholder: 'seu.email@exemplo.com',
+          icon: CupertinoIcons.mail,
           keyboardType: TextInputType.emailAddress,
           onChanged: (value) => viewModel.updateAdditionalInfo(email: value),
-          padding: const EdgeInsets.all(12),
         ),
         const SizedBox(height: 20),
 
@@ -395,11 +501,19 @@ class _UserVerifiedContentWizardScreenState
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: CupertinoColors.systemGreen.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: CupertinoColors.systemGreen.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: CupertinoColors.systemGreen.withOpacity(0.3),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: CupertinoColors.systemGreen.withOpacity(0.15),
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,7 +571,8 @@ class _UserVerifiedContentWizardScreenState
               Expanded(
                 child: CupertinoButton(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  color: CupertinoColors.systemGrey4,
+                  borderRadius: BorderRadius.circular(12),
+                  color: CupertinoColors.systemGrey5,
                   onPressed:
                       viewModel.isLoading ? null : viewModel.previousStep,
                   child: const Text(
@@ -465,6 +580,7 @@ class _UserVerifiedContentWizardScreenState
                     style: TextStyle(
                       color: CupertinoColors.black,
                       fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -477,7 +593,11 @@ class _UserVerifiedContentWizardScreenState
               flex: viewModel.isFirstStep ? 1 : 1,
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                color: CupertinoColors.activeBlue,
+                borderRadius: BorderRadius.circular(12),
+                color:
+                    viewModel.isLoading || !viewModel.canGoNext
+                        ? CupertinoColors.systemGrey3
+                        : CupertinoColors.activeBlue,
                 onPressed:
                     viewModel.isLoading || !viewModel.canGoNext
                         ? null
@@ -491,8 +611,11 @@ class _UserVerifiedContentWizardScreenState
                           viewModel.isLastStep
                               ? 'Enviar Solicitação'
                               : 'Próximo',
-                          style: const TextStyle(
-                            color: CupertinoColors.white,
+                          style: TextStyle(
+                            color:
+                                viewModel.isLoading || !viewModel.canGoNext
+                                    ? CupertinoColors.systemGrey
+                                    : CupertinoColors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -546,6 +669,19 @@ class _UserVerifiedContentWizardScreenState
     }
   }
 
+  IconData _getProofIcon() {
+    switch (viewModel.proofType) {
+      case 'youtube_channel':
+        return CupertinoIcons.play_rectangle;
+      case 'domain_ownership':
+        return CupertinoIcons.globe;
+      case 'social_media':
+        return CupertinoIcons.at;
+      default:
+        return CupertinoIcons.checkmark_shield;
+    }
+  }
+
   // Widgets auxiliares
 
   Widget _buildLabel(String text) {
@@ -584,6 +720,93 @@ class _UserVerifiedContentWizardScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Widget de campo de texto estilizado com ícone e sombreamento interno
+  Widget _buildStyledTextField({
+    required TextEditingController controller,
+    required String placeholder,
+    required IconData icon,
+    required ValueChanged<String> onChanged,
+    TextInputType? keyboardType,
+    int? maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          // Sombra superior interna (simula profundidade)
+          BoxShadow(
+            color: CupertinoColors.systemGrey.withOpacity(0.15),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
+            spreadRadius: 0,
+          ),
+          // Sombra interna sutil para dar efeito "afundado"
+          BoxShadow(
+            color: CupertinoColors.black.withOpacity(0.05),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
+            spreadRadius: -1,
+          ),
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          // Gradiente sutil para simular inner shadow
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              CupertinoColors.systemGrey6.withOpacity(0.3),
+              CupertinoColors.systemGrey6.withOpacity(0.1),
+              CupertinoColors.white.withOpacity(0.5),
+            ],
+            stops: const [0.0, 0.15, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment:
+              maxLines != null && maxLines > 1
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(
+                left: 14,
+                top: maxLines != null && maxLines > 1 ? 14 : 0,
+              ),
+              child: Icon(
+                icon,
+                color: CupertinoColors.systemGrey2,
+                size: 22,
+              ),
+            ),
+            Expanded(
+              child: CupertinoTextField(
+                controller: controller,
+                placeholder: placeholder,
+                keyboardType: keyboardType,
+                maxLines: maxLines,
+                onChanged: onChanged,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: const BoxDecoration(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: CupertinoColors.black,
+                ),
+                placeholderStyle: TextStyle(
+                  color: CupertinoColors.systemGrey2.withOpacity(0.8),
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
