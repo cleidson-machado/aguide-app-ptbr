@@ -181,8 +181,7 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
         }
       }
       
-      //TODO: Melhorar tratamento de erros para diferenciar tipos (network, auth, etc)
-      //É POSSIVEL USAR AS MSN DE RETORNO DA MINHA API REST
+      // Outros erros
       final error = OwnershipErrorModel(
         error: 'NETWORK_ERROR',
         message: 'Erro ao buscar conteúdos: ${e.message}',
@@ -198,6 +197,96 @@ class OwnershipRepository implements OwnershipRepositoryInterface {
         timestamp: DateTime.now().toIso8601String(),
       );
       return OwnershipResult.notOwner(error);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 VALIDAÇÃO DE AUTORIA VIA POST
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 📍 ENDPOINT CONSUMIDO: POST /api/v1/ownership/validate
+  /// Body: { "userId": "...", "contentId": "..." }
+  /// 
+  /// Valida se o usuário é dono do conteúdo especificado
+  /// Retorna VERIFIED (com validationHash) ou REJECTED (sem validationHash)
+  @override
+  Future<OwnershipValidationResponse> validateOwnership({
+    required String userId,
+    required String contentId,
+  }) async {
+    print('🔐 [OwnershipRepository] Validando ownership via POST');
+    print('   User ID: $userId');
+    print('   Content ID: $contentId');
+
+    try {
+      const endpoint = '/ownership/validate';
+
+      // Body dinâmico conforme especificação da API
+      final body = {
+        'userId': userId,
+        'contentId': contentId,
+      };
+
+      print('📤 [OwnershipRepository] Enviando POST: $body');
+
+      final response = await _dio.post(endpoint, data: body);
+
+      print('📡 [OwnershipRepository] Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // ✅ Sucesso: Parse da resposta (VERIFIED ou REJECTED)
+        final responseData = response.data as Map<String, dynamic>;
+        final validationResponse = OwnershipValidationResponse.fromJson(responseData);
+
+        if (validationResponse.isVerified) {
+          print('✅ [OwnershipRepository] Ownership validado com sucesso!');
+          print('   ValidationHash: ${validationResponse.validationHash}');
+          print('   Message: ${validationResponse.message}');
+        } else {
+          print('⚠️  [OwnershipRepository] Ownership rejeitado');
+          print('   Motivo: ${validationResponse.message}');
+        }
+
+        return validationResponse;
+      } else {
+        // Status inesperado
+        throw Exception('Status code inesperado: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('❌ [OwnershipRepository] Erro Dio ao validar: ${e.message}');
+      print('   Status Code: ${e.response?.statusCode}');
+      print('   Response Data: ${e.response?.data}');
+
+      // 🆕 Status 400 é REJECTED válido (Channel IDs não coincidem)
+      if (e.response?.statusCode == 400 && e.response?.data != null) {
+        try {
+          final responseData = e.response!.data as Map<String, dynamic>;
+          final validationResponse = OwnershipValidationResponse.fromJson(responseData);
+          
+          print('⚠️  [OwnershipRepository] Status 400 parseado como REJECTED');
+          print('   Motivo: ${validationResponse.message}');
+          
+          return validationResponse;
+        } catch (parseError) {
+          print('❌ Erro ao parsear resposta 400: $parseError');
+        }
+      }
+
+      // Se o servidor retornou outra resposta, tentar parsear
+      if (e.response?.data != null) {
+        try {
+          final responseData = e.response!.data as Map<String, dynamic>;
+          return OwnershipValidationResponse.fromJson(responseData);
+        } catch (parseError) {
+          print('❌ Erro ao parsear resposta do servidor: $parseError');
+        }
+      }
+
+      // Erro genérico
+      throw Exception('Erro ao validar ownership: ${e.message}');
+    } catch (e) {
+      print('❌ [OwnershipRepository] Erro inesperado ao validar: $e');
+      throw Exception('Erro inesperado ao validar ownership');
     }
   }
 }
