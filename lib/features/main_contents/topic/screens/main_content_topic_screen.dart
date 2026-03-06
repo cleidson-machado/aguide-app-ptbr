@@ -3075,7 +3075,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                             _buildStep(
                                               '1. Faça ',
                                               'logout',
-                                              ' da sua conta Google ou Local atual no App.',
+                                              ' da sua conta Google ou Local atual.',
                                             ),
                                             const SizedBox(height: 8),
                                             
@@ -3203,7 +3203,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     return RichText(
       text: TextSpan(
         style: const TextStyle(
-          fontSize: 13,
+          fontSize: 11,
           color: CupertinoColors.black,
           height: 1.5,
         ),
@@ -3227,7 +3227,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     return RichText(
       text: TextSpan(
         style: const TextStyle(
-          fontSize: 13,
+          fontSize: 11,
           color: CupertinoColors.black,
           height: 1.5,
         ),
