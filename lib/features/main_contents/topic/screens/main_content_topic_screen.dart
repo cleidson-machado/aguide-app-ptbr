@@ -2574,6 +2574,103 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     });
   }
 
+  /// Modal de erro para vinculação de conteúdo
+  /// Exibe ícone vermelho de erro com mensagem
+  /// Auto-fecha após 5 segundos
+  static void _showContentLinkageErrorMessage(BuildContext context) {
+    if (kDebugMode) {
+      debugPrint('🔴 [ERROR MODAL] Tentando exibir modal de erro...');
+      debugPrint('🔴 [ERROR MODAL] Context mounted: ${context.mounted}');
+    }
+
+    if (!context.mounted) {
+      if (kDebugMode) {
+        debugPrint('❌ [ERROR MODAL] Context não está montado, abortando');
+      }
+      return;
+    }
+
+    bool isDialogOpen = true; // Flag para controlar se dialog ainda está aberto
+
+    try {
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false, // ✅ Desabilita fechar tocando fora (evita erro)
+        builder: (BuildContext dialogContext) {
+          if (kDebugMode) {
+            debugPrint('✅ [ERROR MODAL] Builder executado, criando dialog');
+          }
+          
+          return WillPopScope(
+            onWillPop: () async {
+              // Previne fechar com botão voltar
+              if (kDebugMode) {
+                debugPrint('⚠️ [ERROR MODAL] Tentativa de fechar com back button bloqueada');
+              }
+              return false;
+            },
+            child: const CupertinoAlertDialog(
+              title: Icon(
+                CupertinoIcons.xmark_circle_fill,
+                color: CupertinoColors.systemRed,
+                size: 48,
+              ),
+              content: Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text(
+                  'Vinculação\n Não Realizada com Sucesso!',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          );
+        },
+      ).then((_) {
+        // Callback executado quando dialog é fechado (por qualquer motivo)
+        isDialogOpen = false;
+        if (kDebugMode) {
+          debugPrint('🔴 [ERROR MODAL] Dialog foi fechado (callback .then)');
+        }
+      });
+
+      if (kDebugMode) {
+        debugPrint('✅ [ERROR MODAL] Modal exibida com sucesso');
+      }
+
+      // Auto-fechar após 5 segundos com proteção
+      Timer(const Duration(milliseconds: 5000), () {
+        if (kDebugMode) {
+          debugPrint('⏰ [ERROR MODAL] Timer de 5s disparado');
+          debugPrint('   isDialogOpen: $isDialogOpen');
+          debugPrint('   context.mounted: ${context.mounted}');
+        }
+
+        // Só tenta fechar se dialog ainda estiver aberto E context válido
+        if (isDialogOpen && context.mounted) {
+          try {
+            Navigator.of(context, rootNavigator: true).pop();
+            isDialogOpen = false; // Marca como fechado
+            if (kDebugMode) {
+              debugPrint('✅ [ERROR MODAL] Modal fechada automaticamente após 5 segundos');
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('⚠️ [ERROR MODAL] Erro ao fechar: $e');
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ [ERROR MODAL] Dialog já foi fechado ou context inválido');
+          }
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [ERROR MODAL] Erro ao exibir modal: $e');
+      }
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔄 VALIDAÇÃO RÁPIDA DE RETRY
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2655,61 +2752,41 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         }
 
         // Delay para garantir que animação de fechamento complete
-        await Future.delayed(const Duration(milliseconds: 300));
+        await Future.delayed(const Duration(milliseconds: 500));
 
         if (kDebugMode) {
-          debugPrint('✅ [QuickRetry] Delay pós-fechamento completo');
+          debugPrint('✅ [QuickRetry] Delay pós-fechamento completo (500ms)');
         }
       }
     }
 
     // 5️⃣ Verificar se context ainda está válido antes de mostrar resultado
-    if (!context.mounted) {
+    // Usar navigator.context que é mais estável que o context do dialog
+    final validContext = navigator.context;
+    
+    if (kDebugMode) {
+      debugPrint('🔍 [QuickRetry] Verificando context...');
+      debugPrint('   context original.mounted: ${context.mounted}');
+      debugPrint('   navigator.context.mounted: ${validContext.mounted}');
+    }
+
+    if (!validContext.mounted) {
       if (kDebugMode) {
-        debugPrint('⚠️  [QuickRetry] Context não montado após fechar animação');
+        debugPrint('⚠️  [QuickRetry] Navigator context não montado após fechar animação');
       }
       return;
     }
 
-    // 6️⃣ Mostrar modal de confirmação visual (simulada)
     if (kDebugMode) {
-      debugPrint('✅ [QuickRetry] Exibindo modal de confirmação visual');
+      debugPrint('✅ [QuickRetry] Context válido, prosseguindo...');
     }
 
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              CupertinoIcons.checkmark_seal_fill,
-              color: CupertinoColors.systemGreen,
-              size: 28,
-            ),
-            SizedBox(width: 10),
-            Text('Processamento Concluído!'),
-          ],
-        ),
-        content: const Padding(
-          padding: EdgeInsets.only(top: 12),
-          child: Text(
-            'A animação foi exibida com sucesso!\n\n'
-            '⚠️  Funcionalidade visual implementada.\n'
-            'Integração com backend será feita em breve.',
-            style: TextStyle(fontSize: 14, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            isDefaultAction: true,
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    // 6️⃣ Mostrar modal de erro de vinculação usando context válido
+    if (kDebugMode) {
+      debugPrint('❌ [QuickRetry] CHAMANDO _showContentLinkageErrorMessage...');
+    }
+
+    _showContentLinkageErrorMessage(validContext);
 
     if (kDebugMode) {
       debugPrint('🏁 [QuickRetry] Fluxo visual completo finalizado');
@@ -2971,7 +3048,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                       Padding(
                                         padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
                                         child: Text(
-                                          'Temos um probleminha!',
+                                          'AVISO IMPORTANTE!',
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w700,
@@ -2985,7 +3062,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                       const Padding(
                                         padding: EdgeInsets.only(top: 8, left: 16, right: 16),
                                         child: Text(
-                                          'A Validação não é possível!',  
+                                          'A Validação NÃO SERÁ possível!',  
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
@@ -3103,7 +3180,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                     );
                                   },
                                         child: const Text(
-                                          'Entendi! Vamos tentar!?',
+                                          'Entendi! Vamos tentar assim mesmo!?',
                                           style: TextStyle(
                                             fontSize: 17,
                                             fontWeight: FontWeight.w600,
