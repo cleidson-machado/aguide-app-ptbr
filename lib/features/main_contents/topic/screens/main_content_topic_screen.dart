@@ -3027,7 +3027,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                           // 1️⃣ Exibir modal intermediária de reautenticação recomendada (SEM fechar a atual)
                           showCupertinoDialog(
                             context: context,
-                            barrierDismissible: false,
+                            barrierDismissible: true, // ✅ Permite fechar tocando fora
                             builder: (dialogContext) {
                               // Largura proporcional
                               final screenWidth = MediaQuery.of(dialogContext).size.width;
@@ -3185,6 +3185,40 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                             fontSize: 17,
                                             fontWeight: FontWeight.w600,
                                             color: CupertinoColors.activeBlue,
+                                          ),
+                                        ),
+                                      ),
+                                      
+                                      // Divisor
+                                      Container(
+                                        height: 0.5,
+                                        color: CupertinoColors.separator,
+                                      ),
+                                      
+                                      // 🔴 Botão "Cancelar" (fecha todas as modals)
+                                      CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        onPressed: () {
+                                          if (kDebugMode) {
+                                            debugPrint('❌ [Retry] Cancelar selecionado - fechando todas as modals');
+                                          }
+                                          
+                                          // Fechar modal intermediária
+                                          Navigator.pop(dialogContext);
+                                          
+                                          // Fechar modal principal (Ownership Denied) usando navigator capturado
+                                          capturedNavigator.pop();
+                                          
+                                          if (kDebugMode) {
+                                            debugPrint('✅ [Retry] Todas as modals fechadas, retornando à view principal');
+                                          }
+                                        },
+                                        child: const Text(
+                                          'Cancelar',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w400,
+                                            color: CupertinoColors.systemGrey,
                                           ),
                                         ),
                                       ),
