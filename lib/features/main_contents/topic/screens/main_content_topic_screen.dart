@@ -13,6 +13,7 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lottie/lottie.dart';
 
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -2577,9 +2578,10 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   // 🔄 VALIDAÇÃO RÁPIDA DE RETRY
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// 🔄 Validação rápida para retry (sem modal complexa)
-  /// Exibe spinner simples → Chama API → Fecha spinner → Mostra aviso
+  /// 🔄 Validação rápida para retry (com animação Lottie)
+  /// Exibe animação Lottie por 5 segundos → Mostra modal de confirmação visual
   /// 
+  /// ⚠️  NOTA: Por enquanto apenas visual, SEM chamada de API backend
   /// 🔑 Recebe NavigatorState ao invés de BuildContext para evitar problemas de context desativado
   static Future<void> _handleQuickRetryValidation(
     BuildContext context,
@@ -2588,70 +2590,72 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     MainContentTopicViewModel viewModel,
   ) async {
     if (kDebugMode) {
-      debugPrint('🔄 [QuickRetry] Iniciando validação rápida');
+      debugPrint('🔄 [QuickRetry] Iniciando validação visual com Lottie');
       debugPrint('   Content ID: $contentId');
     }
 
-    bool spinnerShown = false;
-    OwnershipValidationResponse? response;
-    String? errorMessage;
+    bool animationShown = false;
 
     try {
-      // 1️⃣ Exibir spinner minimalista usando navigator capturado
-      navigator.push(
-        CupertinoPageRoute(
-          fullscreenDialog: true,
-          builder: (spinnerContext) => const Material(
-            color: Color(0x80000000), // Fundo semi-transparente
-            child: Center(
-              child: CupertinoActivityIndicator(
-                radius: 20,
-                color: CupertinoColors.white,
+      // 1️⃣ Exibir animação Lottie usando showDialog (fundo transparente)
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.5), // Fundo semi-transparente
+        builder: (dialogContext) => WillPopScope(
+          onWillPop: () async => false, // Impede fechar com back button
+          child: Center(
+            child: SizedBox(
+              width: 200,
+              height: 200,
+              child: Lottie.asset(
+                'assets/animated/lottie_spinner_001.json',
+                fit: BoxFit.contain,
+                repeat: true,
               ),
             ),
           ),
         ),
       );
-      spinnerShown = true;
+      animationShown = true;
 
       if (kDebugMode) {
-        debugPrint('✅ [QuickRetry] Spinner exibido (navigator push)');
+        debugPrint('✅ [QuickRetry] Animação Lottie exibida (showDialog)');
       }
 
-      // 2️⃣ Delay de 300ms (simulação de processamento)
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // 3️⃣ Chamar API
-      response = await viewModel.validateOwnershipViaPost(contentId);
+      // 2️⃣ Delay de 5 segundos (animação visual)
+      await Future.delayed(const Duration(seconds: 5));
 
       if (kDebugMode) {
-        debugPrint('📦 [QuickRetry] Response recebida: ${response.status}');
+        debugPrint('✅ [QuickRetry] Delay de 5 segundos completo');
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ [QuickRetry] Erro ao chamar API: $e');
-      }
-      errorMessage = 'Erro ao validar autoria. Tente novamente mais tarde.';
+
+      // 3️⃣ Chamar API (COMENTADO - apenas visual por enquanto)
+      // response = await viewModel.validateOwnershipViaPost(contentId);
+      // if (kDebugMode) {
+      //   debugPrint('📦 [QuickRetry] Response recebida: ${response.status}');
+      // }
     } finally {
-      // 4️⃣ SEMPRE fechar spinner (finally garante execução)
-      if (spinnerShown) {
+      // 4️⃣ SEMPRE fechar animação (finally garante execução)
+      if (animationShown) {
         if (kDebugMode) {
-          debugPrint('🔄 [QuickRetry] Fechando spinner via navigator.pop()...');
+          debugPrint('🔄 [QuickRetry] Fechando animação via navigator.pop()...');
         }
 
         try {
-          navigator.pop(); // Fechar usando navigator capturado
+          // Fechar dialog usando navigator capturado
+          navigator.pop();
           if (kDebugMode) {
-            debugPrint('✅ [QuickRetry] Spinner fechado com sucesso');
+            debugPrint('✅ [QuickRetry] Animação fechada com sucesso');
           }
         } catch (e) {
           if (kDebugMode) {
-            debugPrint('❌ [QuickRetry] Erro ao fechar spinner: $e');
+            debugPrint('❌ [QuickRetry] Erro ao fechar animação: $e');
           }
         }
 
         // Delay para garantir que animação de fechamento complete
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 300));
 
         if (kDebugMode) {
           debugPrint('✅ [QuickRetry] Delay pós-fechamento completo');
@@ -2662,107 +2666,53 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     // 5️⃣ Verificar se context ainda está válido antes de mostrar resultado
     if (!context.mounted) {
       if (kDebugMode) {
-        debugPrint('⚠️  [QuickRetry] Context não montado após fechar spinner');
+        debugPrint('⚠️  [QuickRetry] Context não montado após fechar animação');
       }
       return;
     }
 
-    // 6️⃣ Mostrar resultado simples
-    if (errorMessage != null) {
-      // Erro ao chamar API
-      if (kDebugMode) {
-        debugPrint('⚠️  [QuickRetry] Exibindo modal de erro');
-      }
-
-      showCupertinoDialog(
-        context: context,
-        builder: (ctx) => CupertinoAlertDialog(
-          title: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(CupertinoIcons.exclamationmark_triangle_fill, 
-                   color: CupertinoColors.systemOrange),
-              SizedBox(width: 8),
-              Text('Erro'),
-            ],
-          ),
-          content: Text(errorMessage!),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else if (response != null) {
-      if (response.isVerified) {
-        // ✅ VERIFICADO
-        if (kDebugMode) {
-          debugPrint('✅ [QuickRetry] Exibindo modal de sucesso');
-        }
-
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.check_mark_circled_solid, 
-                     color: CupertinoColors.systemGreen),
-                SizedBox(width: 8),
-                Text('Verificado!'),
-              ],
-            ),
-            content: const Text('Autoria confirmada com sucesso!'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  viewModel.refreshContents();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        // ❌ REJEITADO
-        if (kDebugMode) {
-          debugPrint('❌ [QuickRetry] Exibindo modal de rejeição');
-        }
-
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.xmark_circle_fill, 
-                     color: CupertinoColors.systemRed),
-                SizedBox(width: 8),
-                Text('Rejeitado'),
-              ],
-            ),
-            content: Text(
-              response!.message.isNotEmpty 
-                  ? response.message
-                  : 'Não foi possível verificar a autoria.\n\n'
-                    'Os IDs dos canais não coincidem.',
-            ),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+    // 6️⃣ Mostrar modal de confirmação visual (simulada)
+    if (kDebugMode) {
+      debugPrint('✅ [QuickRetry] Exibindo modal de confirmação visual');
     }
 
+    showCupertinoDialog(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.checkmark_seal_fill,
+              color: CupertinoColors.systemGreen,
+              size: 28,
+            ),
+            SizedBox(width: 10),
+            Text('Processamento Concluído!'),
+          ],
+        ),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: Text(
+            'A animação foi exibida com sucesso!\n\n'
+            '⚠️  Funcionalidade visual implementada.\n'
+            'Integração com backend será feita em breve.',
+            style: TextStyle(fontSize: 14, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
+            isDefaultAction: true,
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
     if (kDebugMode) {
-      debugPrint('🏁 [QuickRetry] Fluxo completo finalizado');
+      debugPrint('🏁 [QuickRetry] Fluxo visual completo finalizado');
     }
   }
 
