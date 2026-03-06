@@ -559,7 +559,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendi'),
+            child: const Text('Sair'),
           ),
         ],
       ),
@@ -3000,18 +3000,129 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                           // 1️⃣ Exibir modal intermediária de reautenticação recomendada (SEM fechar a atual)
                           showCupertinoDialog(
                             context: context,
-                            builder: (dialogContext) => CupertinoAlertDialog(
-                              title: const Text('Reautenticação Recomendada'),
-                              content: const Text(
-                                'Para melhores resultados:\n\n'
-                                '1. Faça logout da sua conta atual\n'
-                                '2. Limpe o cache do aplicativo (opcional)\n'
-                                '3. Faça login novamente\n'
-                                '4. Tente verificar a autoria novamente',
-                              ),
-                              actions: [
-                                CupertinoDialogAction(
-                                  onPressed: () async {
+                            barrierDismissible: false,
+                            builder: (dialogContext) {
+                              // Largura proporcional
+                              final screenWidth = MediaQuery.of(dialogContext).size.width;
+                              final dialogWidth = screenWidth * 0.88;
+                              
+                              return Center(
+                                child: Container(
+                                  width: dialogWidth,
+                                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // 🔴 Título principal (vermelho/rosa)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+                                        child: Text(
+                                          'Temos um probleminha!',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                            color: CupertinoColors.systemRed.withOpacity(0.9),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      
+                                      // Subtítulo
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 8, left: 16, right: 16),
+                                        child: Text(
+                                          'A Validação não é possível!',  
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: CupertinoColors.black,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 20),
+                                      
+                                      // 📋 Conteúdo com instruções
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: CupertinoColors.systemGrey6,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Center(
+                                              child: Text(
+                                                'Para melhores resultados,\n siga, exatamente, os passos abaixo:',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: CupertinoColors.black,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            
+                                            // Lista de passos numerados
+                                            _buildStep(
+                                              '1. Faça ',
+                                              'logout',
+                                              ' da sua conta Google ou Local atual no App.',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '2. ',
+                                              'Limpe o cache',
+                                              ' do aplicativo (opcional).',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '3. Faça ',
+                                              'login novamente',
+                                              ', de preferência com uma Conta Google.',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStepMultiBold([
+                                              {'text': '4. Utilize a ', 'bold': false},
+                                              {'text': 'mesma Conta Google', 'bold': true},
+                                              {'text': ' que você usa na administração do seu ', 'bold': false},
+                                              {'text': 'canal no YouTube', 'bold': true},
+                                              {'text': '.', 'bold': false},
+                                            ]),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '5. E tente ',
+                                              'verificar a autoria',
+                                              ' novamente desse conteúdo.',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 20),
+                                      
+                                      // Divisor
+                                      Container(
+                                        height: 0.5,
+                                        color: CupertinoColors.separator,
+                                      ),
+                                      
+                                      // 🔵 Botão "Entendi! Vamos tentar!?" (azul link)
+                                      CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        onPressed: () async {
                                     if (kDebugMode) {
                                       debugPrint('🔄 [Retry] Fechando modals e disparando validação...');
                                       debugPrint('🔄 [Retry] Content ID: $contentId');
@@ -3025,6 +3136,14 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                     capturedNavigator.pop();
                                     await Future.delayed(const Duration(milliseconds: 200));
                                     
+                                    // ✅ Verificar se context ainda está válido
+                                    if (!capturedContext.mounted) {
+                                      if (kDebugMode) {
+                                        debugPrint('⚠️ [Retry] Context não montado, abortando validação');
+                                      }
+                                      return;
+                                    }
+                                    
                                     // 🆕 NOVO: Passar navigator capturado (válido) ao invés de context
                                     _handleQuickRetryValidation(
                                       capturedContext,
@@ -3033,10 +3152,20 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                       viewModel,
                                     );
                                   },
-                                  child: const Text('Entendi'),
+                                        child: const Text(
+                                          'Entendi! Vamos tentar!?',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w600,
+                                            color: CupertinoColors.activeBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           );
                         },
                         child: const Row(
@@ -3066,6 +3195,54 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Helper para construir linha de passo com texto em negrito (single bold)
+  static Widget _buildStep(String prefix, String boldText, String suffix) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 13,
+          color: CupertinoColors.black,
+          height: 1.5,
+        ),
+        children: [
+          TextSpan(text: prefix),
+          TextSpan(
+            text: boldText,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: suffix),
+        ],
+      ),
+    );
+  }
+
+  /// Helper avançado para construir linha com múltiplos trechos em negrito
+  /// 
+  /// Aceita lista de Maps com 'text' e 'bold' para cada segmento
+  /// Exemplo: [{'text': 'Prefixo ', 'bold': false}, {'text': 'Negrito', 'bold': true}]
+  static Widget _buildStepMultiBold(List<Map<String, dynamic>> segments) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 13,
+          color: CupertinoColors.black,
+          height: 1.5,
+        ),
+        children: segments.map((segment) {
+          final text = segment['text'] as String;
+          final isBold = segment['bold'] as bool;
+          
+          return TextSpan(
+            text: text,
+            style: isBold 
+                ? const TextStyle(fontWeight: FontWeight.w700) 
+                : null,
+          );
+        }).toList(),
+      ),
     );
   }
 }
