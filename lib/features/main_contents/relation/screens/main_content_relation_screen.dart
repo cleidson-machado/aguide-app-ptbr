@@ -98,27 +98,63 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
-                _buildNavigationButton("Minhas Preferências e Ajustes", () {
-                  _navigateToPreferences();
-                }),
-                _buildNavigationButton("Add New Tema", () {
-                  // Navigate to Users List
-                }),
-                _buildNavigationButton("Transactions", () {
-                  // Navigate to Transactions
-                }),
-                _buildNavigationButton("Settings", () {
-                  // Navigate to Settings
-                }),
-                _buildNavigationButton("Reports", () {
-                  // Navigate to Reports
-                }),
-                _buildNavigationButton("Reports", () {
-                  // Navigate to Reports
-                }),
-                _buildNavigationButton("Reports", () {
-                  // Navigate to Reports
-                }),
+                _buildNavigationButton(
+                  "Configurações",
+                  CupertinoIcons.settings,
+                  () {
+                    _navigateToPreferences();
+                  },
+                ),
+                _buildNavigationButton(
+                  "SPONSORS",
+                  CupertinoIcons.star_fill,
+                  () {
+                    // Navigate to Users List
+                  },
+                  isSponsors: true,
+                ),
+                _buildNavigationButton(
+                  "Ganhos e Views",
+                  CupertinoIcons.money_dollar_circle,
+                  () {
+                    // Navigate to Users List
+                  },
+                ),
+                _buildNavigationButton(
+                  "Históricos",
+                  CupertinoIcons.clock,
+                  () {
+                    // Navigate to Transactions
+                  },
+                ),
+                _buildNavigationButton(
+                  "Avaliações",
+                  CupertinoIcons.star,
+                  () {
+                    // Navigate to Settings
+                  },
+                ),
+                _buildNavigationButton(
+                  "Métricas de Engajamento",
+                  CupertinoIcons.chart_bar,
+                  () {
+                    // Navigate to Reports
+                  },
+                ),
+                _buildNavigationButton(
+                  "Relatórios",
+                  CupertinoIcons.doc_text,
+                  () {
+                    // Navigate to Reports
+                  },
+                ),
+                _buildNavigationButton(
+                  "Extrato de Pagamentos",
+                  CupertinoIcons.creditcard,
+                  () {
+                    // Navigate to Reports
+                  },
+                ),
               ],
             ),
           ),
@@ -695,39 +731,62 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
     );
   }
 
-  Widget _buildNavigationButton(String title, VoidCallback onTap) {
+  Widget _buildNavigationButton(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isSponsors = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-                Color.fromARGB(255, 67, 123, 208), // Azul profundo
-                Color.fromARGB(255, 92, 111, 119), // Ciano vibrante
-            ],
+          gradient: LinearGradient(
+            colors: isSponsors
+                ? [
+                    const Color(0xFFE53935), // Vermelho elegante
+                    const Color(0xFFD32F2F), // Vermelho mais profundo
+                  ]
+                : [
+                    const Color.fromARGB(255, 67, 123, 208), // Azul profundo
+                    const Color.fromARGB(255, 92, 111, 119), // Ciano vibrante
+                  ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF007AFF).withOpacity(0.3),
+              color: isSponsors
+                  ? const Color(0xFFE53935).withOpacity(0.3)
+                  : const Color(0xFF007AFF).withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Center(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: CupertinoColors.white,
-              letterSpacing: 0.3,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: CupertinoColors.white,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: CupertinoColors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
         ),
       ),
