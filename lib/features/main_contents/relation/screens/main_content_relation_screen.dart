@@ -2,6 +2,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:country_flags/country_flags.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
@@ -20,12 +21,19 @@ class MainContentRelationScreen extends StatefulWidget {
 
 class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
   final UserDetailsViewModel viewModel = injector<UserDetailsViewModel>();
+  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
 
   @override
   void initState() {
     super.initState();
-    // Carregar detalhes do usuário (ID hardcoded do exemplo fornecido)
-    viewModel.loadUserDetails('aa736f39-4f54-4741-a6c4-6d7b0ba6e7cf');
+    // Carregar detalhes do usuário logado (userId extraído do token JWT)
+    final userId = _tokenManager.getUserId();
+    if (userId != null) {
+      viewModel.loadUserDetails(userId);
+    } else {
+      // Se não houver userId no token, definir erro no viewModel
+      viewModel.setError('Usuário não autenticado. Por favor, faça login novamente.');
+    }
   }
 
   @override

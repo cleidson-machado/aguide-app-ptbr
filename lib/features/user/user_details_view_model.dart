@@ -61,6 +61,14 @@ class UserDetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Define uma mensagem de erro e notifica os listeners
+  void setError(String errorMessage) {
+    error = errorMessage;
+    _userDetails = null;
+    _isLoading = false;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     super.dispose();
