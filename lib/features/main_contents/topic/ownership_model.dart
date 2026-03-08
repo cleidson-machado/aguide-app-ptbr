@@ -120,3 +120,76 @@ class OwnershipResult {
     );
   }
 }
+
+/// ═══════════════════════════════════════════════════════════════════════════
+/// 🆕 MODELO PARA VALIDAÇÃO DE AUTORIA (POST /api/v1/ownership/validate)
+/// ═══════════════════════════════════════════════════════════════════════════
+
+/// Modelo para resposta da validação de autoria via POST
+/// Trata tanto sucesso (VERIFIED) quanto rejeição (REJECTED)
+class OwnershipValidationResponse {
+  final String ownershipId;
+  final String userId;
+  final String contentId;
+  final String youtubeChannelId;
+  final String contentChannelId;
+  final String status; // 'VERIFIED' ou 'REJECTED'
+  final String validationHash; // Vazio em caso de REJECTED
+  final String? verifiedAt; // Null em caso de REJECTED
+  final String createdAt;
+  final String message;
+
+  const OwnershipValidationResponse({
+    required this.ownershipId,
+    required this.userId,
+    required this.contentId,
+    required this.youtubeChannelId,
+    required this.contentChannelId,
+    required this.status,
+    required this.validationHash,
+    this.verifiedAt,
+    required this.createdAt,
+    required this.message,
+  });
+
+  /// Verifica se a validação foi bem-sucedida (status VERIFIED)
+  bool get isVerified => status == 'VERIFIED';
+
+  /// Verifica se a validação foi rejeitada (status REJECTED)
+  bool get isRejected => status == 'REJECTED';
+
+  factory OwnershipValidationResponse.fromJson(Map<String, dynamic> json) {
+    return OwnershipValidationResponse(
+      ownershipId: json['ownershipId'] as String,
+      userId: json['userId'] as String,
+      contentId: json['contentId'] as String,
+      youtubeChannelId: json['youtubeChannelId'] as String,
+      contentChannelId: json['contentChannelId'] as String? ?? '',
+      status: json['status'] as String,
+      validationHash: json['validationHash'] as String? ?? '',
+      verifiedAt: json['verifiedAt'] as String?,
+      createdAt: json['createdAt'] as String,
+      message: json['message'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ownershipId': ownershipId,
+      'userId': userId,
+      'contentId': contentId,
+      'youtubeChannelId': youtubeChannelId,
+      'contentChannelId': contentChannelId,
+      'status': status,
+      'validationHash': validationHash,
+      'verifiedAt': verifiedAt,
+      'createdAt': createdAt,
+      'message': message,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'OwnershipValidationResponse(ownershipId: $ownershipId, status: $status, message: $message)';
+  }
+}

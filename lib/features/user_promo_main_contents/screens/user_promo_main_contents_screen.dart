@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 
 /// 🎯 Tela de Promoção/Onboarding com 3 Estágios (6 Páginas Internas)
@@ -33,11 +34,11 @@ class _UserPromoMainContentsScreenState
   // Controller para gerenciar a navegação entre páginas
   final PageController _pageController = PageController();
   
-  // Índice da página atual (0 a 5)
+  // Índice da página atual (0 a 6)
   int _currentPage = 0;
   
-  // Total de páginas (6 páginas = 3 estágios × 2 páginas cada)
-  static const int _totalPages = 6;
+  // Total de páginas (7 páginas = 3 estágios × 2 páginas cada + 1 página extra)
+  static const int _totalPages = 7;
   
   // Total de estágios visuais (usado nos dots)
   static const int _totalStages = 3;
@@ -170,10 +171,15 @@ class _UserPromoMainContentsScreenState
     _progressController?.reset();
   }
 
-  /// Pula o onboarding
+  /// Pula o onboarding - vai direto para a página 7 (loading)
   void _skipOnboarding() {
     _cancelAutoAdvance();
-    _handleFinish();
+    // Navega para a página 7 (loading Lottie)
+    _pageController.animateToPage(
+      6, // Página 7 (índice 6)
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
   /// Finaliza o onboarding (última página ou "Pular")
@@ -197,8 +203,12 @@ class _UserPromoMainContentsScreenState
     if (_isOpeningPage(index)) {
       _startAutoAdvance();
     } else if (index == 5) {
-      // Página 6 (última) - auto-avanço de 15 segundos
+      // Página 6 - auto-avanço de 15 segundos
       _startAutoAdvance(durationSeconds: 15);
+    } else if (index == 6) {
+      // Página 7 (Loading Lottie) - BLOQUEADA por 3 segundos
+      // Usuário não pode sair desta página até o timer acabar
+      _startAutoAdvance(durationSeconds: 3);
     } else {
       // Se é página de mensagem (1, 3), cancela auto-avanço
       _cancelAutoAdvance();
@@ -207,17 +217,25 @@ class _UserPromoMainContentsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
+    return PopScope(
+      // Bloqueia o botão de voltar do sistema quando na página 7 (loading)
+      canPop: _currentPage != 6,
+      child: CupertinoPageScaffold(
       // Sem NavigationBar para tela inteira
       child: SafeArea(
         child: Stack(
           children: [
             // ═══════════════════════════════════════════════════════════════
-            // PageView com os 6 estágios (3 grupos × 2 páginas)
+            // PageView com os 7 estágios (3 grupos × 2 páginas + 1 loading)
+            // Página 7: Gestos bloqueados durante carregamento
             // ═══════════════════════════════════════════════════════════════
             PageView(
               controller: _pageController,
               onPageChanged: _onPageChanged,
+              // Bloqueia gestos na página 7 (loading)
+              physics: _currentPage == 6
+                  ? const NeverScrollableScrollPhysics()
+                  : const AlwaysScrollableScrollPhysics(),
               children: [
                 _buildPage1Opening(),      // Estágio 1 - Abertura (auto-avança)
                 _buildPage2Message(),      // Estágio 1 - Mensagem (aguarda)
@@ -225,43 +243,49 @@ class _UserPromoMainContentsScreenState
                 _buildPage4Message(),      // Estágio 2 - Mensagem (aguarda)
                 _buildPage5Opening(),      // Estágio 3 - Abertura (auto-avança)
                 _buildPage6Message(),      // Estágio 3 - Mensagem (aguarda)
+                _buildPage7Blank(),        // Página Extra - Loading Lottie (bloqueado)
               ],
             ),
 
             // ═══════════════════════════════════════════════════════════════
             // Botão "Pular" no topo direito
+            // Oculto na página 7 (página em branco)
             // ═══════════════════════════════════════════════════════════════
-            Positioned(
-              top: 16,
-              right: 16,
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: CupertinoColors.black.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-                onPressed: _skipOnboarding,
-                child: const Text(
-                  'Pular',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+            if (_currentPage != 6) // Esconde botão na página 7
+              Positioned(
+                top: 16,
+                right: 16,
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: CupertinoColors.black.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  onPressed: _skipOnboarding,
+                  child: const Text(
+                    'Pular',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
-            ),
 
             // ═══════════════════════════════════════════════════════════════
             // Indicadores de Página (Dots) - Apenas no bottom
+            // Oculto na página 7 (página em branco)
             // ═══════════════════════════════════════════════════════════════
-            Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: _buildPageIndicators(),
-            ),
+            if (_currentPage != 6) // Esconde dots na página 7
+              Positioned(
+                bottom: 40,
+                left: 0,
+                right: 0,
+                child: _buildPageIndicators(),
+              ),
           ],
         ),
       ),
+      ), // Fechamento do PopScope
     );
   }
 
@@ -317,6 +341,50 @@ class _UserPromoMainContentsScreenState
   /// ═══════════════════════════════════════════════════════════════════════
   Widget _buildPage6Message() {
     return _buildPage6MessageWithFloatingCircles();
+  }
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// PÁGINA 7 - Página Extra com Animação Lottie (não conta nos dots)
+  /// ═══════════════════════════════════════════════════════════════════════
+  Widget _buildPage7Blank() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(255, 67, 123, 208), // Azul profundo
+            Color.fromARGB(255, 92, 111, 119), // Ciano vibrante
+            Color.fromARGB(255, 213, 198, 118), // Amarelo dourado
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Animação Lottie
+            Lottie.asset(
+              'assets/animated/lottie_spinner_001.json',
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Carregando...',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// ═══════════════════════════════════════════════════════════════════════

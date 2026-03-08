@@ -13,6 +13,7 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lottie/lottie.dart';
 
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -267,12 +268,179 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 HANDLER DE VALIDAÇÃO DE AUTORIA VIA POST
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Handler que executa validação POST ao clicar no botão VERMELHO
+  /// 
+  /// Fluxo:
+  /// 1. Exibe modal de loading
+  /// 2. Chama API POST /api/v1/ownership/validate
+  /// 3. Fecha loading e exibe resultado (VERIFIED ou REJECTED)
+  /// 4. Se VERIFIED, recarrega lista para atualizar cor do botão
+  /// 5. Se REJECTED, oferece opção de "REGISTRO AVANÇADO" para wizard
+  static Future<void> _handleValidationPost(
+    BuildContext context,
+    String contentId,
+    MainContentTopicViewModel viewModel,
+    VoidCallback onNavigateToWizard, {
+    bool isRetry = false, // 🆕 Se é retry, usa spinner mais rápido
+  }) async {
+    if (kDebugMode) {
+      debugPrint('🚀 [_handleValidationPost] Iniciando validação POST');
+      debugPrint('   Content ID: $contentId');
+      debugPrint('   Is Retry: $isRetry');
+    }
+
+    // Verificar se context está válido antes de iniciar
+    if (!context.mounted) {
+      if (kDebugMode) {
+        debugPrint('❌ [_handleValidationPost] Context não montado, abortando');
+      }
+      return;
+    }
+
+    // 1️⃣ Exibir modal de loading (rápido para retry, normal para primeira vez)
+    if (isRetry) {
+      // Spinner rápido para retry (sem texto descritivo, só spinner)
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CupertinoActivityIndicator(
+            radius: 20,
+            color: CupertinoColors.activeBlue,
+          ),
+        ),
+      );
+    } else {
+      _showValidationLoadingDialog(context);
+    }
+
+    // Delay reduzido para retry (300ms) vs normal (800ms)
+    final delayDuration = isRetry 
+        ? const Duration(milliseconds: 300)
+        : const Duration(milliseconds: 800);
+    
+    await Future.delayed(delayDuration);
+
+    try {
+      // 2️⃣ Chamar API POST /api/v1/ownership/validate
+      final response = await viewModel.validateOwnershipViaPost(contentId);
+
+      if (kDebugMode) {
+        debugPrint('📦 [_handleValidationPost] Response recebido: ${response.status}');
+      }
+
+      // 3️⃣ Fechar loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        if (kDebugMode) {
+          debugPrint('✅ [_handleValidationPost] Loading dialog fechado');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('⚠️  [_handleValidationPost] Context não montado, não pode fechar loading');
+        }
+        return;
+      }
+
+      // Pequeno delay para transição visual
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!context.mounted) {
+        if (kDebugMode) {
+          debugPrint('⚠️  [_handleValidationPost] Context não montado após delay');
+        }
+        return;
+      }
+
+      // 4️⃣ Exibir modal de resultado
+      _showValidationResultDialog(
+        context,
+        response,
+        onNavigateToWizard: onNavigateToWizard, // 🆕 Passa callback para wizard
+        onDismiss: () {
+          // 5️⃣ Se VERIFIED, recarregar lista para atualizar UI
+          if (response.isVerified) {
+            if (kDebugMode) {
+              debugPrint('✅ [_handleValidationPost] Recarregando lista após validação');
+            }
+            viewModel.refreshContents();
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [_handleValidationPost] Erro capturado: $e');
+      }
+
+      // Fechar loading dialog em caso de erro
+      if (context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+          if (kDebugMode) {
+            debugPrint('✅ [_handleValidationPost] Loading dialog fechado (erro)');
+          }
+        } catch (navError) {
+          if (kDebugMode) {
+            debugPrint('⚠️  [_handleValidationPost] Erro ao fechar loading: $navError');
+          }
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('❌ [_handleValidationPost] Erro: $e');
+      }
+
+      // Exibir erro ao usuário
+      if (context.mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  CupertinoIcons.exclamationmark_triangle_fill,
+                  color: Color(0xFFEF5350),
+                  size: 28,
+                ),
+                SizedBox(width: 8),
+                Text('Erro na Validação'),
+              ],
+            ),
+            content: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                e.toString().replaceAll('Exception: ', ''),
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Fechar'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
   /// Widget do botão de validação de autoria
   /// ✅ CORRIGIDO: Renderização individual e isolada por item
   /// ✅ PRESERVA SCROLL: Recebe callback para navegação que preserva posição
+  /// 🆕 VALIDAÇÃO POST: Agora chama API de validação ao clicar no botão VERMELHO
   static Widget _buildValidationButton(
     BuildContext context,
     MainContentTopicModel content,
+    MainContentTopicViewModel viewModel, // 🆕 Adicionado para chamar validação POST
     VoidCallback onNavigateToWizard, // ✅ Callback para navegação
   ) {
     // ✅ DEBUG: Log do validationHash para verificar valores
@@ -302,16 +470,21 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         borderRadius: BorderRadius.circular(5),
         onPressed: () {
           if (hasValidation) {
-            // ✅ Botão AZUL: Mostra modal informativo
+            // ✅ Botão AZUL: Mostra modal informativo (já validado)
             _showValidatedContentDialog(context, content);
           } else {
-            // ✅ Botão VERMELHO: Navega preservando scroll
+            // 🆕 Botão VERMELHO: Chama validação POST
             if (kDebugMode) {
               debugPrint(
-                '🎯 [ValidationButton] Navegando para wizard - ID: ${content.id}',
+                '🔐 [ValidationButton] Iniciando validação POST - ID: ${content.id}',
               );
             }
-            onNavigateToWizard(); // ✅ Usa callback ao invés de navegação direta
+            _handleValidationPost(
+              context,
+              content.id,
+              viewModel,
+              onNavigateToWizard, // 🆕 Passa callback para wizard
+            );
           }
         },
         child: Text(
@@ -387,7 +560,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendi'),
+            child: const Text('Sair'),
           ),
         ],
       ),
@@ -479,9 +652,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             ),
           ),
           // Botão de destaque - Validação de Autoria (Dinâmico)
+          // 🆕 Agora chama validação POST ao clicar (botão VERMELHO)
           _MainContentTopicScreenState._buildValidationButton(
             context, 
-            content, 
+            content,
+            viewModel, // 🆕 Passa viewModel para chamar validação POST
             onNavigateToWizard, // ✅ Repassa callback
           ),
           // Conteúdo do card
@@ -548,7 +723,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                         case 2:
                           // Verificar ownership antes de exibir modal de autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
-                          _MainContentTopicScreenState._handleAuthorshipCheck(context, content, viewModel);
+                          _MainContentTopicScreenState._handleAuthorshipCheck(
+                            context,
+                            content,
+                            viewModel,
+                            onNavigateToWizard: onNavigateToWizard,
+                          );
                           break;
                       }
                     },
@@ -1114,12 +1294,257 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
 
   //YYYYY Conteúdo scrollável com informações dinâmicas -FIM
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 VALIDAÇÃO DE AUTORIA VIA POST (Modals)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Exibe modal de loading durante validação POST
+  /// Inclui spinner e mensagem de processamento
+  static void _showValidationLoadingDialog(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const CupertinoAlertDialog(
+        content: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CupertinoActivityIndicator(radius: 16),
+              SizedBox(height: 20),
+              Text(
+                'Validando autoria...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Aguarde enquanto verificamos seus dados',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CupertinoColors.systemGrey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Exibe modal de resultado da validação (VERIFIED ou REJECTED)
+  /// 
+  /// [context] - Contexto da tela
+  /// [response] - Resposta da API com status e detalhes
+  /// [onNavigateToWizard] - Callback para navegar ao wizard de registro avançado
+  /// [onDismiss] - Callback executado ao fechar o modal (opcional)
+  static void _showValidationResultDialog(
+    BuildContext context,
+    OwnershipValidationResponse response, {
+    VoidCallback? onNavigateToWizard,
+    VoidCallback? onDismiss,
+  }) {
+    final isVerified = response.isVerified;
+    final icon = isVerified 
+        ? CupertinoIcons.checkmark_seal_fill 
+        : CupertinoIcons.xmark_circle_fill;
+    final iconColor = isVerified 
+        ? const Color(0xFF4CAF50) // Verde
+        : const Color(0xFFEF5350); // Vermelho
+    final title = isVerified 
+        ? '✅ Autoria Confirmada!' 
+        : '❌ Autoria Não Confirmada';
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CupertinoAlertDialog(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 17),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            
+            // Mensagem da API
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                response.message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            
+            // Detalhes (condicional baseado no status)
+            if (isVerified) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Benefícios Ativos:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildBenefitRow('Autoria reconhecida publicamente'),
+              _buildBenefitRow('Monetização ativa'),
+              _buildBenefitRow('Suporte prioritário'),
+              _buildBenefitRow('Estatísticas detalhadas'),
+              
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemGrey5,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Hash de Validação:',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      response.validationHash.length > 20
+                          ? '${response.validationHash.substring(0, 20)}...'
+                          : response.validationHash,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        color: CupertinoColors.systemGrey2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEBEE), // Vermelho claro
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFEF5350),
+                    width: 1,
+                  ),
+                ),
+                child: const Column(
+                  children: [
+                    Text(
+                      'Possíveis motivos:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '• Canal do YouTube não coincide\n'
+                      '• Conteúdo não pertence ao usuário\n'
+                      '• Verificação ainda pendente',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              // 🆕 Botão "REGISTRO AVANÇADO" para navegar ao wizard
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: CupertinoButton(
+                  color: const Color(0xFFB71C1C), // Vermelho escuro
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  borderRadius: BorderRadius.circular(10),
+                  onPressed: () {
+                    // Fechar modal e navegar para wizard
+                    Navigator.of(context).pop();
+                    if (onNavigateToWizard != null) {
+                      if (kDebugMode) {
+                        debugPrint('🚀 [ValidationResult] Navegando para REGISTRO AVANÇADO');
+                      }
+                      onNavigateToWizard();
+                    }
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.doc_text_fill,
+                        color: CupertinoColors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'REGISTRO AVANÇADO',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: CupertinoColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              if (onDismiss != null) onDismiss();
+            },
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
   /// Verifica ownership e decide se abre modal ou exibe mensagem de alerta
+  /// 
+  /// [onNavigateToWizard] - Callback para navegar ao wizard de registro avançado
   static Future<void> _handleAuthorshipCheck(
     BuildContext context,
     MainContentTopicModel content,
-    MainContentTopicViewModel viewModel,
-  ) async {
+    MainContentTopicViewModel viewModel, {
+    VoidCallback? onNavigateToWizard,
+  }) async {
     // Exibir loading enquanto verifica
     showCupertinoDialog(
       context: context,
@@ -1167,13 +1592,22 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
           _showOwnershipDeniedMessage(
             context,
             'Erro: Dados de ownership não encontrados.',
+            onNavigateToWizard: onNavigateToWizard,
+            contentId: content.id,
+            viewModel: viewModel,
           );
         }
       } else {
         // ❌ NÃO É DONO: Exibir mensagem de alerta
         final message = result.error?.message ?? 
                         'Este conteúdo não pertence ao usuário logado';
-        _showOwnershipDeniedMessage(context, message);
+        _showOwnershipDeniedMessage(
+          context,
+          message,
+          onNavigateToWizard: onNavigateToWizard,
+          contentId: content.id,
+          viewModel: viewModel,
+        );
       }
     } catch (e) {
       // Fechar loading dialog em caso de erro
@@ -1189,6 +1623,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         _showOwnershipDeniedMessage(
           context,
           'Erro ao verificar autoria. Tente novamente.',
+          onNavigateToWizard: onNavigateToWizard,
+          contentId: content.id,
+          viewModel: viewModel,
         );
       }
     }
@@ -2137,9 +2574,238 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     });
   }
 
+  /// Modal de erro para vinculação de conteúdo
+  /// Exibe ícone vermelho de erro com mensagem
+  /// Auto-fecha após 5 segundos
+  static void _showContentLinkageErrorMessage(BuildContext context) {
+    if (kDebugMode) {
+      debugPrint('🔴 [ERROR MODAL] Tentando exibir modal de erro...');
+      debugPrint('🔴 [ERROR MODAL] Context mounted: ${context.mounted}');
+    }
+
+    if (!context.mounted) {
+      if (kDebugMode) {
+        debugPrint('❌ [ERROR MODAL] Context não está montado, abortando');
+      }
+      return;
+    }
+
+    bool isDialogOpen = true; // Flag para controlar se dialog ainda está aberto
+
+    try {
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false, // ✅ Desabilita fechar tocando fora (evita erro)
+        builder: (BuildContext dialogContext) {
+          if (kDebugMode) {
+            debugPrint('✅ [ERROR MODAL] Builder executado, criando dialog');
+          }
+          
+          return WillPopScope(
+            onWillPop: () async {
+              // Previne fechar com botão voltar
+              if (kDebugMode) {
+                debugPrint('⚠️ [ERROR MODAL] Tentativa de fechar com back button bloqueada');
+              }
+              return false;
+            },
+            child: const CupertinoAlertDialog(
+              title: Icon(
+                CupertinoIcons.xmark_circle_fill,
+                color: CupertinoColors.systemRed,
+                size: 48,
+              ),
+              content: Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text(
+                  'Vinculação\n Não Realizada com Sucesso!',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          );
+        },
+      ).then((_) {
+        // Callback executado quando dialog é fechado (por qualquer motivo)
+        isDialogOpen = false;
+        if (kDebugMode) {
+          debugPrint('🔴 [ERROR MODAL] Dialog foi fechado (callback .then)');
+        }
+      });
+
+      if (kDebugMode) {
+        debugPrint('✅ [ERROR MODAL] Modal exibida com sucesso');
+      }
+
+      // Auto-fechar após 5 segundos com proteção
+      Timer(const Duration(milliseconds: 5000), () {
+        if (kDebugMode) {
+          debugPrint('⏰ [ERROR MODAL] Timer de 5s disparado');
+          debugPrint('   isDialogOpen: $isDialogOpen');
+          debugPrint('   context.mounted: ${context.mounted}');
+        }
+
+        // Só tenta fechar se dialog ainda estiver aberto E context válido
+        if (isDialogOpen && context.mounted) {
+          try {
+            Navigator.of(context, rootNavigator: true).pop();
+            isDialogOpen = false; // Marca como fechado
+            if (kDebugMode) {
+              debugPrint('✅ [ERROR MODAL] Modal fechada automaticamente após 5 segundos');
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('⚠️ [ERROR MODAL] Erro ao fechar: $e');
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ [ERROR MODAL] Dialog já foi fechado ou context inválido');
+          }
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [ERROR MODAL] Erro ao exibir modal: $e');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 VALIDAÇÃO RÁPIDA DE RETRY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🔄 Validação rápida para retry (com animação Lottie)
+  /// Exibe animação Lottie por 5 segundos → Mostra modal de confirmação visual
+  /// 
+  /// ⚠️  NOTA: Por enquanto apenas visual, SEM chamada de API backend
+  /// 🔑 Recebe NavigatorState ao invés de BuildContext para evitar problemas de context desativado
+  static Future<void> _handleQuickRetryValidation(
+    BuildContext context,
+    NavigatorState navigator,
+    String contentId,
+    MainContentTopicViewModel viewModel,
+  ) async {
+    if (kDebugMode) {
+      debugPrint('🔄 [QuickRetry] Iniciando validação visual com Lottie');
+      debugPrint('   Content ID: $contentId');
+    }
+
+    bool animationShown = false;
+
+    try {
+      // 1️⃣ Exibir animação Lottie usando showDialog (fundo transparente)
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.5), // Fundo semi-transparente
+        builder: (dialogContext) => WillPopScope(
+          onWillPop: () async => false, // Impede fechar com back button
+          child: Center(
+            child: SizedBox(
+              width: 200,
+              height: 200,
+              child: Lottie.asset(
+                'assets/animated/lottie_spinner_001.json',
+                fit: BoxFit.contain,
+                repeat: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      animationShown = true;
+
+      if (kDebugMode) {
+        debugPrint('✅ [QuickRetry] Animação Lottie exibida (showDialog)');
+      }
+
+      // 2️⃣ Delay de 5 segundos (animação visual)
+      await Future.delayed(const Duration(seconds: 5));
+
+      if (kDebugMode) {
+        debugPrint('✅ [QuickRetry] Delay de 5 segundos completo');
+      }
+
+      // 3️⃣ Chamar API (COMENTADO - apenas visual por enquanto)
+      // response = await viewModel.validateOwnershipViaPost(contentId);
+      // if (kDebugMode) {
+      //   debugPrint('📦 [QuickRetry] Response recebida: ${response.status}');
+      // }
+    } finally {
+      // 4️⃣ SEMPRE fechar animação (finally garante execução)
+      if (animationShown) {
+        if (kDebugMode) {
+          debugPrint('🔄 [QuickRetry] Fechando animação via navigator.pop()...');
+        }
+
+        try {
+          // Fechar dialog usando navigator capturado
+          navigator.pop();
+          if (kDebugMode) {
+            debugPrint('✅ [QuickRetry] Animação fechada com sucesso');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('❌ [QuickRetry] Erro ao fechar animação: $e');
+          }
+        }
+
+        // Delay para garantir que animação de fechamento complete
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (kDebugMode) {
+          debugPrint('✅ [QuickRetry] Delay pós-fechamento completo (500ms)');
+        }
+      }
+    }
+
+    // 5️⃣ Verificar se context ainda está válido antes de mostrar resultado
+    // Usar navigator.context que é mais estável que o context do dialog
+    final validContext = navigator.context;
+    
+    if (kDebugMode) {
+      debugPrint('🔍 [QuickRetry] Verificando context...');
+      debugPrint('   context original.mounted: ${context.mounted}');
+      debugPrint('   navigator.context.mounted: ${validContext.mounted}');
+    }
+
+    if (!validContext.mounted) {
+      if (kDebugMode) {
+        debugPrint('⚠️  [QuickRetry] Navigator context não montado após fechar animação');
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ [QuickRetry] Context válido, prosseguindo...');
+    }
+
+    // 6️⃣ Mostrar modal de erro de vinculação usando context válido
+    if (kDebugMode) {
+      debugPrint('❌ [QuickRetry] CHAMANDO _showContentLinkageErrorMessage...');
+    }
+
+    _showContentLinkageErrorMessage(validContext);
+
+    if (kDebugMode) {
+      debugPrint('🏁 [QuickRetry] Fluxo visual completo finalizado');
+    }
+  }
+
   /// Exibe mensagem de alerta quando usuário NÃO é dono do conteúdo
   /// Layout melhorado com explicação detalhada e opções de ação
-  static void _showOwnershipDeniedMessage(BuildContext context, String message) {
+  /// 
+  /// [onNavigateToWizard] - Callback para navegar ao wizard de registro avançado
+  /// [contentId] - ID do conteúdo para retry de validação POST
+  /// [viewModel] - ViewModel para disparar validação POST novamente
+  static void _showOwnershipDeniedMessage(
+    BuildContext context,
+    String message, {
+    VoidCallback? onNavigateToWizard,
+    String? contentId,
+    MainContentTopicViewModel? viewModel,
+  }) {
     // Usar mensagem padrão se a mensagem da API for genérica
     final useDefaultMessage = message.contains('não pertence') || 
                               message.contains('not found') ||
@@ -2282,52 +2948,43 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                   color: CupertinoColors.separator,
                 ),
                 
-                // Botão "REGISTRO AVANÇADO" (azul)
-                CupertinoButton(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    // TODO: Implementar navegação para tela de registro avançado
-                    if (kDebugMode) {
-                      debugPrint('📋 [OwnershipDenied] REGISTRO AVANÇADO solicitado');
-                    }
-                    
-                    // Placeholder: exibir mensagem temporária
-                    showCupertinoDialog(
-                      context: context,
-                      builder: (context) => CupertinoAlertDialog(
-                        title: const Text('Em Desenvolvimento'),
-                        content: const Text(
-                          'A funcionalidade de Registro Avançado estará disponível em breve. '
-                          'Nossa equipe analisará manualmente o vínculo do conteúdo.',
+                // 🆕 Botão "REGISTRO AVANÇADO" (VERMELHO - Layout atualizado)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: CupertinoButton(
+                    color: const Color(0xFFB71C1C), // Vermelho escuro (consistente)
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    borderRadius: BorderRadius.circular(10),
+                    onPressed: () {
+                      Navigator.of(context, rootNavigator: true).pop();
+                      if (kDebugMode) {
+                        debugPrint('🚀 [OwnershipDenied] Navegando para REGISTRO AVANÇADO');
+                      }
+                      // 🆕 Navegar para wizard (Slider → Wizard)
+                      if (onNavigateToWizard != null) {
+                        onNavigateToWizard();
+                      }
+                    },
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          CupertinoIcons.doc_text_fill,
+                          color: CupertinoColors.white,
+                          size: 20,
                         ),
-                        actions: [
-                          CupertinoDialogAction(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
+                        SizedBox(width: 10),
+                        Text(
+                          'REGISTRO AVANÇADO',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: CupertinoColors.white,
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.doc_text_fill,
-                        size: 18,
-                        color: CupertinoColors.activeBlue,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'REGISTRO AVANÇADO',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: CupertinoColors.activeBlue,
-                          fontSize: 15,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 
@@ -2337,61 +2994,316 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                   color: CupertinoColors.separator,
                 ),
                 
-                // Botão "TENTAR NOVAMENTE" (vermelho/rosa)
-                CupertinoButton(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    if (kDebugMode) {
-                      debugPrint('🔄 [OwnershipDenied] TENTAR NOVAMENTE selecionado');
-                    }
-                    
-                    // Sugerir logout/login
-                    showCupertinoDialog(
-                      context: context,
-                      builder: (context) => CupertinoAlertDialog(
-                        title: const Text('Reautenticação Recomendada'),
-                        content: const Text(
-                          'Para melhores resultados:\n\n'
-                          '1. Faça logout da sua conta atual\n'
-                          '2. Limpe o cache do aplicativo (opcional)\n'
-                          '3. Faça login novamente\n'
-                          '4. Tente verificar a autoria novamente',
+                // 🔄 Botão "TENTAR NOVAMENTE" (Degradê Coral → Rosa)
+                if (contentId != null && viewModel != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFFF6B6B), // Coral/vermelho claro
+                            Color(0xFFEE5A6F), // Rosa avermelhado
+                            Color(0xFFE94B82), // Rosa forte
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        actions: [
-                          CupertinoDialogAction(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Entendi'),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                  },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'TENTAR NOVAMENTE',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFE57373), // Rosa/vermelho claro
-                          fontSize: 15,
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          if (kDebugMode) {
+                            debugPrint('🔄 [OwnershipDenied] TENTAR NOVAMENTE selecionado');
+                          }
+                          
+                          // 🔑 CRÍTICO: Capturar navigator ANTES de qualquer operação assíncrona
+                          final capturedNavigator = Navigator.of(context, rootNavigator: true);
+                          final capturedContext = context; // Capturar context também
+                          
+                          // 1️⃣ Exibir modal intermediária de reautenticação recomendada (SEM fechar a atual)
+                          showCupertinoDialog(
+                            context: context,
+                            barrierDismissible: true, // ✅ Permite fechar tocando fora
+                            builder: (dialogContext) {
+                              // Largura proporcional
+                              final screenWidth = MediaQuery.of(dialogContext).size.width;
+                              final dialogWidth = screenWidth * 0.88;
+                              
+                              return Center(
+                                child: Container(
+                                  width: dialogWidth,
+                                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    color: CupertinoColors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // 🔴 Título principal (vermelho/rosa)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+                                        child: Text(
+                                          'AVISO IMPORTANTE!',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                            color: CupertinoColors.systemRed.withOpacity(0.9),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      
+                                      // Subtítulo
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 8, left: 16, right: 16),
+                                        child: Text(
+                                          'A Validação NÃO SERÁ possível!',  
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: CupertinoColors.black,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 20),
+                                      
+                                      // 📋 Conteúdo com instruções
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: CupertinoColors.systemGrey6,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Center(
+                                              child: Text(
+                                                'Para melhores resultados,\n siga, exatamente, os passos abaixo:',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: CupertinoColors.black,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            
+                                            // Lista de passos numerados
+                                            _buildStep(
+                                              '1. Faça ',
+                                              'logout',
+                                              ' da sua conta Google ou Local atual.',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '2. ',
+                                              'Limpe o cache',
+                                              ' do aplicativo (opcional).',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '3. Faça ',
+                                              'login novamente',
+                                              ', de preferência com uma Conta Google.',
+                                            ),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStepMultiBold([
+                                              {'text': '4. Utilize a ', 'bold': false},
+                                              {'text': 'mesma Conta Google', 'bold': true},
+                                              {'text': ' que você usa na administração do seu ', 'bold': false},
+                                              {'text': 'canal no YouTube', 'bold': true},
+                                              {'text': '.', 'bold': false},
+                                            ]),
+                                            const SizedBox(height: 8),
+                                            
+                                            _buildStep(
+                                              '5. E tente ',
+                                              'verificar a autoria',
+                                              ' novamente desse conteúdo.',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 20),
+                                      
+                                      // Divisor
+                                      Container(
+                                        height: 0.5,
+                                        color: CupertinoColors.separator,
+                                      ),
+                                      
+                                      // 🔵 Botão "Entendi! Vamos tentar!?" (azul link)
+                                      CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        onPressed: () async {
+                                    if (kDebugMode) {
+                                      debugPrint('🔄 [Retry] Fechando modals e disparando validação...');
+                                      debugPrint('🔄 [Retry] Content ID: $contentId');
+                                    }
+                                    
+                                    // Fechar modal de reautenticação
+                                    Navigator.pop(dialogContext);
+                                    await Future.delayed(const Duration(milliseconds: 100));
+                                    
+                                    // Fechar modal principal (Ownership Denied)
+                                    capturedNavigator.pop();
+                                    await Future.delayed(const Duration(milliseconds: 200));
+                                    
+                                    // ✅ Verificar se context ainda está válido
+                                    if (!capturedContext.mounted) {
+                                      if (kDebugMode) {
+                                        debugPrint('⚠️ [Retry] Context não montado, abortando validação');
+                                      }
+                                      return;
+                                    }
+                                    
+                                    // 🆕 NOVO: Passar navigator capturado (válido) ao invés de context
+                                    _handleQuickRetryValidation(
+                                      capturedContext,
+                                      capturedNavigator,
+                                      contentId,
+                                      viewModel,
+                                    );
+                                  },
+                                        child: const Text(
+                                          'Entendi! Vamos tentar assim mesmo!?',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w600,
+                                            color: CupertinoColors.activeBlue,
+                                          ),
+                                        ),
+                                      ),
+                                      
+                                      // Divisor
+                                      Container(
+                                        height: 0.5,
+                                        color: CupertinoColors.separator,
+                                      ),
+                                      
+                                      // 🔴 Botão "Cancelar" (fecha todas as modals)
+                                      CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        onPressed: () {
+                                          if (kDebugMode) {
+                                            debugPrint('❌ [Retry] Cancelar selecionado - fechando todas as modals');
+                                          }
+                                          
+                                          // Fechar modal intermediária
+                                          Navigator.pop(dialogContext);
+                                          
+                                          // Fechar modal principal (Ownership Denied) usando navigator capturado
+                                          capturedNavigator.pop();
+                                          
+                                          if (kDebugMode) {
+                                            debugPrint('✅ [Retry] Todas as modals fechadas, retornando à view principal');
+                                          }
+                                        },
+                                        child: const Text(
+                                          'Cancelar',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w400,
+                                            color: CupertinoColors.systemGrey,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.refresh_circled_solid,
+                              color: CupertinoColors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'TENTAR NOVAMENTE',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: CupertinoColors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(
-                        CupertinoIcons.refresh_circled_solid,
-                        size: 18,
-                        color: Color(0xFFE57373),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  /// Helper para construir linha de passo com texto em negrito (single bold)
+  static Widget _buildStep(String prefix, String boldText, String suffix) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 11,
+          color: CupertinoColors.black,
+          height: 1.5,
+        ),
+        children: [
+          TextSpan(text: prefix),
+          TextSpan(
+            text: boldText,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: suffix),
+        ],
+      ),
+    );
+  }
+
+  /// Helper avançado para construir linha com múltiplos trechos em negrito
+  /// 
+  /// Aceita lista de Maps com 'text' e 'bold' para cada segmento
+  /// Exemplo: [{'text': 'Prefixo ', 'bold': false}, {'text': 'Negrito', 'bold': true}]
+  static Widget _buildStepMultiBold(List<Map<String, dynamic>> segments) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 11,
+          color: CupertinoColors.black,
+          height: 1.5,
+        ),
+        children: segments.map((segment) {
+          final text = segment['text'] as String;
+          final isBold = segment['bold'] as bool;
+          
+          return TextSpan(
+            text: text,
+            style: isBold 
+                ? const TextStyle(fontWeight: FontWeight.w700) 
+                : null,
+          );
+        }).toList(),
+      ),
     );
   }
 }

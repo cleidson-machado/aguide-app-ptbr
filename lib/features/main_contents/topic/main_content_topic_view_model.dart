@@ -483,6 +483,60 @@ class MainContentTopicViewModel extends ChangeNotifier {
     }
   }
 
+  /// 🆕 Valida autoria via POST /api/v1/ownership/validate
+  /// 
+  /// Envia requisição POST para validar se o usuário é dono do conteúdo
+  /// Retorna [OwnershipValidationResponse] com status:
+  /// - VERIFIED: autoria confirmada com validationHash
+  /// - REJECTED: autoria negada (canais não coincidem)
+  /// 
+  /// [contentId] - ID do conteúdo a validar
+  Future<OwnershipValidationResponse> validateOwnershipViaPost(
+    String contentId,
+  ) async {
+    if (kDebugMode) {
+      debugPrint('🔐 [MainContentTopicViewModel] Validando ownership via POST');
+      debugPrint('   Content ID: $contentId');
+    }
+
+    // Obter userId do token JWT
+    final tokenManager = injector<AuthTokenManager>();
+    final userId = tokenManager.getUserId();
+
+    if (userId == null || userId.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('❌ [MainContentTopicViewModel] Erro: userId não encontrado no token');
+      }
+
+      // Lançar exceção para ser tratada na UI
+      throw Exception('Token de autenticação inválido. Faça login novamente.');
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ [MainContentTopicViewModel] User ID extraído: $userId');
+    }
+
+    // 📍 CONSUMO DO ENDPOINT: POST /api/v1/ownership/validate
+    final ownershipRepo = injector<OwnershipRepositoryInterface>();
+    final response = await ownershipRepo.validateOwnership(
+      userId: userId,
+      contentId: contentId,
+    );
+
+    if (kDebugMode) {
+      if (response.isVerified) {
+        debugPrint('✅ [MainContentTopicViewModel] Ownership VERIFICADO!');
+        debugPrint('   ValidationHash: ${response.validationHash}');
+        debugPrint('   Message: ${response.message}');
+      } else {
+        debugPrint('❌ [MainContentTopicViewModel] Ownership REJEITADO');
+        debugPrint('   Motivo: ${response.message}');
+      }
+    }
+
+    return response;
+  }
+
   // ===== Helpers internos =====
   void _setLoading(bool value) {
     _isLoading = value;
