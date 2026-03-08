@@ -187,10 +187,21 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             children: [
               Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: CupertinoSearchTextField(
-                      onChanged: _onSearchChanged, // Usa handler com debounce
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: CupertinoSearchTextField(
+                        placeholder: 'Pesquisar',
+                        onChanged: _onSearchChanged, // Usa handler com debounce
+                      ),
                     ),
                   ),
                   Expanded(child: _buildBody()),
