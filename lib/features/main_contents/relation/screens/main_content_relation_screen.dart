@@ -1,6 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
@@ -199,6 +200,11 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
             textAlign: TextAlign.center,
           ),
           
+          const SizedBox(height: 12),
+          
+          // Emblema OAuth Provider ou Local User
+          _buildOAuthProviderBadge(user.oauthProvider),
+          
           const SizedBox(height: 16),
           
           // E-mail
@@ -316,17 +322,140 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
 
   // Avatar mocado circular
   Widget _buildMockedAvatar() {
+    // ════════════════════════════════════════════════════════════════════════════
+    // ⚠️  TODO: IMPLEMENTAR ARMAZENAMENTO E EXIBIÇÃO DE FOTO DE PERFIL DO USUÁRIO
+    // ════════════════════════════════════════════════════════════════════════════
+    // PENDENTE: Definir estratégia de armazenamento de imagens de perfil:
+    //   - Opção 1: Cloud Storage (AWS S3, Firebase Storage, etc.)
+    //   - Opção 2: CDN própria
+    //   - Opção 3: Base64 no banco de dados (não recomendado para produção)
+    // 
+    // Após decisão, atualizar UserDetailsModel para incluir campo photoUrl
+    // e substituir URL mockada abaixo pela URL real do usuário.
+    // ════════════════════════════════════════════════════════════════════════════
+    
     return Container(
-      width: 120,
-      height: 120,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: CupertinoColors.systemGrey4,
+        boxShadow: [
+          BoxShadow(
+            color: CupertinoColors.black.withOpacity(0.15),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: const Icon(
-        CupertinoIcons.person_fill,
-        size: 60,
-        color: CupertinoColors.white,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          const CircleAvatar(
+            radius: 60, // 120px de diâmetro total
+            backgroundImage: NetworkImage(
+              "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            ),
+          ),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              // TODO: Implementar lógica de troca de imagem
+              // Opções: Câmera, Galeria, Remover foto
+            },
+            child: Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: CupertinoColors.black,
+              ),
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                CupertinoIcons.pencil,
+                color: CupertinoColors.white,
+                size: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Emblema/Badge do OAuth Provider ou Local User
+  Widget _buildOAuthProviderBadge(String? oauthProvider) {
+    // Determinar cor e ícone baseado no provider
+    Color badgeColor;
+    IconData badgeIcon;
+    String displayText;
+    Color textColor;
+
+    // Se for null, é um usuário local restrito
+    if (oauthProvider == null) {
+      badgeColor = const Color(0xFFFFCDD2); // Vermelho claro (Red 100)
+      badgeIcon = CupertinoIcons.person_crop_circle_badge_xmark;
+      displayText = 'Restricted Local User';
+      textColor = CupertinoColors.black;
+    } else {
+      textColor = CupertinoColors.white;
+      
+      switch (oauthProvider.toUpperCase()) {
+      case 'GOOGLE':
+        badgeColor = const Color(0xFF4285F4); // Google Blue
+        badgeIcon = CupertinoIcons.globe;
+        displayText = 'Google Account';
+        break;
+      case 'FACEBOOK':
+        badgeColor = const Color(0xFF1877F2); // Facebook Blue
+        badgeIcon = CupertinoIcons.person_circle_fill;
+        displayText = 'Facebook Account';
+        break;
+      case 'APPLE':
+        badgeColor = CupertinoColors.black;
+        badgeIcon = CupertinoIcons.device_phone_portrait;
+        displayText = 'Apple ID';
+        break;
+      case 'LINKEDIN':
+        badgeColor = const Color(0xFF0A66C2); // LinkedIn Blue
+        badgeIcon = CupertinoIcons.briefcase_fill;
+        displayText = 'LinkedIn Account';
+        break;
+        default:
+          badgeColor = const Color(0xFF6C757D); // Cinza neutro
+          badgeIcon = CupertinoIcons.checkmark_seal_fill;
+          displayText = '$oauthProvider Account';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: badgeColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            badgeIcon,
+            size: 18,
+            color: textColor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            displayText,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
       ),
     );
   }
