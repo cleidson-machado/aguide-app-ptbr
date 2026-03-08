@@ -5,6 +5,7 @@ import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'user_preferences_settings_screen.dart';
 
 class MainContentRelationScreen extends StatefulWidget {
   const MainContentRelationScreen({super.key});
@@ -15,16 +16,13 @@ class MainContentRelationScreen extends StatefulWidget {
 }
 
 class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
-  final Map<String, bool> _settings = {
-    "Money Receive": false,
-    "Card Activation": true,
-    "Update Feature": false,
-    "Cash In": false,
-    "Money Request": false,
-    "Money Transfer": false,
-    "Number Notification": false,
-    "Email Notification": false,
-  };
+  void _navigateToPreferences() {
+    Navigator.of(context).push(
+      CupertinoPageRoute(
+        builder: (context) => const UserPreferencesSettingsScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +63,8 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               children: [
-                _buildNavigationButton("Users List", () {
-                  // Navigate to Users List
+                _buildNavigationButton("Minhas Preferências e Ajustes", () {
+                  _navigateToPreferences();
                 }),
                 _buildNavigationButton("Add New Tema", () {
                   // Navigate to Users List
@@ -90,38 +88,20 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
             ),
           ),
 
-          // Settings List
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(top: 12),
-              children:
-                  _settings.entries.map((entry) {
-                    return CupertinoListTile(
-                      title: Text(
-                        entry.key,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Text(
-                        _getSubtitle(entry.key),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: CupertinoColors.systemGrey,
-                        ),
-                      ),
-                      trailing: CupertinoSwitch(
-                        value: entry.value,
-                        activeTrackColor: CupertinoColors.activeBlue,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _settings[entry.key] = value;
-                          });
-                        },
-                      ),
-                    );
-                  }).toList(),
+          // Conteúdo Principal
+          const Expanded(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  "📋 Área de Conteúdo Principal\n\nSelecione uma opção no menu acima para visualizar o conteúdo.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -151,29 +131,6 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
         ),
       ),
     );
-  }
-
-  String _getSubtitle(String key) {
-    switch (key) {
-      case "Money Receive":
-        return "If anyone sent you money";
-      case "Card Activation":
-        return "If card active";
-      case "Update Feature":
-        return "If any new update come";
-      case "Cash In":
-        return "If any cash in your card";
-      case "Money Request":
-        return "If anyone sent you money request";
-      case "Money Transfer":
-        return "If you sent money to someone";
-      case "Number Notification":
-        return "Send notification to your number";
-      case "Email Notification":
-        return "Send notification to your email";
-      default:
-        return "";
-    }
   }
 
   Future<dynamic> _popUpHandler(BuildContext context) {
