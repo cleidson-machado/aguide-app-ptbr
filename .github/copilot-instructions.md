@@ -702,6 +702,91 @@ class MainContentTopicModel {
 }
 ```
 
+### 5. Backup de Views (Screens)
+
+Quando solicitar backup de uma view Flutter, seguir este padrão estruturado:
+
+**❌ ERRADO - Cópia simples com nome diferente:**
+```dart
+// Apenas copiar o arquivo com sufixo "_backup" no nome
+// main_content_profile_screen_backup.dart
+class MainContentProfileScreen extends StatefulWidget { ... }
+```
+
+**✅ CORRETO - Backup estruturado e documentado:**
+
+1. **Nome do Arquivo:** `[nome_original]_backup.dart` (Ex: `main_content_profile_screen_backup.dart`)
+2. **Localização:** Mesmo diretório da view original (facilita localização)
+3. **Cabeçalho Obrigatório:**
+
+```dart
+// ======================================================================
+// BACKUP DA VIEW ORIGINAL - [NomeClasse]
+// Data do backup: [data atual]
+// 
+// Contexto: [onde a view é usada - ex: TabView default, Perfil user, etc.]
+// Preservada para facilitar reutilização futura se necessário.
+//
+// Para restaurar: renomear este arquivo removendo o sufixo "_backup"
+// ======================================================================
+
+// ignore_for_file: library_private_types_in_public_api
+
+import 'package:flutter/cupertino.dart';
+// ... demais imports
+```
+
+4. **Nomenclatura de Classes - CRÍTICO:**
+
+A classe do backup **DEVE** ter sufixo `Backup` para evitar conflitos:
+
+```dart
+// ✅ Nomenclatura correta
+class MainContentProfileScreenBackup extends StatefulWidget {
+  const MainContentProfileScreenBackup({super.key});
+  
+  @override
+  _MainContentProfileScreenBackupState createState() => 
+      _MainContentProfileScreenBackupState();
+}
+
+class _MainContentProfileScreenBackupState 
+    extends State<MainContentProfileScreenBackup> {
+  // ... código da view
+}
+```
+
+**Por que isso é importante:**
+- ✅ Evita conflito de nomes de classes no mesmo projeto
+- ✅ Permite ter ambas as versões (original e backup) no código simultaneamente
+- ✅ Facilita comparação lado a lado durante refatorações
+- ✅ O arquivo pode ser facilmente restaurado (renomear classe de volta)
+
+**Exemplo Prático - Processo Completo:**
+
+```bash
+# View original
+lib/features/main_contents/profile/screens/main_content_profile_screen.dart
+  ↓
+  classe: MainContentProfileScreen
+
+# Backup criado
+lib/features/main_contents/profile/screens/main_content_profile_screen_backup.dart
+  ↓
+  classe: MainContentProfileScreenBackup + cabeçalho documentado
+```
+
+**Quando Criar Backups:**
+- Antes de refatorações grandes em views funcionais
+- Quando view será substituída por nova implementação
+- Para preservar UI de referência (mockups, protótipos)
+- Ao migrar de Cupertino para Material (ou vice-versa)
+
+**Restauração:**
+1. Renomear arquivo: remover sufixo `_backup`
+2. Renomear classes: remover sufixo `Backup`
+3. Ajustar imports se necessário
+
 ## Tratamento de Exceções
 - Usar try-catch em operações assíncronas
 - Criar classes de exceção customizadas quando necessário
