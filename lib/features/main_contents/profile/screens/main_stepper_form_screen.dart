@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
 
 /// Tela de formulário stepper com 10 perguntas (MOCK)
-/// Usa design Cupertino com esquema de cores roxo
+/// Usa design Cupertino com esquema de cores azul padrão iOS
 class MainStepperFormScreen extends StatefulWidget {
   const MainStepperFormScreen({super.key});
 
@@ -11,10 +11,6 @@ class MainStepperFormScreen extends StatefulWidget {
 }
 
 class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
-  // Cor principal roxa
-  static const Color _primaryPurple = Color(0xFF7B2CBF);
-  static const Color _lightPurple = Color(0xFF9D4EDD);
-  static const Color _palePurple = Color(0xFFE0AAFF);
 
   int _currentStep = 0;
   final int _totalSteps = 10;
@@ -217,7 +213,6 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
             _currentStep == 0
                 ? CupertinoIcons.xmark
                 : CupertinoIcons.chevron_back,
-            color: _primaryPurple,
           ),
         ),
         middle: const Text(
@@ -278,13 +273,13 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isActive
-                            ? _primaryPurple
+                            ? CupertinoColors.activeBlue
                             : (isCompleted
-                              ? _lightPurple.withValues(alpha: 0.3)
+                                ? CupertinoColors.activeBlue.withValues(alpha: 0.2)
                                 : CupertinoColors.white),
                         border: Border.all(
                           color: isActive || isCompleted
-                              ? _primaryPurple
+                              ? CupertinoColors.activeBlue
                               : CupertinoColors.systemGrey3,
                           width: 2,
                         ),
@@ -293,7 +288,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
                         child: isCompleted
                             ? const Icon(
                                 CupertinoIcons.check_mark,
-                                color: _primaryPurple,
+                                color: CupertinoColors.activeBlue,
                                 size: 20,
                               )
                             : Text(
@@ -314,7 +309,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                        color: isActive ? _primaryPurple : CupertinoColors.systemGrey,
+                        color: isActive ? CupertinoColors.activeBlue : CupertinoColors.systemGrey,
                       ),
                     ),
                   ],
@@ -327,7 +322,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
                     height: 2,
                     margin: const EdgeInsets.only(bottom: 22, left: 4, right: 4),
                     color: isCompleted
-                        ? _primaryPurple
+                        ? CupertinoColors.activeBlue
                         : CupertinoColors.systemGrey4,
                   ),
               ],
@@ -351,7 +346,6 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
           style: const TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: _primaryPurple,
           ),
         ),
         const SizedBox(height: 8),
@@ -388,9 +382,15 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _palePurple.withValues(alpha: 0.2),
+        color: CupertinoColors.systemGrey6,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _palePurple, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: CupertinoColors.systemGrey.withValues(alpha: 0.12),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,7 +400,6 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: _primaryPurple,
             ),
           ),
           const SizedBox(height: 16),
@@ -415,7 +414,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
                     '${index + 1}. ',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: _primaryPurple,
+                      color: CupertinoColors.activeBlue,
                     ),
                   ),
                   Expanded(
@@ -487,12 +486,12 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
             ),
             const SizedBox(width: 12),
 
-            // Botão Confirm/Next (cor roxa)
+            // Botão Confirm/Next
             Expanded(
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 borderRadius: BorderRadius.circular(12),
-                color: _primaryPurple,
+                color: CupertinoColors.activeBlue,
                 onPressed: _handleNext,
                 child: Text(
                   _currentStep == _totalSteps - 1 ? 'Confirm' : 'Next',
@@ -572,7 +571,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
               padding: const EdgeInsets.only(left: 14),
               child: Icon(
                 icon,
-                color: _lightPurple,
+                color: CupertinoColors.activeBlue,
                 size: 22,
               ),
             ),
