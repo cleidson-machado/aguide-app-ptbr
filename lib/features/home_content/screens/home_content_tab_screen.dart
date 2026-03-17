@@ -45,7 +45,8 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
       // Isso permite que AutomaticKeepAliveClientMixin funcione corretamente
       // Apenas alterna a visibilidade entre as tabs sem destruir os widgets
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      bottomNavigationBar: SafeArea(
+      // 🎯 SOLUÇÃO: Esconde bottomNavigationBar quando MainStepperFormScreen está ativa
+      bottomNavigationBar: _selectedIndex == 1 ? null : SafeArea(
         child: CupertinoTabBar(
           currentIndex: _selectedIndex,
           height: 65,
