@@ -81,6 +81,14 @@ class AuthCredentialsLoginViewModel extends ChangeNotifier {
         await _tokenManager.saveUserEmail(response.user!.email!);
       }
 
+      // Salvar nome do usuário se disponível
+      if (response.user?.name != null && response.user!.name!.isNotEmpty) {
+        await _tokenManager.saveUserName(response.user!.name!);
+        if (kDebugMode) {
+          print('👤 [AuthCredentialsLoginViewModel] Nome salvo: ${response.user!.name}');
+        }
+      }
+
       _loginResponse = response;
       _state = LoginState.success;
       _errorMessage = null;
