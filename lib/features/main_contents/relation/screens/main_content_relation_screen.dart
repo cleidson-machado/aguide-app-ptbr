@@ -56,23 +56,11 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: false,
-        middle: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Guia - PORTUGAL",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 6),
-            Text(
-              "| Painel de Configuração |",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: CupertinoColors.systemPink,
-              ),
-            ),
-          ],
+        backgroundColor: CupertinoColors.systemGroupedBackground, // ✅ Força cor fixa (cinza claro iOS)
+        border: null, // ✅ Remove borda que aparece com scroll
+        middle: const Text(
+          "Guia - PORTUGAL",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
         trailing: GestureDetector(
           onTap: () {
@@ -83,6 +71,33 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
       ),
       child: Column(
         children: [
+          // ✅ Header com texto fixo (sem animação)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: CupertinoColors.separator,
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: const SizedBox(
+              height: 24,
+              child: Center(
+                child: Text(
+                  "| Painel de Configuração |",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: CupertinoColors.systemPink,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
           // Horizontal Navigation Section
           Container(
             height: 70,

@@ -84,6 +84,15 @@ class AuthGoogleViewModel extends ChangeNotifier {
       final userEmail = response.user?.email ?? googleData.email;
       await _tokenManager.saveUserEmail(userEmail);
 
+      // Salvar nome do usuário se disponível
+      final userName = response.user?.name ?? googleData.displayName;
+      if (userName != null && userName.isNotEmpty) {
+        await _tokenManager.saveUserName(userName);
+        if (kDebugMode) {
+          print('👤 [AuthGoogleViewModel] Nome salvo: $userName');
+        }
+      }
+
       if (kDebugMode) {
         print('✅ [AuthGoogleViewModel] Login com Google realizado com sucesso!');
         final userName = response.user?.name ?? googleData.displayName ?? '';

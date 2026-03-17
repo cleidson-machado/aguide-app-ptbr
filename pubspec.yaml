@@ -33,6 +33,7 @@ dependencies:
   skeletonizer: ^2.1.2              ############################ Para criar skeleton loaders modernos e melhorar UX durante carregamentos.
   cached_network_image: ^3.3.0      ############################ Cache otimizado de imagens de rede (memória + disco) para performance.
   lottie: ^3.2.0                    ############################ Para renderizar animações Lottie (Adobe After Effects) em formato JSON.
+  animated_text_kit: ^4.2.2         ############################ Animações de texto prontas (fade, rotate, typewriter, etc.) para melhorar UX.
 
   # UTILITÁRIOS & SISTEMA
   intl: ^0.20.2                     ############################ Para internacionalização (i18n) e formatação de datas, números, etc.

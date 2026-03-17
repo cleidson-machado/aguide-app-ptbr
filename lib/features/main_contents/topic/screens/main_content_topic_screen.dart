@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
@@ -14,6 +15,7 @@ import 'package:portugal_guide/features/main_contents/topic/sorting/main_content
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -26,10 +28,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     with AutomaticKeepAliveClientMixin {
   final MainContentTopicViewModel viewModel =
       injector<MainContentTopicViewModel>();
+  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
   double _savedScrollPosition = 0.0; // ✅ Posição do scroll antes de navegar
+  String _userName = ''; // 🆕 Nome do usuário logado para animação
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -43,6 +47,25 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     _scrollController.addListener(_onScroll);
     // Carrega apenas se for a primeira vez (viewModel não inicializado)
     viewModel.loadPagedContentsIfNeeded();
+    // 🆕 Carrega nome do usuário do SharedPreferences
+    _loadUserName();
+  }
+
+  /// 🆕 Carrega o nome do usuário logado do SharedPreferences
+  void _loadUserName() {
+    final name = _tokenManager.getUserName();
+    if (name != null && name.isNotEmpty) {
+      setState(() {
+        _userName = name;
+      });
+      if (kDebugMode) {
+        debugPrint('👤 [MainContentTopicScreen] Nome carregado: $_userName');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️  [MainContentTopicScreen] Nome do usuário não disponível');
+      }
+    }
   }
 
   @override
@@ -155,23 +178,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: false,
-        middle: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Guia - PORTUGAL",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 6),
-            Text(
-              "| TEMAS - Perfil CRIADOR de Conteúdo |",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: CupertinoColors.systemPink,
-              ),
-            ),
-          ],
+        backgroundColor: CupertinoColors.systemGroupedBackground, // ✅ Força cor fixa (cinza claro iOS)
+        border: null, // ✅ Remove borda que aparece com scroll
+        middle: const Text(
+          "Guia - PORTUGAL",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
         trailing: GestureDetector(
           onTap: () {
@@ -187,6 +198,58 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             children: [
               Column(
                 children: [
+                  // 🆕 Header com animação de texto (fora da NavigationBar)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: SizedBox(
+                      height: 24, // ✅ Altura adequada para a animação
+                      child: Center(
+                        child: AnimatedTextKit(
+                          animatedTexts: [
+                            RotateAnimatedText(
+                              "| TEMAS - Perfil CRIADOR de Conteúdo |",
+                              textStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: CupertinoColors.systemPink,
+                              ),
+                              textAlign: TextAlign.center,
+                              rotateOut: false, // ✅ Sem rotação de saída
+                              duration: const Duration(milliseconds: 800), // ✅ Duração da animação de entrada
+                            ),
+                            if (_userName.isNotEmpty)
+                              RotateAnimatedText(
+                                "Bem-Vindo - $_userName!",
+                                textStyle: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: CupertinoColors.systemPink,
+                                ),
+                                textAlign: TextAlign.center,
+                                rotateOut: false, // ✅ Sem rotação de saída
+                                duration: const Duration(milliseconds: 800), // ✅ Duração da animação de entrada
+                              ),
+                          ],
+                          repeatForever: true,
+                          pause: const Duration(milliseconds: 15000), // 6 segundos pausado
+                          displayFullTextOnTap: false,
+                          stopPauseOnTap: false,
+                          isRepeatingAnimation: true,
+                          totalRepeatCount: 999999, // Loop infinito
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Campo de busca
                   Container(
                     decoration: const BoxDecoration(
                       border: Border(
