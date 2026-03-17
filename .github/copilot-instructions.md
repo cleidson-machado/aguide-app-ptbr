@@ -1237,6 +1237,8 @@ flutter:
 ❌ AnimatedBuilder genérico em listas grandes
 ❌ Pular testes no CI/CD
 ❌ Comitar arquivos `.env` ou credenciais
+❌ **Usar `Navigator.pop()` em telas que são TABS (causa tela preta)**
+❌ **Fazer `setState()` imediatamente antes de `Navigator.pop()`**
 
 ## Recursos Flutter a Utilizar
 ✅ Hot Reload: `r` no terminal (desenvolvimento rápido)
@@ -1248,6 +1250,196 @@ flutter:
 ✅ Skeletonizer: Loading states elegantes
 ✅ CachedNetworkImage: Cache de imagens
 ✅ Cupertino widgets: Design nativo iOS
+
+---
+
+## 🚨 Problema: Tela Preta ao Fechar Dialogs em Tabs
+
+### ⚠️ CAUSA RAIZ
+
+Quando uma tela está **dentro de uma TAB** (usando `IndexedStack`, `TabBarView`, etc.) e tenta fazer `Navigator.of(context).pop()` após fechar um dialog, o app pode travar em **tela preta**.
+
+**Por que isso acontece?**
+- A tela **não foi navegada** com `Navigator.push()` ou `Modular.to.navigate()`
+- Ela é um **widget filho direto** de um sistema de tabs
+- `Navigator.pop()` tenta voltar para uma rota anterior **que não existe**
+- Resultado: **Tela preta** ou comportamento indefinido
+
+### 🔍 Como Identificar o Problema
+
+#### Checklist: Sua tela é uma TAB ou ROTA navegada?
+
+**É uma TAB se:**
+- [ ] Está dentro de `TabBarView`, `CupertinoTabView`, ou `IndexedStack`
+- [ ] É filha direta de `HomeContentTabScreen` ou similar
+- [ ] Não foi aberta com `Navigator.push()` ou `Modular.to.navigate()`
+- [ ] Aparece na barra de tabs inferior
+- [ ] `Navigator.of(context).canPop()` retorna `false`
+
+**É uma ROTA navegada se:**
+- [x] Foi registrada em `app_route_module.dart`
+- [x] Foi aberta com `Navigator.push()` ou `Modular.to.navigate()`
+- [x] Tem um `NavigationBar` próprio com botão de voltar
+- [x] Ocupa tela inteira fora das tabs
+- [x] `Navigator.of(context).canPop()` retorna `true`
+
+### ✅ SOLUÇÕES
+
+#### 1. Para Telas em TAB → Acessar o Estado Pai
+
+```dart
+// ❌ ERRADO - Tela em tab tentando fazer pop
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    Navigator.of(context).pop();  // ← ERRO: não há para onde voltar!
+  }
+}
+
+// ✅ CORRETO - Resetar tab para o índice 0
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    _resetForm();
+    
+    // Busca o HomeContentTabScreen na árvore de widgets
+    final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
+    homeState?.resetToFirstTab();  // ← Reseta para primeira tab
+  }
+}
+```
+
+**Implementação do método no pai (HomeContentTabScreen):**
+
+```dart
+// Tornar a classe State pública (remover underscore)
+class HomeContentTabScreenState extends State<HomeContentTabScreen> {
+  int _selectedIndex = 0;
+  
+  /// Método público para resetar tab para o índice 0
+  void resetToFirstTab() {
+    if (mounted) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
+  }
+  
+  // Ou método genérico para qualquer índice
+  void switchToTab(int index) {
+    if (mounted && index >= 0 && index < _pages.length) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+}
+```
+
+#### 2. Para Telas NAVEGADAS → pop() OU navigate()
+
+```dart
+// ✅ CORRETO - Tela navegada pode usar pop
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    // Opção 1: Voltar na pilha
+    Navigator.of(context).pop();
+    
+    // Opção 2: Navegar para rota específica
+    // Modular.to.navigate(AppRoutes.main);
+  }
+}
+```
+
+#### 3. Dialog → SEMPRE fechar antes de ações de navegação
+
+```dart
+// ✅ PADRÃO CORRETO
+final result = await showCupertinoDialog<bool>(
+  context: context,
+  builder: (context) => CupertinoAlertDialog(
+    title: const Text('Confirmar?'),
+    actions: [
+      CupertinoDialogAction(
+        onPressed: () => Navigator.of(context).pop(false),  // ← Fecha dialog
+        child: const Text('Não'),
+      ),
+      CupertinoDialogAction(
+        onPressed: () => Navigator.of(context).pop(true),  // ← Fecha dialog
+        child: const Text('Sim'),
+      ),
+    ],
+  ),
+);
+
+// Só depois navega baseado no resultado
+if (result == true && mounted) {
+  // Ações de navegação aqui
+}
+```
+
+### 📊 Arquiteturas e Soluções
+
+| Tipo de Tela | Como Cancelar | Exemplo |
+|--------------|---------------|---------|
+| **TAB** | `context.findAncestorStateOfType<>()` + `resetToFirstTab()` | `MainStepperFormScreen` |
+| **ROTA navegada** | `Navigator.pop()` ou `Modular.to.navigate()` | `UserVerifiedContentWizardScreen` |
+| **DIALOG** | `Navigator.pop(result)` para fechar | Qualquer `CupertinoAlertDialog` |
+
+### 🛠️ Debugging
+
+```dart
+// Verificar se pode fazer pop (no initState ou build)
+@override
+void initState() {
+  super.initState();
+  
+  final canPop = Navigator.of(context).canPop();
+  debugPrint('🔍 Pode fazer pop? $canPop');
+  // false = É tab ou rota raiz
+  // true = É rota navegada
+}
+```
+
+### ⚠️ Erros Comuns a EVITAR
+
+```dart
+// ❌ NUNCA fazer setState imediatamente antes de pop
+if (result == true) {
+  _resetForm();  // setState que pode invalidar contexto
+  Navigator.pop(context);  // Pode causar tela preta
+}
+
+// ❌ NUNCA usar pop() em tela que é tab
+if (result == true) {
+  Navigator.of(context).pop();  // Não há para onde voltar!
+}
+
+// ❌ NUNCA tentar navegar dentro do onPressed do dialog
+CupertinoDialogAction(
+  onPressed: () {
+    Navigator.pop(context);
+    Navigator.pop(context);  // ← Conflito! Dois pops simultâneos
+  },
+)
+```
+
+### 📁 Exemplos no Projeto
+
+**Tela em TAB:**
+- `lib/features/main_contents/profile/screens/main_stepper_form_screen.dart`
+- Usa `context.findAncestorStateOfType<HomeContentTabScreenState>()`
+
+**Tela NAVEGADA:**
+- `lib/features/user_verified_content/screens/user_verified_content_wizard_screen.dart`
+- Usa `Modular.to.navigate(AppRoutes.main)`
+
+**Referência Completa:**
+- `x_temp_files/SOLUCAO_TELA_PRETA_NAVIGATOR_POP.md`
 
 ---
 

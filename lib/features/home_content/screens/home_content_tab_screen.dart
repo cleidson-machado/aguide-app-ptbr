@@ -1,8 +1,6 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
+import 'package:portugal_guide/features/main_contents/profile/screens/main_stepper_form_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_content_relation_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
 
@@ -12,15 +10,16 @@ class HomeContentTabScreen extends StatefulWidget {
   const HomeContentTabScreen({super.key});
 
   @override
-  _HomeContentTabScreenState createState() => _HomeContentTabScreenState();
+  HomeContentTabScreenState createState() => HomeContentTabScreenState();
 }
 
-class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
+class HomeContentTabScreenState extends State<HomeContentTabScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
-    const MainContentProfileScreen(), //#### RELAÇÕES
+    //const MainContentProfileScreen(), //#### RELAÇÕES Backup Old way
+    const MainStepperFormScreen(), //#### RELAÇÕES
     const MainContentRelationScreen(), //### PERFIL
   ];
 
@@ -28,6 +27,15 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  /// Método público para resetar tab para o índice 0 (TEMAS)
+  void resetToFirstTab() {
+    if (mounted) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
   }
 
   @override
