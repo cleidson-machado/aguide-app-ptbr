@@ -37,24 +37,33 @@ class ProfileWelcomeViewModel extends ChangeNotifier {
   /// Retorna o nome do usuário para personalização da mensagem
   String get userName => _userDetails?.name ?? 'Usuário';
 
-  /// Mensagem dinâmica baseada no tipo de usuário (CRIADOR ou CONSUMIDOR)
-  String get welcomeMessage {
+  /// Retorna o tipo de usuário para exibição (usado na view com estilo customizado)
+  String get userTypeLabel => isContentCreator ? '| Produtor de Conteúdo |' : '| Consumidor de Conteúdo |';
+
+  /// Primeira parte da mensagem (antes do tipo de usuário)
+  String get welcomeMessagePrefix => 'Que bom ter você aqui! \n Identificamos seu perfil como: \n\n ';
+
+  /// Segunda parte da mensagem (depois do tipo de usuário) - dinâmica por tipo
+  String get welcomeMessageSuffix {
     if (isContentCreator) {
-      return 'Que bom ter você aqui! \n Identificamos seu perfil como \n\n Produtor de Conteúdo.\n\n'
-          'Para liberar todas as funcionalidades da área de Relações e te ajudar a aumentar '
+      // Mensagem para CRIADOR (Produtor de Conteúdo)
+      return '\n\nPara liberar todas as funcionalidades da área de Relações e te ajudar a aumentar '
           'seus ganhos e monetização, precisamos que você preencha um formulário \n com 10 perguntas simples.\n\n'
-          'As respostas são fundamentais para entendermos seu padrão e fazer os ajustes necessários.\n\n'
-          'Responda com sinceridade \n as questões. No final, avisamos \n por e-mail '
+          'As respostas são fundamentais para entendermos seu padrão e fazer todos \n os ajustes necessários e afins.\n\n'
+          'Responda com sinceridade \n as questões. No final, te avisamos \n por e-mail '
           'ou aqui no App com \n uma Mensagem personalizada.';
     } else {
-      return 'Que bom ter você aqui! \n Identificamos seu perfil como \n\n Consumidor de Conteúdo.\n\n'
-          'Para liberar todas as funcionalidades da área de Relações e te ajudar a aumentar '
-          'seus ganhos e monetização, precisamos que você preencha um formulário \n com 10 perguntas simples.\n\n'
-          'As respostas são fundamentais para entendermos seu padrão e fazer os ajustes necessários.\n\n'
-          'Responda com sinceridade \n as questões. No final, avisamos \n por e-mail '
+      // Mensagem para CONSUMIDOR (placeholder - mesmo texto por enquanto)
+      return '\n\nPara liberar tudo da área de Relações \n e te ajudar a encontrar, detalhadamente, '
+          'tudo que precisa, precisamos que você preencha um formulário \n com 10 perguntas simples.\n\n'
+          'As respostas são fundamentais para entendermos seu padrão e fazer todos \n os ajustes necessários e afins.\n\n'
+          'Responda com sinceridade \n as questões. No final, te avisamos \n por e-mail '
           'ou aqui no App com \n uma Mensagem personalizada.';
     }
   }
+
+  /// Mensagem completa (mantido para compatibilidade)
+  String get welcomeMessage => welcomeMessagePrefix + userTypeLabel + welcomeMessageSuffix;
 
   /// Carrega os detalhes do usuário via API
   /// 

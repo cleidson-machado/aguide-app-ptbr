@@ -218,13 +218,25 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
 
           const SizedBox(height: 8),
 
-          // Mensagem dinâmica (CRIADOR ou CONSUMIDOR)
-          Text(
-            _viewModel.welcomeMessage,
-            style: const TextStyle(
-              fontSize: 18,
-              height: 1.4,
-              color: CupertinoColors.label,
+          // Mensagem dinâmica (CRIADOR ou CONSUMIDOR) com tipo em negrito e vermelho
+          Text.rich(
+            TextSpan(
+              style: const TextStyle(
+                fontSize: 18,
+                height: 1.4,
+                color: CupertinoColors.label,
+              ),
+              children: [
+                TextSpan(text: _viewModel.welcomeMessagePrefix),
+                TextSpan(
+                  text: _viewModel.userTypeLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: CupertinoColors.destructiveRed,
+                  ),
+                ),
+                TextSpan(text: _viewModel.welcomeMessageSuffix),
+              ],
             ),
             textAlign: TextAlign.center,
           ),
