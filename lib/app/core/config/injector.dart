@@ -15,6 +15,7 @@ import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
+import 'package:portugal_guide/features/main_contents/profile/profile_welcome_view_model.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository_interface.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_view_model.dart';
@@ -75,6 +76,9 @@ Future<void> setupDependencies() async {
   );
   injector.registerFactory<UserDetailsViewModel>(
     () => UserDetailsViewModel(repository: injector<UserRepositoryInterface>()),
+  );
+  injector.registerFactory<ProfileWelcomeViewModel>(
+    () => ProfileWelcomeViewModel(injector<UserRepositoryInterface>()),
   );
 
   //### For Main Content Topic ###

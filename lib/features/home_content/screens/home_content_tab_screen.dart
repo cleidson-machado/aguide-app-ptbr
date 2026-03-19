@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:portugal_guide/features/main_contents/profile/screens/main_stepper_form_screen.dart';
+import 'package:portugal_guide/features/main_contents/profile/screens/main_profile_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_content_relation_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
 
@@ -18,8 +19,7 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
 
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
-    //const MainContentProfileScreen(), //#### RELAÇÕES Backup Old way
-    const MainStepperFormScreen(), //#### RELAÇÕES
+    const MainProfileWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária)
     const MainContentRelationScreen(), //### PERFIL
   ];
 
@@ -31,10 +31,19 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
 
   /// Método público para resetar tab para o índice 0 (TEMAS)
   void resetToFirstTab() {
+    if (kDebugMode) {
+      print('📌 [HomeContentTabScreen] resetToFirstTab chamado');
+      print('   Current index: $_selectedIndex');
+    }
+    
     if (mounted) {
       setState(() {
         _selectedIndex = 0;
       });
+      
+      if (kDebugMode) {
+        print('✅ [HomeContentTabScreen] Tab resetada para 0');
+      }
     }
   }
 

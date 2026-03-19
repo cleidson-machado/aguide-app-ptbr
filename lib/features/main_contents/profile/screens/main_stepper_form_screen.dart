@@ -262,7 +262,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
     }
   }
 
-  /// Cancela e volta para primeira tab
+  /// Cancela e volta para tela anterior (MainProfileWelcomeScreen)
   Future<void> _handleCancel() async {
     final result = await showCupertinoDialog<bool>(
       context: context,
@@ -289,9 +289,9 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
     if (result == true && mounted) {
       _resetForm();
       
-      // Busca o HomeContentTabScreen na árvore de widgets e reseta para a primeira tab
-      final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
-      homeState?.resetToFirstTab();
+      // ✅ CORRETO: Esta tela FOI navegada com Navigator.push()
+      // Então pode fazer pop() para voltar para MainProfileWelcomeScreen
+      Navigator.of(context).pop();
     }
   }
 
