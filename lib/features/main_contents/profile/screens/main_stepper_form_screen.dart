@@ -262,7 +262,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
     }
   }
 
-  /// Cancela e volta para tela anterior (MainProfileWelcomeScreen)
+  /// Cancela e volta para MainProfileWelcomeScreen com sinalização
   Future<void> _handleCancel() async {
     final result = await showCupertinoDialog<bool>(
       context: context,
@@ -289,9 +289,9 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
     if (result == true && mounted) {
       _resetForm();
       
-      // ✅ CORRETO: Esta tela FOI navegada com Navigator.push()
-      // Então pode fazer pop() para voltar para MainProfileWelcomeScreen
-      Navigator.of(context).pop();
+      // ✅ Volta para MainProfileWelcomeScreen com sinalização 'cancelled'
+      // A tela receberá isso e mudará para modo EXIT automaticamente
+      Navigator.of(context).pop('cancelled');
     }
   }
 

@@ -1,16 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
 import 'package:portugal_guide/features/main_contents/profile/profile_welcome_view_model.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_stepper_form_screen.dart';
 
-/// Tela intermediária de boas-vindas exibida antes do formulário de perfil
-/// 
-/// Determina dinamicamente se o usuário é CRIADOR ou CONSUMIDOR baseado em:
-/// - youtubeUserId e youtubeChannelId (ambos não-nulos = CRIADOR)
-/// 
+/// Tela de boas-vindas/saída da aba Relações.
+///
+/// Estado controlado por [_cancelCount]:
+///   _cancelCount == 0  →  Layout WELCOME
+///   _cancelCount  > 0  →  Layout EXIT (timer 6s → auto-home)
+///
+/// [AnimationController] criado UMA vez em [initState] e nunca recriado.
+/// Cada cancelamento chama reset()+forward() no mesmo controller.
+///
 /// Consome endpoint: GET /api/v1/users/{userId}/details
 class MainProfileWelcomeScreen extends StatefulWidget {
   const MainProfileWelcomeScreen({super.key});
@@ -19,9 +24,21 @@ class MainProfileWelcomeScreen extends StatefulWidget {
   State<MainProfileWelcomeScreen> createState() => _MainProfileWelcomeScreenState();
 }
 
-class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
+class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
+    with SingleTickerProviderStateMixin {
   late final ProfileWelcomeViewModel _viewModel;
   late final AuthTokenManager _authManager;
+
+  /// Controller único — criado em initState, nunca recriado ou redisposado.
+  late final AnimationController _progressController;
+
+  Timer? _redirectTimer;
+
+  /// Contador de cancelamentos.
+  /// 0 = WELCOME  |  > 0 = EXIT (cada incremento reinicia o ciclo)
+  int _cancelCount = 0;
+
+  bool get _isExitMode => _cancelCount > 0;
 
   @override
   void initState() {
@@ -29,8 +46,47 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
     _viewModel = injector<ProfileWelcomeViewModel>();
     _authManager = injector<AuthTokenManager>();
 
-    // Carregar detalhes do usuário logado
+    // Controller criado UMA vez para todo o ciclo de vida do widget
+    _progressController = AnimationController(
+      duration: const Duration(seconds: 6),
+      vsync: this,
+    );
+
     _loadUserDetails();
+  }
+
+  /// Entra em EXIT: incrementa contador, reinicia animação e timer.
+  void _enterExitMode() {
+    if (kDebugMode) {
+      print('🔄 [MainProfileWelcomeScreen] _enterExitMode — cancelCount: ${_cancelCount + 1}');
+    }
+    _redirectTimer?.cancel();
+    _progressController.stop();
+    _progressController.reset();
+    _progressController.forward();
+    _redirectTimer = Timer(const Duration(seconds: 6), _redirectToHome);
+    setState(() => _cancelCount++);
+  }
+
+  /// Reseta para WELCOME: zera contador, para animação e timer.
+  void _resetToWelcome() {
+    if (kDebugMode) print('✅ [MainProfileWelcomeScreen] _resetToWelcome');
+    _redirectTimer?.cancel();
+    _redirectTimer = null;
+    _progressController.stop();
+    _progressController.reset();
+    if (mounted) setState(() => _cancelCount = 0);
+  }
+
+  /// Chamado após 6s: reseta estado ANTES de navegar.
+  void _redirectToHome() {
+    if (!mounted) return;
+    if (kDebugMode) print('🏠 [MainProfileWelcomeScreen] _redirectToHome');
+    // Reset FIRST → quando usuário voltar à tab verá WELCOME
+    _resetToWelcome();
+    context
+        .findAncestorStateOfType<HomeContentTabScreenState>()
+        ?.resetToFirstTab();
   }
 
   Future<void> _loadUserDetails() async {
@@ -92,23 +148,44 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
     }
   }
 
-  void _handleStartForm() {
+  void _handleStartForm() async {
     // Navega para o formulário (main_stepper_form_screen)
-    Navigator.of(context).push(
+    final result = await Navigator.of(context).push(
       CupertinoPageRoute(
         builder: (context) => const MainStepperFormScreen(),
       ),
     );
+
+    // Se retornou 'cancelled', entra em EXIT mode
+    if (result == 'cancelled' && mounted) {
+      if (kDebugMode) {
+        print('🔙 [MainProfileWelcomeScreen] cancelled → _enterExitMode');
+      }
+      _enterExitMode();
+    }
   }
 
   @override
   void dispose() {
+    _progressController.dispose();
+    _redirectTimer?.cancel();
     _viewModel.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Modo EXIT: Layout simplificado sem NavigationBar
+    if (_isExitMode) {
+      return CupertinoPageScaffold(
+        backgroundColor: CupertinoColors.systemGroupedBackground,
+        child: SafeArea(
+          child: _buildExitContent(),
+        ),
+      );
+    }
+
+    // Modo WELCOME: Layout completo com NavigationBar
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
@@ -179,14 +256,15 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
             }
 
             // Content state
-            return _buildContent();
+            return _buildWelcomeContent();
           },
         ),
       ),
     );
   }
 
-  Widget _buildContent() {
+  /// Layout de boas-vindas (modo WELCOME)
+  Widget _buildWelcomeContent() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -284,6 +362,139 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Layout de despedida (modo EXIT)
+  Widget _buildExitContent() {
+    final userName = _authManager.getUserName() ?? 'Usuário';
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Spacer(),
+
+          // Saudação personalizada
+          Text(
+            'Bem, $userName...',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: CupertinoColors.label,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 32),
+
+          // Imagem de despedida
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Image.asset(
+              'assets/forms/profile1_go_out.png',
+              width: 200,
+              height: 200,
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Mensagem de despedida
+          const Text(
+            'Você já desistiu?',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Não tem problema!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: CupertinoColors.label,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 16),
+
+          const Text(
+            'Vamos retomar depois!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: CupertinoColors.label,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Até mais tarde!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: CupertinoColors.destructiveRed,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 48),
+
+          // Loader horizontal animado
+          // Barra de progresso — usa o controller único, sempre não-nulo
+          AnimatedBuilder(
+            animation: _progressController,
+            builder: (context, child) {
+              final secsLeft =
+                  (6 - (_progressController.value * 6)).ceil().clamp(0, 6);
+              return Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey5,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _progressController.value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.activeBlue,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Redirecionando em ${secsLeft}s...',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          const Spacer(),
         ],
       ),
     );
