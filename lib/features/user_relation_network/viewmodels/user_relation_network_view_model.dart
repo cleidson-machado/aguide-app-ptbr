@@ -148,6 +148,136 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
         ),
       ];
 
+  /// Temas em Destaque (scroll vertical independente)
+  List<ConnectionProfileModel> get temasDestaque => [
+        const ConnectionProfileModel(
+          id: '20',
+          name: 'Tecnologia',
+          avatarUrl: 'https://i.pravatar.cc/150?img=11',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '21',
+          name: 'Design',
+          avatarUrl: 'https://i.pravatar.cc/150?img=22',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '22',
+          name: 'Marketing',
+          avatarUrl: 'https://i.pravatar.cc/150?img=31',
+          isOnline: true,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '23',
+          name: 'Negócios',
+          avatarUrl: 'https://i.pravatar.cc/150?img=41',
+          isOnline: false,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '24',
+          name: 'Educação',
+          avatarUrl: 'https://i.pravatar.cc/150?img=51',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '25',
+          name: 'Saúde',
+          avatarUrl: 'https://i.pravatar.cc/150?img=61',
+          isOnline: false,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '26',
+          name: 'Finanças',
+          avatarUrl: 'https://i.pravatar.cc/150?img=14',
+          isOnline: true,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '27',
+          name: 'Artes',
+          avatarUrl: 'https://i.pravatar.cc/150?img=24',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '28',
+          name: 'Música',
+          avatarUrl: 'https://i.pravatar.cc/150?img=34',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '29',
+          name: 'Esportes',
+          avatarUrl: 'https://i.pravatar.cc/150?img=44',
+          isOnline: false,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '30',
+          name: 'Viagens',
+          avatarUrl: 'https://i.pravatar.cc/150?img=54',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '31',
+          name: 'Fotografia',
+          avatarUrl: 'https://i.pravatar.cc/150?img=64',
+          isOnline: false,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '32',
+          name: 'Cinema',
+          avatarUrl: 'https://i.pravatar.cc/150?img=16',
+          isOnline: true,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '33',
+          name: 'Literatura',
+          avatarUrl: 'https://i.pravatar.cc/150?img=26',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '34',
+          name: 'Gastronomia',
+          avatarUrl: 'https://i.pravatar.cc/150?img=36',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '35',
+          name: 'Moda',
+          avatarUrl: 'https://i.pravatar.cc/150?img=46',
+          isOnline: false,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '36',
+          name: 'Sustentabilidade',
+          avatarUrl: 'https://i.pravatar.cc/150?img=56',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '37',
+          name: 'Inovação',
+          avatarUrl: 'https://i.pravatar.cc/150?img=66',
+          isOnline: false,
+          status: ConnectionStatus.connected,
+        ),
+      ];
+
   /// Atualiza a query de busca
   void setSearchQuery(String query) {
     if (_searchQuery != query) {

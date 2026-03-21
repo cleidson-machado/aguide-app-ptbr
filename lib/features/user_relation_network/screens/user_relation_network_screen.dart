@@ -246,25 +246,40 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Temas em Destaque" - Grid de avatares circulares
+  /// Seção "Temas em Destaque" - Scroll vertical independente
   Widget _buildTemasDestaqueSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.myConnections);
+    final profiles = _viewModel.getFilteredProfiles(_viewModel.temasDestaque);
 
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.95, // Mais compacto sem status
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final profile = profiles[index];
-            return _buildTemasDestaqueProfileCard(profile);
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 400, // Altura fixa para scroll independente
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: (profiles.length / 3).ceil(),
+          itemBuilder: (context, rowIndex) {
+            final startIndex = rowIndex * 3;
+            final rowProfiles = <ConnectionProfileModel>[];
+            
+            for (int i = 0; i < 3; i++) {
+              final profileIndex = startIndex + i;
+              if (profileIndex < profiles.length) {
+                rowProfiles.add(profiles[profileIndex]);
+              }
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: rowProfiles.map((profile) {
+                  return Expanded(
+                    child: _buildTemasDestaqueProfileCard(profile),
+                  );
+                }).toList(),
+              ),
+            );
           },
-          childCount: profiles.length,
         ),
       ),
     );
