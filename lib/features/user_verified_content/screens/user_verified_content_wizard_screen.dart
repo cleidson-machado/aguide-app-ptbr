@@ -304,13 +304,13 @@ class _UserVerifiedContentWizardScreenState
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: CupertinoColors.systemGrey.withOpacity(0.15),
+                color: CupertinoColors.systemGrey.withValues(alpha: 0.15),
                 offset: const Offset(0, 1),
                 blurRadius: 3,
                 spreadRadius: 0,
               ),
               BoxShadow(
-                color: CupertinoColors.black.withOpacity(0.05),
+                color: CupertinoColors.black.withValues(alpha: 0.05),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
                 spreadRadius: -1,
@@ -369,13 +369,13 @@ class _UserVerifiedContentWizardScreenState
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: CupertinoColors.systemGrey.withOpacity(0.15),
+                color: CupertinoColors.systemGrey.withValues(alpha: 0.15),
                 offset: const Offset(0, 1),
                 blurRadius: 3,
                 spreadRadius: 0,
               ),
               BoxShadow(
-                color: CupertinoColors.black.withOpacity(0.05),
+                color: CupertinoColors.black.withValues(alpha: 0.05),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
                 spreadRadius: -1,
@@ -740,14 +740,14 @@ class _UserVerifiedContentWizardScreenState
         boxShadow: [
           // Sombra superior interna (simula profundidade)
           BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.15),
+            color: CupertinoColors.systemGrey.withValues(alpha: 0.15),
             offset: const Offset(0, 1),
             blurRadius: 3,
             spreadRadius: 0,
           ),
           // Sombra interna sutil para dar efeito "afundado"
           BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.05),
+            color: CupertinoColors.black.withValues(alpha: 0.05),
             offset: const Offset(0, 2),
             blurRadius: 4,
             spreadRadius: -1,
@@ -761,9 +761,9 @@ class _UserVerifiedContentWizardScreenState
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              CupertinoColors.systemGrey6.withOpacity(0.3),
-              CupertinoColors.systemGrey6.withOpacity(0.1),
-              CupertinoColors.white.withOpacity(0.5),
+              CupertinoColors.systemGrey6.withValues(alpha: 0.3),
+              CupertinoColors.systemGrey6.withValues(alpha: 0.1),
+              CupertinoColors.white.withValues(alpha: 0.5),
             ],
             stops: const [0.0, 0.15, 1.0],
           ),

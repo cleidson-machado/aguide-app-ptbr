@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/app/core/auth/auth_exception.dart';
@@ -24,8 +25,10 @@ class AuthCredentialsService {
         password: password,
       );
 
-      print('🔐 [AuthCredentialsService] Tentando login para: $email');
-      print('📍 [AuthCredentialsService] URL: $baseUrl/auth/login');
+      if (kDebugMode) {
+        debugPrint('🔐 [AuthCredentialsService] Tentando login para: $email');
+        debugPrint('📍 [AuthCredentialsService] URL: $baseUrl/auth/login');
+      }
 
       final response = await client.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -35,19 +38,25 @@ class AuthCredentialsService {
         body: jsonEncode(request.toJson()),
       );
 
-      print('📥 [AuthCredentialsService] Status Code: ${response.statusCode}');
-      final bodyPreview = response.body.length > 200 
-          ? '${response.body.substring(0, 200)}...' 
-          : response.body;
-      print('📥 [AuthCredentialsService] Response Body: $bodyPreview');
+      if (kDebugMode) {
+        debugPrint('📥 [AuthCredentialsService] Status Code: ${response.statusCode}');
+        final bodyPreview = response.body.length > 200 
+            ? '${response.body.substring(0, 200)}...' 
+            : response.body;
+        debugPrint('📥 [AuthCredentialsService] Response Body: $bodyPreview');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        print('✅ [AuthCredentialsService] JSON parseado com sucesso');
-        print('🔑 [AuthCredentialsService] Token presente: ${jsonResponse.containsKey('token')}');
+        if (kDebugMode) {
+          debugPrint('✅ [AuthCredentialsService] JSON parseado com sucesso');
+          debugPrint('🔑 [AuthCredentialsService] Token presente: ${jsonResponse.containsKey('token')}');
+        }
         
         final loginResponse = AuthCredentialsLoginResponse.fromJson(jsonResponse);
-        print('✅ [AuthCredentialsService] Model criado com sucesso');
+        if (kDebugMode) {
+          debugPrint('✅ [AuthCredentialsService] Model criado com sucesso');
+        }
         
         return loginResponse;
       } else if (response.statusCode == 401) {

@@ -2675,13 +2675,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             debugPrint('✅ [ERROR MODAL] Builder executado, criando dialog');
           }
           
-          return WillPopScope(
-            onWillPop: () async {
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (bool didPop, dynamic result) {
               // Previne fechar com botão voltar
               if (kDebugMode) {
                 debugPrint('⚠️ [ERROR MODAL] Tentativa de fechar com back button bloqueada');
               }
-              return false;
             },
             child: const CupertinoAlertDialog(
               title: Icon(
@@ -2772,9 +2772,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       showDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor: Colors.black.withOpacity(0.5), // Fundo semi-transparente
-        builder: (dialogContext) => WillPopScope(
-          onWillPop: () async => false, // Impede fechar com back button
+        barrierColor: Colors.black.withValues(alpha: 0.5), // Fundo semi-transparente
+        builder: (dialogContext) => PopScope(
+          canPop: false, // Impede fechar com back button
           child: Center(
             child: SizedBox(
               width: 200,

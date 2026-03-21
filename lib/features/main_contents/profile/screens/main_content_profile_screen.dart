@@ -390,7 +390,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: CupertinoColors.black.withOpacity(0.15),
+            color: CupertinoColors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
@@ -482,7 +482,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: badgeColor.withOpacity(0.3),
+            color: badgeColor.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -775,8 +775,8 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
           boxShadow: [
             BoxShadow(
               color: isSponsors
-                  ? const Color(0xFFE53935).withOpacity(0.3)
-                  : const Color(0xFF007AFF).withOpacity(0.3),
+                  ? const Color(0xFFE53935).withValues(alpha: 0.3)
+                  : const Color(0xFF007AFF).withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
