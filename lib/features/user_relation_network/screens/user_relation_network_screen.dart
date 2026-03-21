@@ -9,6 +9,7 @@ import '../viewmodels/user_relation_network_view_model.dart';
 /// - Seção "Meus Vídeos" (grid vertical)
 /// - Seção "Minhas Conexões" (grid vertical)
 /// - Seção "Sugestões" (grid vertical)
+/// - Seção "Temas em Destaque" (grid vertical)
 /// 
 /// Dados mockados para desenvolvimento da UI
 class UserRelationNetworkScreen extends StatefulWidget {
@@ -85,6 +86,17 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                 ),
                 _buildSuggestionsSection(),
 
+                // Linha divisória com ponto
+                SliverToBoxAdapter(
+                  child: _buildDividerWithDot(),
+                ),
+
+                // Seção "Temas em Destaque"
+                SliverToBoxAdapter(
+                  child: _buildSectionTitle('Temas em Destaque'),
+                ),
+                _buildTemasDestaqueSection(),
+
                 // Espaçamento final
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 40),
@@ -142,17 +154,17 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Linha horizontal
+          // Linha horizontal mais visível
           Container(
-            height: 1,
-            color: CupertinoColors.systemGrey5.resolveFrom(context),
+            height: 2,
+            color: CupertinoColors.systemGrey3.resolveFrom(context),
           ),
           // Ponto central
           Container(
-            width: 8,
-            height: 8,
+            width: 10,
+            height: 10,
             decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey4.resolveFrom(context),
+              color: CupertinoColors.systemGrey2.resolveFrom(context),
               shape: BoxShape.circle,
             ),
           ),
@@ -233,13 +245,38 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
+  /// Seção "Temas em Destaque" - Grid de avatares circulares
+  Widget _buildTemasDestaqueSection() {
+    final profiles = _viewModel.getFilteredProfiles(_viewModel.myConnections);
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.95, // Mais compacto sem status
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final profile = profiles[index];
+            return _buildTemasDestaqueProfileCard(profile);
+          },
+          childCount: profiles.length,
+        ),
+      ),
+    );
+  }
+
   /// Card de perfil circular (para "Meus Vídeos")
   Widget _buildMeusVideosProfileCard(ConnectionProfileModel profile) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar
-          ClipOval(
+          // Avatar quadrado com bordas arredondadas
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
               imageUrl: profile.avatarUrl,
               width: 70,
@@ -249,7 +286,10 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
               errorWidget: (context, url, error) => Container(
                 width: 70,
                 height: 70,
-                color: CupertinoColors.systemGrey5,
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemGrey5,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: const Icon(CupertinoIcons.person_fill, size: 35),
               ),
             ),
@@ -315,6 +355,46 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
 
   /// Card de perfil circular (para "Sugestões")
   Widget _buildSuggestionProfileCard(ConnectionProfileModel profile) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+          // Avatar
+          ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: profile.avatarUrl,
+              width: 70,
+              height: 70,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => const CupertinoActivityIndicator(),
+              errorWidget: (context, url, error) => Container(
+                width: 70,
+                height: 70,
+                color: CupertinoColors.systemGrey5,
+                child: const Icon(CupertinoIcons.person_fill, size: 35),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Nome
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              profile.name,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+  }
+
+  /// Card de perfil circular (para "Temas em Destaque")
+  Widget _buildTemasDestaqueProfileCard(ConnectionProfileModel profile) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
