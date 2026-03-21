@@ -63,11 +63,21 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                 ),
                 _buildMeusVideosSection(),
 
+                // Linha divisória com ponto
+                SliverToBoxAdapter(
+                  child: _buildDividerWithDot(),
+                ),
+
                 // Seção "Minhas Conexões"
                 SliverToBoxAdapter(
                   child: _buildSectionTitle('Minhas Conexões'),
                 ),
                 _buildConnectionsSection(),
+
+                // Linha divisória com ponto
+                SliverToBoxAdapter(
+                  child: _buildDividerWithDot(),
+                ),
 
                 // Seção "Sugestões"
                 SliverToBoxAdapter(
@@ -100,17 +110,53 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Título de seção
+  /// Título de seção com chevron
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: CupertinoColors.label.resolveFrom(context),
-        ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.label.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            CupertinoIcons.chevron_right,
+            size: 18,
+            color: CupertinoColors.systemGrey.resolveFrom(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Linha divisória com ponto central
+  Widget _buildDividerWithDot() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Linha horizontal
+          Container(
+            height: 1,
+            color: CupertinoColors.systemGrey5.resolveFrom(context),
+          ),
+          // Ponto central
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey4.resolveFrom(context),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }
