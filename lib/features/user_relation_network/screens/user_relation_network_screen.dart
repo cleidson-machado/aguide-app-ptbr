@@ -173,25 +173,26 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Meus Vídeos" - Grid de avatares circulares
+  /// Seção "Meus Vídeos" - Scroll horizontal
   Widget _buildMeusVideosSection() {
     final profiles = _viewModel.getFilteredProfiles(_viewModel.featuredProfiles);
 
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.95, // Mais compacto sem status
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 120,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: profiles.length,
+          itemBuilder: (context, index) {
             final profile = profiles[index];
-            return _buildMeusVideosProfileCard(profile);
+            return Container(
+              width: 100,
+              margin: const EdgeInsets.only(right: 12),
+              child: _buildMeusVideosProfileCard(profile),
+            );
           },
-          childCount: profiles.length,
         ),
       ),
     );
@@ -222,25 +223,26 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Sugestões" - Grid de avatares circulares
+  /// Seção "Sugestões" - Scroll horizontal
   Widget _buildSuggestionsSection() {
     final profiles = _viewModel.getFilteredProfiles(_viewModel.suggestions);
 
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.95, // Mais compacto sem status
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 120,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: profiles.length,
+          itemBuilder: (context, index) {
             final profile = profiles[index];
-            return _buildSuggestionProfileCard(profile);
+            return Container(
+              width: 100,
+              margin: const EdgeInsets.only(right: 12),
+              child: _buildSuggestionProfileCard(profile),
+            );
           },
-          childCount: profiles.length,
         ),
       ),
     );
@@ -285,7 +287,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Card de perfil circular (para "Meus Vídeos")
+  /// Card de perfil quadrado (para "Meus Vídeos")
   Widget _buildMeusVideosProfileCard(ConnectionProfileModel profile) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -306,7 +308,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                   color: CupertinoColors.systemGrey5,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(CupertinoIcons.person_fill, size: 35),
+                child: const Icon(CupertinoIcons.play_rectangle_fill, size: 35),
               ),
             ),
           ),

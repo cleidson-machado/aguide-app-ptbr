@@ -10,28 +10,91 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
 
   // ========== DADOS MOCKADOS ==========
 
-  /// Perfis destacados no topo (horizontal scroll)
+  /// Meus Vídeos (horizontal scroll) - 12 itens
   List<ConnectionProfileModel> get featuredProfiles => [
         const ConnectionProfileModel(
           id: '1',
-          name: 'Suzane Jobs',
+          name: 'Canal Tech',
           avatarUrl: 'https://i.pravatar.cc/150?img=1',
           isOnline: true,
           status: ConnectionStatus.connected,
         ),
         const ConnectionProfileModel(
           id: '2',
-          name: 'João Silva',
+          name: 'Vlog Viagens',
           avatarUrl: 'https://i.pravatar.cc/150?img=12',
           isOnline: true,
           status: ConnectionStatus.following,
         ),
         const ConnectionProfileModel(
           id: '3',
-          name: 'Suzane Costa',
+          name: 'Receitas Fit',
           avatarUrl: 'https://i.pravatar.cc/150?img=5',
           isOnline: false,
           status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '100',
+          name: 'Gaming Pro',
+          avatarUrl: 'https://i.pravatar.cc/150?img=70',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '101',
+          name: 'DIY Criativo',
+          avatarUrl: 'https://i.pravatar.cc/150?img=8',
+          isOnline: false,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '102',
+          name: 'Fitness Zone',
+          avatarUrl: 'https://i.pravatar.cc/150?img=18',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '103',
+          name: 'Música Live',
+          avatarUrl: 'https://i.pravatar.cc/150?img=28',
+          isOnline: true,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '104',
+          name: 'Arte Digital',
+          avatarUrl: 'https://i.pravatar.cc/150?img=38',
+          isOnline: false,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '105',
+          name: 'Idiomas',
+          avatarUrl: 'https://i.pravatar.cc/150?img=48',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '106',
+          name: 'Ciência Cool',
+          avatarUrl: 'https://i.pravatar.cc/150?img=58',
+          isOnline: false,
+          status: ConnectionStatus.following,
+        ),
+        const ConnectionProfileModel(
+          id: '107',
+          name: 'História',
+          avatarUrl: 'https://i.pravatar.cc/150?img=63',
+          isOnline: true,
+          status: ConnectionStatus.connected,
+        ),
+        const ConnectionProfileModel(
+          id: '108',
+          name: 'Pets Fun',
+          avatarUrl: 'https://i.pravatar.cc/150?img=69',
+          isOnline: false,
+          status: ConnectionStatus.following,
         ),
       ];
 
@@ -123,27 +186,90 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
         ),
       ];
 
-  /// Sugestões de conexão
+  /// Sugestões de conexão (horizontal scroll) - 12 itens
   List<ConnectionProfileModel> get suggestions => [
         const ConnectionProfileModel(
           id: '7',
-          name: 'Suzane Jobs',
+          name: 'Amanda Silva',
           avatarUrl: 'https://i.pravatar.cc/150?img=29',
           isOnline: false,
           status: ConnectionStatus.suggested,
         ),
         const ConnectionProfileModel(
           id: '8',
-          name: 'João Silva',
+          name: 'Bruno Castro',
           avatarUrl: 'https://i.pravatar.cc/150?img=33',
           isOnline: false,
           status: ConnectionStatus.suggested,
         ),
         const ConnectionProfileModel(
           id: '9',
-          name: 'Aleson Costa',
+          name: 'Carla Souza',
           avatarUrl: 'https://i.pravatar.cc/150?img=68',
           isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '200',
+          name: 'Diego Alves',
+          avatarUrl: 'https://i.pravatar.cc/150?img=3',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '201',
+          name: 'Elena Rodrigues',
+          avatarUrl: 'https://i.pravatar.cc/150?img=23',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '202',
+          name: 'Fernando Lima',
+          avatarUrl: 'https://i.pravatar.cc/150?img=43',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '203',
+          name: 'Gabriela Martins',
+          avatarUrl: 'https://i.pravatar.cc/150?img=53',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '204',
+          name: 'Henrique Dias',
+          avatarUrl: 'https://i.pravatar.cc/150?img=7',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '205',
+          name: 'Isabela Rocha',
+          avatarUrl: 'https://i.pravatar.cc/150?img=17',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '206',
+          name: 'Jorge Santos',
+          avatarUrl: 'https://i.pravatar.cc/150?img=27',
+          isOnline: true,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '207',
+          name: 'Karina Ferreira',
+          avatarUrl: 'https://i.pravatar.cc/150?img=37',
+          isOnline: false,
+          status: ConnectionStatus.suggested,
+        ),
+        const ConnectionProfileModel(
+          id: '208',
+          name: 'Leonardo Costa',
+          avatarUrl: 'https://i.pravatar.cc/150?img=67',
+          isOnline: true,
           status: ConnectionStatus.suggested,
         ),
       ];
