@@ -21,7 +21,8 @@ class MainProfileWelcomeScreen extends StatefulWidget {
   const MainProfileWelcomeScreen({super.key});
 
   @override
-  State<MainProfileWelcomeScreen> createState() => _MainProfileWelcomeScreenState();
+  State<MainProfileWelcomeScreen> createState() =>
+      _MainProfileWelcomeScreenState();
 }
 
 class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
@@ -31,8 +32,6 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
   /// Controller único — criado em initState, nunca recriado ou redisposado.
   late final AnimationController _progressController;
-
-  Timer? _redirectTimer;
 
   /// Contador de cancelamentos.
   /// 0 = WELCOME  |  > 0 = EXIT (cada incremento reinicia o ciclo)
@@ -52,27 +51,32 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
       vsync: this,
     );
 
+    // Única fonte de verdade: redireciona quando a animação completa
+    _progressController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _redirectToHome();
+      }
+    });
+
     _loadUserDetails();
   }
 
-  /// Entra em EXIT: incrementa contador, reinicia animação e timer.
+  /// Entra em EXIT: incrementa contador, reinicia animação.
   void _enterExitMode() {
     if (kDebugMode) {
-      print('🔄 [MainProfileWelcomeScreen] _enterExitMode — cancelCount: ${_cancelCount + 1}');
+      print(
+        '🔄 [MainProfileWelcomeScreen] _enterExitMode — cancelCount: ${_cancelCount + 1}',
+      );
     }
-    _redirectTimer?.cancel();
     _progressController.stop();
     _progressController.reset();
     _progressController.forward();
-    _redirectTimer = Timer(const Duration(seconds: 6), _redirectToHome);
     setState(() => _cancelCount++);
   }
 
-  /// Reseta para WELCOME: zera contador, para animação e timer.
+  /// Reseta para WELCOME: zera contador e para animação.
   void _resetToWelcome() {
     if (kDebugMode) print('✅ [MainProfileWelcomeScreen] _resetToWelcome');
-    _redirectTimer?.cancel();
-    _redirectTimer = null;
     _progressController.stop();
     _progressController.reset();
     if (mounted) setState(() => _cancelCount = 0);
@@ -91,16 +95,20 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
   Future<void> _loadUserDetails() async {
     final userId = _authManager.getUserId();
-    
+
     if (userId != null && userId.isNotEmpty) {
       await _viewModel.loadUserDetails(userId);
     } else {
       if (kDebugMode) {
-        print('❌ [MainProfileWelcomeScreen] User ID não encontrado no token JWT');
+        print(
+          '❌ [MainProfileWelcomeScreen] User ID não encontrado no token JWT',
+        );
       }
-      
+
       if (mounted) {
-        _showErrorDialog('Erro de autenticação. Por favor, faça login novamente.');
+        _showErrorDialog(
+          'Erro de autenticação. Por favor, faça login novamente.',
+        );
       }
     }
   }
@@ -108,16 +116,17 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   void _showErrorDialog(String message) {
     showCupertinoDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Erro'),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+      builder:
+          (context) => CupertinoAlertDialog(
+            title: const Text('Erro'),
+            content: Text(message),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -125,17 +134,20 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
     if (kDebugMode) {
       print('🔴 [MainProfileWelcomeScreen] _handleCancel chamado');
     }
-    
+
     // ✅ CORRETO: Esta é uma TAB, não uma rota navegada
     // Não pode usar Navigator.pop() pois não há para onde voltar
     // Solução: Acessar o HomeContentTabScreen e resetar para primeira tab
-    
-    final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
-    
+
+    final homeState =
+        context.findAncestorStateOfType<HomeContentTabScreenState>();
+
     if (kDebugMode) {
-      print('🔍 [MainProfileWelcomeScreen] homeState encontrado: ${homeState != null}');
+      print(
+        '🔍 [MainProfileWelcomeScreen] homeState encontrado: ${homeState != null}',
+      );
     }
-    
+
     if (homeState != null) {
       if (kDebugMode) {
         print('✅ [MainProfileWelcomeScreen] Chamando resetToFirstTab()');
@@ -143,7 +155,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
       homeState.resetToFirstTab();
     } else {
       if (kDebugMode) {
-        print('❌ [MainProfileWelcomeScreen] HomeContentTabScreenState não encontrado');
+        print(
+          '❌ [MainProfileWelcomeScreen] HomeContentTabScreenState não encontrado',
+        );
       }
     }
   }
@@ -151,9 +165,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   void _handleStartForm() async {
     // Navega para o formulário (main_stepper_form_screen)
     final result = await Navigator.of(context).push(
-      CupertinoPageRoute(
-        builder: (context) => const MainStepperFormScreen(),
-      ),
+      CupertinoPageRoute(builder: (context) => const MainStepperFormScreen()),
     );
 
     // Se retornou 'cancelled', entra em EXIT mode
@@ -168,7 +180,6 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   @override
   void dispose() {
     _progressController.dispose();
-    _redirectTimer?.cancel();
     _viewModel.dispose();
     super.dispose();
   }
@@ -179,9 +190,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
     if (_isExitMode) {
       return CupertinoPageScaffold(
         backgroundColor: CupertinoColors.systemGroupedBackground,
-        child: SafeArea(
-          child: _buildExitContent(),
-        ),
+        child: SafeArea(child: _buildExitContent()),
       );
     }
 
@@ -194,10 +203,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _handleCancel,
-          child: const Icon(
-            CupertinoIcons.xmark,
-            color: CupertinoColors.label,
-          ),
+          child: const Icon(CupertinoIcons.xmark, color: CupertinoColors.label),
         ),
         middle: const Text('Relações - Ajustes'),
         trailing: CupertinoButton(
@@ -205,9 +211,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           onPressed: _handleCancel,
           child: const Text(
             'Cancelar',
-            style: TextStyle(
-              color: CupertinoColors.destructiveRed,
-            ),
+            style: TextStyle(color: CupertinoColors.destructiveRed),
           ),
         ),
       ),
@@ -217,9 +221,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           builder: (context, child) {
             // Loading state
             if (_viewModel.isLoading) {
-              return const Center(
-                child: CupertinoActivityIndicator(),
-              );
+              return const Center(child: CupertinoActivityIndicator());
             }
 
             // Error state
@@ -265,19 +267,36 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
   /// Layout de boas-vindas (modo WELCOME)
   Widget _buildWelcomeContent() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Espaço superior flexível
+          const Spacer(flex: 1),
+
           // Imagem de boas-vindas
-          ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Image.asset(
-              'assets/forms/profile1_welcome.png',
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.systemGrey.withOpacity(0.35),
+                  blurRadius: 10,
+                  spreadRadius: 1.1,
+                  offset: const Offset(0, 0),
+                  blurStyle: BlurStyle.normal,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/forms/profile1_welcome.png',
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 
@@ -319,9 +338,10 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 28),
+          // Espaço que empurra botões para o rodapé
+          const Spacer(flex: 2),
 
-          // Botões de ação
+          // Botões de ação (sempre no rodapé)
           Row(
             children: [
               // Botão Cancelar
@@ -362,6 +382,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
               ),
             ],
           ),
+
+          // Margem inferior do rodapé
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -370,7 +393,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   /// Layout de despedida (modo EXIT)
   Widget _buildExitContent() {
     final userName = _authManager.getUserName() ?? 'Usuário';
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       child: Column(
@@ -380,26 +403,53 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           const Spacer(),
 
           // Saudação personalizada
-          Text(
-            'Bem, $userName...',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: CupertinoColors.label,
-            ),
-            textAlign: TextAlign.center,
+          Column(
+            children: [
+              Text(
+                '$userName...',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: CupertinoColors.label,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Text(
+                'Respire fundo!',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.normal,
+                  color: CupertinoColors.label,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
 
           const SizedBox(height: 32),
 
           // Imagem de despedida
-          ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Image.asset(
-              'assets/forms/profile1_go_out.png',
-              width: 200,
-              height: 200,
-              fit: BoxFit.cover,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.systemGrey.withOpacity(0.25),
+                  blurRadius: 22,
+                  spreadRadius: 0.8,
+                  offset: const Offset(0, 0),
+                  blurStyle: BlurStyle.normal,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/forms/profile1_go_out.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 
@@ -407,10 +457,10 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
           // Mensagem de despedida
           const Text(
-            'Você já desistiu?',
+            'Estamos quase lá!',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
               color: CupertinoColors.label,
             ),
             textAlign: TextAlign.center,
@@ -419,7 +469,19 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           const SizedBox(height: 8),
 
           const Text(
-            'Não tem problema!',
+            'Não desista!',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.systemBlue,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Você pode voltar \n e terminar quando quiser.',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
@@ -431,7 +493,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           const SizedBox(height: 16),
 
           const Text(
-            'Vamos retomar depois!',
+            'Estaremos aqui a sua disposição!',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
@@ -443,11 +505,11 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           const SizedBox(height: 8),
 
           const Text(
-            'Até mais tarde!',
+            '| Até breve! |',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
-              color: CupertinoColors.destructiveRed,
+              color: CupertinoColors.systemBlue,
             ),
             textAlign: TextAlign.center,
           ),
@@ -459,8 +521,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           AnimatedBuilder(
             animation: _progressController,
             builder: (context, child) {
-              final secsLeft =
-                  (6 - (_progressController.value * 6)).ceil().clamp(0, 6);
+              final secsLeft = (6 - (_progressController.value * 6))
+                  .ceil()
+                  .clamp(0, 6);
               return Column(
                 children: [
                   Container(
