@@ -197,25 +197,26 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Minhas Conexões" - Grid de avatares circulares
+  /// Seção "Minhas Conexões" - Scroll horizontal
   Widget _buildConnectionsSection() {
     final profiles = _viewModel.getFilteredProfiles(_viewModel.myConnections);
 
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.95, // Mais compacto sem status
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 120,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: profiles.length,
+          itemBuilder: (context, index) {
             final profile = profiles[index];
-            return _buildConnectionProfileCard(profile);
+            return Container(
+              width: 100,
+              margin: const EdgeInsets.only(right: 12),
+              child: _buildConnectionProfileCard(profile),
+            );
           },
-          childCount: profiles.length,
         ),
       ),
     );
