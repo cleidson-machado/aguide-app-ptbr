@@ -42,10 +42,11 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text(
-          'Connections Network',
+          'Guia - PORTUGAL - Relações',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+        backgroundColor: CupertinoColors.systemGroupedBackground.resolveFrom(context),
+        border: null,
       ),
       child: SafeArea(
         child: AnimatedBuilder(
