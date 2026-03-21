@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
@@ -47,7 +48,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
     // Controller criado UMA vez para todo o ciclo de vida do widget
     _progressController = AnimationController(
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 15),
       vsync: this,
     );
 
@@ -305,7 +306,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           // Saudação personalizada
           Text(
             'Olá, ${_viewModel.userName}!',
-            style: const TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: CupertinoColors.label,
@@ -318,7 +319,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           // Mensagem dinâmica (CRIADOR ou CONSUMIDOR) com tipo em negrito e vermelho
           Text.rich(
             TextSpan(
-              style: const TextStyle(
+              style: GoogleFonts.lato(
                 fontSize: 18,
                 height: 1.4,
                 color: CupertinoColors.label,
@@ -327,7 +328,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
                 TextSpan(text: _viewModel.welcomeMessagePrefix),
                 TextSpan(
                   text: _viewModel.userTypeLabel,
-                  style: const TextStyle(
+                  style: GoogleFonts.lato(
                     fontWeight: FontWeight.bold,
                     color: CupertinoColors.destructiveRed,
                   ),
@@ -350,9 +351,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
                   onPressed: _handleCancel,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   color: CupertinoColors.systemGrey4,
-                  child: const Text(
+                  child: Text(
                     'Cancelar',
-                    style: TextStyle(
+                    style: GoogleFonts.lato(
                       color: CupertinoColors.label,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -370,9 +371,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
                   onPressed: _handleStartForm,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   color: CupertinoColors.activeBlue,
-                  child: const Text(
+                  child: Text(
                     'Vamos começar!',
-                    style: TextStyle(
+                    style: GoogleFonts.lato(
                       color: CupertinoColors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -407,19 +408,19 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
             children: [
               Text(
                 '$userName...',
-                style: const TextStyle(
+                style: GoogleFonts.lato(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: CupertinoColors.label,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const Text(
+              Text(
                 'Respire fundo!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.normal,
-                  color: CupertinoColors.label,
+                style: GoogleFonts.lato(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemBlue,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -456,9 +457,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           const SizedBox(height: 32),
 
           // Mensagem de despedida
-          const Text(
+          Text(
             'Estamos quase lá!',
-            style: TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 20,
               fontWeight: FontWeight.w500,
               color: CupertinoColors.label,
@@ -468,9 +469,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
           const SizedBox(height: 8),
 
-          const Text(
+          Text(
             'Não desista!',
-            style: TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 28,
               fontWeight: FontWeight.w600,
               color: CupertinoColors.systemBlue,
@@ -480,9 +481,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
           const SizedBox(height: 8),
 
-          const Text(
+          Text(
             'Você pode voltar \n e terminar quando quiser.',
-            style: TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 20,
               fontWeight: FontWeight.w500,
               color: CupertinoColors.label,
@@ -492,9 +493,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
           const SizedBox(height: 16),
 
-          const Text(
+          Text(
             'Estaremos aqui a sua disposição!',
-            style: TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 20,
               fontWeight: FontWeight.w500,
               color: CupertinoColors.label,
@@ -504,9 +505,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
           const SizedBox(height: 8),
 
-          const Text(
+          Text(
             '| Até breve! |',
-            style: TextStyle(
+            style: GoogleFonts.lato(
               fontSize: 20,
               fontWeight: FontWeight.w500,
               color: CupertinoColors.systemBlue,
@@ -521,9 +522,9 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
           AnimatedBuilder(
             animation: _progressController,
             builder: (context, child) {
-              final secsLeft = (6 - (_progressController.value * 6))
+              final secsLeft = (15 - (_progressController.value * 15))
                   .ceil()
-                  .clamp(0, 6);
+                  .clamp(0, 15);
               return Column(
                 children: [
                   Container(
@@ -547,7 +548,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
                   const SizedBox(height: 12),
                   Text(
                     'Redirecionando em ${secsLeft}s...',
-                    style: const TextStyle(
+                    style: GoogleFonts.lato(
                       fontSize: 14,
                       color: CupertinoColors.secondaryLabel,
                     ),
