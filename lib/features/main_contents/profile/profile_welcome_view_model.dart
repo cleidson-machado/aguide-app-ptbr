@@ -48,17 +48,23 @@ class ProfileWelcomeViewModel extends ChangeNotifier {
     if (isContentCreator) {
       // Mensagem para CRIADOR (Produtor de Conteúdo)
       return '\n\nPara liberar todas as funcionalidades da área de Relações e te ajudar a aumentar '
-          'seus ganhos e monetização, precisamos que você preencha um formulário \n com 10 perguntas simples.\n\n'
-          'As respostas são fundamentais para entendermos seu padrão e fazer todos \n os ajustes necessários e afins.\n\n'
-          'Responda com sinceridade \n as questões. No final, te avisamos \n por e-mail '
-          'ou aqui no App com \n uma Mensagem personalizada.';
+          'seus ganhos e monetização, precisamos que você preencha um formulário '
+          'com 10 perguntas simples.\n\n'
+          'As respostas são fundamentais para entendermos seu padrão e fazer todos '
+          'os ajustes necessários e outras adaptações afins.\n\n'
+          'Responda com sinceridade '
+          'as questões. \n No final, te avisamos '
+          'por e-mail ou aqui no App com '
+          'uma Mensagem personalizada.';
     } else {
-      // Mensagem para CONSUMIDOR (placeholder - mesmo texto por enquanto)
-      return '\n\nPara liberar tudo da área de Relações \n e te ajudar a encontrar, detalhadamente, '
-          'tudo que precisa, precisamos que você preencha um formulário \n com 10 perguntas simples.\n\n'
-          'As respostas são fundamentais para entendermos seu padrão e fazer todos \n os ajustes necessários e afins.\n\n'
-          'Responda com sinceridade \n as questões. No final, te avisamos \n por e-mail '
-          'ou aqui no App com \n uma Mensagem personalizada.';
+      // Mensagem para CONSUMIDOR
+      return '\n\nPara liberar tudo da área de Relações e te ajudar \n a encontrar, detalhadamente, '
+          'tudo que precisa, precisamos que você preencha um formulário '
+          'com 10 perguntas simples.\n\n'
+          'As respostas são fundamentais para entendermos seu padrão e fazer todos '
+          'os ajustes necessários \n e outras adaptações afins.\n\n'
+          'Responda com sinceridade as questões. \n No final, te avisamos '
+          'por e-mail ou aqui no App \n com uma Mensagem personalizada.';
     }
   }
 

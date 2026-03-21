@@ -273,74 +273,87 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Espaço superior flexível
-          const Spacer(flex: 1),
+          // Conteúdo scrollable (imagem + textos)
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 16),
 
-          // Imagem de boas-vindas
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.systemGrey.withOpacity(0.35),
-                  blurRadius: 10,
-                  spreadRadius: 1.1,
-                  offset: const Offset(0, 0),
-                  blurStyle: BlurStyle.normal,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.asset(
-                'assets/forms/profile1_welcome.png',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Saudação personalizada
-          Text(
-            'Olá, ${_viewModel.userName}!',
-            style: GoogleFonts.lato(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: CupertinoColors.label,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 8),
-
-          // Mensagem dinâmica (CRIADOR ou CONSUMIDOR) com tipo em negrito e vermelho
-          Text.rich(
-            TextSpan(
-              style: GoogleFonts.lato(
-                fontSize: 18,
-                height: 1.4,
-                color: CupertinoColors.label,
-              ),
-              children: [
-                TextSpan(text: _viewModel.welcomeMessagePrefix),
-                TextSpan(
-                  text: _viewModel.userTypeLabel,
-                  style: GoogleFonts.lato(
-                    fontWeight: FontWeight.bold,
-                    color: CupertinoColors.destructiveRed,
+                  // Imagem de boas-vindas
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.35),
+                          blurRadius: 10,
+                          spreadRadius: 1.1,
+                          offset: const Offset(0, 0),
+                          blurStyle: BlurStyle.normal,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.asset(
+                        'assets/forms/profile1_welcome.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                ),
-                TextSpan(text: _viewModel.welcomeMessageSuffix),
-              ],
-            ),
-            textAlign: TextAlign.center,
-          ),
 
-          // Espaço que empurra botões para o rodapé
-          const Spacer(flex: 2),
+                  const SizedBox(height: 10),
+
+                  // Saudação personalizada
+                  Text(
+                    'Olá, ${_viewModel.userName}!',
+                    style: GoogleFonts.lato(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoColors.label,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Mensagem dinâmica (CRIADOR ou CONSUMIDOR) com tipo em negrito e vermelho
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text.rich(
+                      TextSpan(
+                        style: GoogleFonts.lato(
+                          fontSize: 16,
+                          height: 1.4,
+                          color: CupertinoColors.label,
+                        ),
+                        children: [
+                          TextSpan(text: _viewModel.welcomeMessagePrefix),
+                          TextSpan(
+                            text: _viewModel.userTypeLabel,
+                            style: GoogleFonts.lato(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: CupertinoColors.destructiveRed,
+                            ),
+                          ),
+                          TextSpan(text: _viewModel.welcomeMessageSuffix),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
 
           // Botões de ação (sempre no rodapé)
           Row(
