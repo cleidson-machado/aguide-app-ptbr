@@ -79,6 +79,15 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
           'Guia - PORTUGAL - Relações',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
+        trailing: GestureDetector(
+          onTap: () {
+            // TODO: Implementar modal de filtros/configurações
+            if (kDebugMode) {
+              debugPrint('🔧 [UserRelationNetworkScreen] Botão de filtros clicado');
+            }
+          },
+          child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
+        ),
         backgroundColor: CupertinoColors.systemGroupedBackground.resolveFrom(context),
         border: null,
       ),
@@ -86,55 +95,60 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: AnimatedBuilder(
           animation: _viewModel,
           builder: (context, child) {
-            return CustomScrollView(
-              slivers: [
-                // Campo de busca
-                SliverToBoxAdapter(
-                  child: _buildSearchBar(),
-                ),
+            return Column(
+              children: [
+                // Campo de busca FIXO (não faz scroll)
+                _buildSearchBar(),
+                
+                // Conteúdo scrollable
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      // Seção "Meus Vídeos"
+                      SliverToBoxAdapter(
+                        child: _buildSectionTitle('Meus Vídeos'),
+                      ),
+                      _buildMeusVideosSection(),
 
-                // Seção "Meus Vídeos"
-                SliverToBoxAdapter(
-                  child: _buildSectionTitle('Meus Vídeos'),
-                ),
-                _buildMeusVideosSection(),
+                      // Linha divisória com ponto
+                      SliverToBoxAdapter(
+                        child: _buildDividerWithDot(),
+                      ),
 
-                // Linha divisória com ponto
-                SliverToBoxAdapter(
-                  child: _buildDividerWithDot(),
-                ),
+                      // Seção "Minhas Conexões"
+                      SliverToBoxAdapter(
+                        child: _buildSectionTitle('Minhas Conexões'),
+                      ),
+                      _buildConnectionsSection(),
 
-                // Seção "Minhas Conexões"
-                SliverToBoxAdapter(
-                  child: _buildSectionTitle('Minhas Conexões'),
-                ),
-                _buildConnectionsSection(),
+                      // Linha divisória com ponto
+                      SliverToBoxAdapter(
+                        child: _buildDividerWithDot(),
+                      ),
 
-                // Linha divisória com ponto
-                SliverToBoxAdapter(
-                  child: _buildDividerWithDot(),
-                ),
+                      // Seção "Sugestões"
+                      SliverToBoxAdapter(
+                        child: _buildSectionTitle('Sugestões'),
+                      ),
+                      _buildSuggestionsSection(),
 
-                // Seção "Sugestões"
-                SliverToBoxAdapter(
-                  child: _buildSectionTitle('Sugestões'),
-                ),
-                _buildSuggestionsSection(),
+                      // Linha divisória com ponto
+                      SliverToBoxAdapter(
+                        child: _buildDividerWithDot(),
+                      ),
 
-                // Linha divisória com ponto
-                SliverToBoxAdapter(
-                  child: _buildDividerWithDot(),
-                ),
+                      // Seção "Temas em Destaque"
+                      SliverToBoxAdapter(
+                        child: _buildSectionTitle('Temas em Destaque'),
+                      ),
+                      _buildTemasDestaqueSection(),
 
-                // Seção "Temas em Destaque"
-                SliverToBoxAdapter(
-                  child: _buildSectionTitle('Temas em Destaque'),
-                ),
-                _buildTemasDestaqueSection(),
-
-                // Espaçamento final
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 40),
+                      // Espaçamento final
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 40),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );
@@ -146,13 +160,23 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
 
   /// Campo de busca
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: CupertinoSearchTextField(
-        controller: _searchController,
-        placeholder: 'Buscar',
-        onChanged: (value) => _viewModel.setSearchQuery(value),
-        style: const TextStyle(fontSize: 16),
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: CupertinoColors.separator,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: CupertinoSearchTextField(
+          controller: _searchController,
+          placeholder: 'Buscar',
+          onChanged: (value) => _viewModel.setSearchQuery(value),
+          style: const TextStyle(fontSize: 16),
+        ),
       ),
     );
   }
@@ -160,7 +184,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   /// Título de seção com chevron
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
         children: [
           Text(
