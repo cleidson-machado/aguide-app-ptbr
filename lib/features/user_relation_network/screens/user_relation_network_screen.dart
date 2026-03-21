@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
+import '../../home_content/screens/home_content_tab_screen.dart';
 
 /// Tela de Rede de Conexões (Connections Network)
 /// Layout vertical com scroll contínuo:
@@ -37,10 +39,42 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     super.dispose();
   }
 
+  /// Navega para a home (primeira tab) independente de pilha de navegação
+  void _navigateToHome(BuildContext context) {
+    if (kDebugMode) {
+      print('🔙 [UserRelationNetworkScreen] Navegando para home...');
+    }
+    
+    // Busca o HomeContentTabScreen na árvore de widgets
+    final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
+    
+    if (homeState != null) {
+      // Reseta para a primeira tab (TEMAS)
+      homeState.resetToFirstTab();
+      
+      if (kDebugMode) {
+        print('✅ [UserRelationNetworkScreen] Navegação para home concluída');
+      }
+    } else {
+      if (kDebugMode) {
+        print('⚠️ [UserRelationNetworkScreen] HomeContentTabScreen não encontrado na árvore');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => _navigateToHome(context),
+          child: const Icon(
+            CupertinoIcons.chevron_left,
+            size: 28,
+            color: CupertinoColors.activeBlue,
+          ),
+        ),
         middle: const Text(
           'Guia - PORTUGAL - Relações',
           style: TextStyle(fontWeight: FontWeight.w600),
