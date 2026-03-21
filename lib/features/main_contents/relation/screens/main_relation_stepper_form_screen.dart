@@ -10,14 +10,14 @@ import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart'
 
 /// Tela de formulário stepper com 10 perguntas CREATOR
 /// Integração completa com API REST /api/v1/user-choices
-class MainStepperFormScreen extends StatefulWidget {
-  const MainStepperFormScreen({super.key});
+class MainRelationStepperFormScreen extends StatefulWidget {
+  const MainRelationStepperFormScreen({super.key});
 
   @override
-  State<MainStepperFormScreen> createState() => _MainStepperFormScreenState();
+  State<MainRelationStepperFormScreen> createState() => _MainRelationStepperFormScreenState();
 }
 
-class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
+class _MainRelationStepperFormScreenState extends State<MainRelationStepperFormScreen> {
   // ViewModels e Services
   late final UserChoiceViewModel _viewModel;
   late final AuthTokenManager _authManager;

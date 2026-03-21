@@ -14,15 +14,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 
-class MainContentProfileScreenBackup extends StatefulWidget {
-  const MainContentProfileScreenBackup({super.key});
+class MainContentRelationScreenBackup extends StatefulWidget {
+  const MainContentRelationScreenBackup({super.key});
 
   @override
-  _MainContentProfileScreenBackupState createState() =>
-      _MainContentProfileScreenBackupState();
+  _MainContentRelationScreenBackupState createState() =>
+      _MainContentRelationScreenBackupState();
 }
 
-class _MainContentProfileScreenBackupState extends State<MainContentProfileScreenBackup> {
+class _MainContentRelationScreenBackupState extends State<MainContentRelationScreenBackup> {
   final TextEditingController _nameController = TextEditingController(
     text: "Suzane Jobs",
   );

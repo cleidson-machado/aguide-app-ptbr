@@ -6,15 +6,15 @@ import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-class MainContentRelationScreen extends StatefulWidget {
-  const MainContentRelationScreen({super.key});
+class MainContentProfileScreen extends StatefulWidget {
+  const MainContentProfileScreen({super.key});
 
   @override
-  _MainContentRelationScreenState createState() =>
-      _MainContentRelationScreenState();
+  _MainContentProfileScreenState createState() =>
+      _MainContentProfileScreenState();
 }
 
-class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
+class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
   final Map<String, bool> _settings = {
     "Money Receive": false,
     "Card Activation": true,

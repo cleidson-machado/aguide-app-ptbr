@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
-import 'package:portugal_guide/features/main_contents/profile/profile_welcome_view_model.dart';
-import 'package:portugal_guide/features/main_contents/profile/screens/main_stepper_form_screen.dart';
+import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
+import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_stepper_form_screen.dart';
 
 /// Tela de boas-vindas/saída da aba Relações.
 ///
@@ -18,15 +18,15 @@ import 'package:portugal_guide/features/main_contents/profile/screens/main_stepp
 /// Cada cancelamento chama reset()+forward() no mesmo controller.
 ///
 /// Consome endpoint: GET /api/v1/users/{userId}/details
-class MainProfileWelcomeScreen extends StatefulWidget {
-  const MainProfileWelcomeScreen({super.key});
+class MainRelationWelcomeScreenBackup extends StatefulWidget {
+  const MainRelationWelcomeScreenBackup({super.key});
 
   @override
-  State<MainProfileWelcomeScreen> createState() =>
-      _MainProfileWelcomeScreenState();
+  State<MainRelationWelcomeScreenBackup> createState() =>
+      _MainRelationWelcomeScreenBackupState();
 }
 
-class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
+class _MainRelationWelcomeScreenBackupState extends State<MainRelationWelcomeScreenBackup>
     with SingleTickerProviderStateMixin {
   late final ProfileWelcomeViewModel _viewModel;
   late final AuthTokenManager _authManager;
@@ -66,7 +66,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   void _enterExitMode() {
     if (kDebugMode) {
       print(
-        '🔄 [MainProfileWelcomeScreen] _enterExitMode — cancelCount: ${_cancelCount + 1}',
+        '🔄 [MainRelationWelcomeScreenBackup] _enterExitMode — cancelCount: ${_cancelCount + 1}',
       );
     }
     _progressController.stop();
@@ -77,7 +77,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
   /// Reseta para WELCOME: zera contador e para animação.
   void _resetToWelcome() {
-    if (kDebugMode) print('✅ [MainProfileWelcomeScreen] _resetToWelcome');
+    if (kDebugMode) print('✅ [MainRelationWelcomeScreenBackup] _resetToWelcome');
     _progressController.stop();
     _progressController.reset();
     if (mounted) setState(() => _cancelCount = 0);
@@ -86,7 +86,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   /// Chamado após 6s: reseta estado ANTES de navegar.
   void _redirectToHome() {
     if (!mounted) return;
-    if (kDebugMode) print('🏠 [MainProfileWelcomeScreen] _redirectToHome');
+    if (kDebugMode) print('🏠 [MainRelationWelcomeScreenBackup] _redirectToHome');
     // Reset FIRST → quando usuário voltar à tab verá WELCOME
     _resetToWelcome();
     context
@@ -102,7 +102,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
     } else {
       if (kDebugMode) {
         print(
-          '❌ [MainProfileWelcomeScreen] User ID não encontrado no token JWT',
+          '❌ [MainRelationWelcomeScreenBackup] User ID não encontrado no token JWT',
         );
       }
 
@@ -133,7 +133,7 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
   void _handleCancel() {
     if (kDebugMode) {
-      print('🔴 [MainProfileWelcomeScreen] _handleCancel chamado');
+      print('🔴 [MainRelationWelcomeScreenBackup] _handleCancel chamado');
     }
 
     // ✅ CORRETO: Esta é uma TAB, não uma rota navegada
@@ -145,19 +145,19 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
 
     if (kDebugMode) {
       print(
-        '🔍 [MainProfileWelcomeScreen] homeState encontrado: ${homeState != null}',
+        '🔍 [MainRelationWelcomeScreenBackup] homeState encontrado: ${homeState != null}',
       );
     }
 
     if (homeState != null) {
       if (kDebugMode) {
-        print('✅ [MainProfileWelcomeScreen] Chamando resetToFirstTab()');
+        print('✅ [MainRelationWelcomeScreenBackup] Chamando resetToFirstTab()');
       }
       homeState.resetToFirstTab();
     } else {
       if (kDebugMode) {
         print(
-          '❌ [MainProfileWelcomeScreen] HomeContentTabScreenState não encontrado',
+          '❌ [MainRelationWelcomeScreenBackup] HomeContentTabScreenState não encontrado',
         );
       }
     }
@@ -166,13 +166,13 @@ class _MainProfileWelcomeScreenState extends State<MainProfileWelcomeScreen>
   void _handleStartForm() async {
     // Navega para o formulário (main_stepper_form_screen)
     final result = await Navigator.of(context).push(
-      CupertinoPageRoute(builder: (context) => const MainStepperFormScreen()),
+      CupertinoPageRoute(builder: (context) => const MainRelationStepperFormScreen()),
     );
 
     // Se retornou 'cancelled', entra em EXIT mode
     if (result == 'cancelled' && mounted) {
       if (kDebugMode) {
-        print('🔙 [MainProfileWelcomeScreen] cancelled → _enterExitMode');
+        print('🔙 [MainRelationWelcomeScreenBackup] cancelled → _enterExitMode');
       }
       _enterExitMode();
     }

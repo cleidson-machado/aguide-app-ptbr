@@ -26,14 +26,14 @@ import 'package:portugal_guide/features/home_content/screens/home_content_tab_sc
 /// - Loader horizontal animado
 /// - Aguarda 6 segundos automaticamente
 /// - Redireciona para primeira tab (Home)
-class MainProfileExitScreenBackup extends StatefulWidget {
-  const MainProfileExitScreenBackup({super.key});
+class MainRelationExitScreenBackup extends StatefulWidget {
+  const MainRelationExitScreenBackup({super.key});
 
   @override
-  State<MainProfileExitScreenBackup> createState() => _MainProfileExitScreenBackupState();
+  State<MainRelationExitScreenBackup> createState() => _MainRelationExitScreenBackupState();
 }
 
-class _MainProfileExitScreenBackupState extends State<MainProfileExitScreenBackup>
+class _MainRelationExitScreenBackupState extends State<MainRelationExitScreenBackup>
     with SingleTickerProviderStateMixin {
   late final AuthTokenManager _authManager;
   late AnimationController _progressController;
@@ -72,7 +72,7 @@ class _MainProfileExitScreenBackupState extends State<MainProfileExitScreenBacku
     if (!mounted) return;
 
     if (kDebugMode) {
-      print('🏠 [MainProfileExitScreenBackup] Iniciando redirecionamento para home');
+      print('🏠 [MainRelationExitScreenBackup] Iniciando redirecionamento para home');
     }
 
     // ✅ Buscar HomeContentTabScreenState ANTES de fazer pop
@@ -83,7 +83,7 @@ class _MainProfileExitScreenBackupState extends State<MainProfileExitScreenBacku
       if (element.widget is HomeContentTabScreen) {
         homeState = (element as StatefulElement).state as HomeContentTabScreenState;
         if (kDebugMode) {
-          print('✅ [MainProfileExitScreenBackup] HomeContentTabScreen encontrado na árvore');
+          print('✅ [MainRelationExitScreenBackup] HomeContentTabScreen encontrado na árvore');
         }
         return false; // Para a busca
       }
@@ -92,7 +92,7 @@ class _MainProfileExitScreenBackupState extends State<MainProfileExitScreenBacku
 
     if (homeState == null) {
       if (kDebugMode) {
-        print('❌ [MainProfileExitScreenBackup] HomeContentTabScreen não encontrado');
+        print('❌ [MainRelationExitScreenBackup] HomeContentTabScreen não encontrado');
       }
       // Fallback: apenas fazer pop
       Navigator.of(context).pop();
@@ -107,7 +107,7 @@ class _MainProfileExitScreenBackupState extends State<MainProfileExitScreenBacku
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (homeState != null) {
         if (kDebugMode) {
-          print('🎯 [MainProfileExitScreenBackup] Resetando para primeira tab');
+          print('🎯 [MainRelationExitScreenBackup] Resetando para primeira tab');
         }
         homeState!.resetToFirstTab();
       }
