@@ -22,6 +22,8 @@ import 'package:portugal_guide/features/user_verified_content/user_verified_cont
 import 'package:portugal_guide/features/user_choice/user_choice_repository.dart';
 import 'package:portugal_guide/features/user_choice/user_choice_repository_interface.dart';
 import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final injector =
@@ -114,6 +116,11 @@ Future<void> setupDependencies() async {
     () => UserChoiceViewModel(
       injector<UserChoiceRepositoryInterface>(),
     ),
+  );
+
+  //### For User Engagement (Content Tracking) ###
+  injector.registerLazySingleton<UserEngagementRepositoryInterface>(
+    () => UserEngagementRepository(),
   );
 }
 

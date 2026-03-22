@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
 import '../../home_content/screens/home_content_tab_screen.dart';
@@ -24,12 +26,49 @@ class UserRelationNetworkScreen extends StatefulWidget {
 class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   late final UserRelationNetworkViewModel _viewModel;
   late final TextEditingController _searchController;
+  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
 
   @override
   void initState() {
     super.initState();
     _viewModel = UserRelationNetworkViewModel();
     _searchController = TextEditingController();
+    // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
+    _loadUserDetails();
+  }
+
+  /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
+  Future<void> _loadUserDetails() async {
+    final userId = _tokenManager.getUserId();
+    if (userId != null && userId.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  👤 CARREGANDO USER DETAILS - UserRelationNetworkScreen       ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+        debugPrint('   🆔 UserId: $userId');
+        debugPrint('   📍 Origem: UserRelationNetworkScreen.initState()');
+        debugPrint('─────────────────────────────────────────────────────────────────');
+      }
+
+      await _viewModel.loadUserDetails(userId);
+
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🔄 ESTADO ATUAL DO VIEWMODEL - UserRelationNetwork          ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+        debugPrint('   📊 userDetails: ${_viewModel.userDetails != null ? "CARREGADO" : "NULL"}');
+        debugPrint('   🎯 isContentCreator: ${_viewModel.isContentCreator}');
+        debugPrint('   🏷️  meusVideosTitle: "${_viewModel.meusVideosTitle}"');
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️  [UserRelationNetworkScreen] UserId não disponível - não é possível carregar user details');
+      }
+    }
   }
 
   @override
@@ -95,12 +134,15 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                 _buildSearchBar(),
                 
                 // Conteúdo scrollable
+                // 🆕 Dinâmico baseado no tipo de usuário:
+                // - CRIADOR: "Meus Vídeos - CRIADOS"
+                // - CONSUMIDOR: "Conteúdo Visualizado"
                 Expanded(
                   child: CustomScrollView(
                     slivers: [
-                      // Seção "Meus Vídeos"
+                      // Seção "Meus Vídeos" ou "Conteúdo Visualizado" (dinâmico)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle('Meus Vídeos'),
+                        child: _buildSectionTitle(_viewModel.meusVideosTitle),
                       ),
                       _buildMeusVideosSection(),
 
