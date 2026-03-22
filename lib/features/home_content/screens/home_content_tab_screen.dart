@@ -20,8 +20,8 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
 
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
-    // const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
-    const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE
+    const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
+    // const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE
     const MainContentProfileScreen(), //### PERFIL / PROFILE
   ];
 

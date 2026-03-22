@@ -38,7 +38,7 @@ class ProfileWelcomeViewModel extends ChangeNotifier {
   String get userName => _userDetails?.name ?? 'Usuário';
 
   /// Retorna o tipo de usuário para exibição (usado na view com estilo customizado)
-  String get userTypeLabel => isContentCreator ? '| Produtor de Conteúdo |' : '| Consumidor de Conteúdo |';
+  String get userTypeLabel => isContentCreator ? '| CRIADOR de Conteúdo |' : '| CONSUMIDOR de Conteúdo |';
 
   /// Primeira parte da mensagem (antes do tipo de usuário)
   String get welcomeMessagePrefix => 'Que bom ter você aqui! \n Identificamos seu perfil como: \n\n ';
