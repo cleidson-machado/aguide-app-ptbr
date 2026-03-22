@@ -36,7 +36,6 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
   double _savedScrollPosition = 0.0; // ✅ Posição do scroll antes de navegar
-  String _userName = ''; // 🆕 Nome do usuário logado para animação
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -50,23 +49,41 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     _scrollController.addListener(_onScroll);
     // Carrega apenas se for a primeira vez (viewModel não inicializado)
     viewModel.loadPagedContentsIfNeeded();
-    // 🆕 Carrega nome do usuário do SharedPreferences
-    _loadUserName();
+    // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
+    _loadUserDetails();
   }
 
-  /// 🆕 Carrega o nome do usuário logado do SharedPreferences
-  void _loadUserName() {
-    final name = _tokenManager.getUserName();
-    if (name != null && name.isNotEmpty) {
-      setState(() {
-        _userName = name;
-      });
+  /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
+  Future<void> _loadUserDetails() async {
+    final userId = _tokenManager.getUserId();
+    if (userId != null && userId.isNotEmpty) {
       if (kDebugMode) {
-        debugPrint('👤 [MainContentTopicScreen] Nome carregado: $_userName');
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  👤 INICIANDO CARREGAMENTO DE USER DETAILS                         ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   🆔 UserId: $userId');
+        debugPrint('   📍 Origem: MainContentTopicScreen.initState()');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+      }
+      
+      await viewModel.loadUserDetails(userId);
+      
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🔄 USER DETAILS CARREGADO - ESTADO ATUAL DO VIEWMODEL             ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   📊 userDetails: ${viewModel.userDetails != null ? "CARREGADO" : "NULL"}');
+        debugPrint('   🎯 isContentCreator: ${viewModel.isContentCreator}');
+        debugPrint('   🏷️  topicHeaderLabel: "${viewModel.topicHeaderLabel}"');
+        debugPrint('   👤 userName: "${viewModel.userName}"');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+        debugPrint('');
       }
     } else {
       if (kDebugMode) {
-        debugPrint('⚠️  [MainContentTopicScreen] Nome do usuário não disponível');
+        debugPrint('⚠️  [MainContentTopicScreen] UserId não disponível - não é possível carregar user details');
       }
     }
   }
@@ -201,8 +218,10 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             children: [
               Column(
                 children: [
-                  // 🆕 Header com animação de texto (fora da NavigationBar)
+                  // 🆕 Header com animação de texto dinâmico (CRIADOR/CONSUMIDOR)
+                  // ✅ Key única força reconstrução da animação quando viewModel muda
                   Container(
+                    key: ValueKey('header_${viewModel.isContentCreator}_${viewModel.userName}'),
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     decoration: const BoxDecoration(
@@ -217,9 +236,10 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                       height: 24, // ✅ Altura adequada para a animação
                       child: Center(
                         child: AnimatedTextKit(
+                          key: ValueKey('anim_${viewModel.isContentCreator}_${viewModel.userName}_${DateTime.now().millisecondsSinceEpoch}'),
                           animatedTexts: [
                             RotateAnimatedText(
-                              "| TEMAS - Perfil CRIADOR de Conteúdo |",
+                              viewModel.topicHeaderLabel, // ✅ Dinâmico: CRIADOR ou CONSUMIDOR
                               textStyle: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -229,9 +249,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                               rotateOut: false, // ✅ Sem rotação de saída
                               duration: const Duration(milliseconds: 800), // ✅ Duração da animação de entrada
                             ),
-                            if (_userName.isNotEmpty)
+                            if (viewModel.userName.isNotEmpty)
                               RotateAnimatedText(
-                                "Bem-Vindo - $_userName!",
+                                "Bem-Vindo - ${viewModel.userName}!", // ✅ Usa nome da API
                                 textStyle: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
@@ -243,7 +263,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                               ),
                           ],
                           repeatForever: true,
-                          pause: const Duration(milliseconds: 15000), // 6 segundos pausado
+                          pause: const Duration(milliseconds: 15000), // 15 segundos pausado
                           displayFullTextOnTap: false,
                           stopPauseOnTap: false,
                           isRepeatingAnimation: true,

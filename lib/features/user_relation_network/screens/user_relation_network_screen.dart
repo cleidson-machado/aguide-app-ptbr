@@ -95,12 +95,14 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                 _buildSearchBar(),
                 
                 // Conteúdo scrollable
+                //Meus Vídeos - CRIADOS => CRIADOR
+                //Conteúdo Visualizado => CONSUMIDOR
                 Expanded(
                   child: CustomScrollView(
                     slivers: [
                       // Seção "Meus Vídeos"
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle('Meus Vídeos'),
+                        child: _buildSectionTitle('Conteúdo Visualizado'),
                       ),
                       _buildMeusVideosSection(),
 

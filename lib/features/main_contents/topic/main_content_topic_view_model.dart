@@ -12,13 +12,19 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_repository
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_criteria.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_service.dart';
+import 'package:portugal_guide/features/user/user_details_model.dart';
+import 'package:portugal_guide/features/user/user_repository_interface.dart';
 
 class MainContentTopicViewModel extends ChangeNotifier {
   final MainContentTopicRepositoryInterface _repository;
+  final UserRepositoryInterface _userRepository;
   late final AuthErrorHandler _errorHandler;
 
-  MainContentTopicViewModel({MainContentTopicRepositoryInterface? repository})
-    : _repository = repository ?? MainContentTopicRepository() {
+  MainContentTopicViewModel({
+    MainContentTopicRepositoryInterface? repository,
+    UserRepositoryInterface? userRepository,
+  }) : _repository = repository ?? MainContentTopicRepository(),
+       _userRepository = userRepository ?? injector<UserRepositoryInterface>() {
     // Inicializar error handler com token manager do injector
     _errorHandler = injector<AuthErrorHandler>();
   }
@@ -28,6 +34,10 @@ class MainContentTopicViewModel extends ChangeNotifier {
   bool _isLoading = false;
   Exception? _error; // ✅ MUDANÇA: Armazenar Exception ao invés de String
   bool _isInitialized = false; // Flag para controlar se já foi inicializado
+  
+  // ===== Estado de User Details (para diferenciação CRIADOR/CONSUMIDOR) =====
+  UserDetailsModel? _userDetails;
+  bool _isLoadingUserDetails = false;
 
   // ===== Estado de Paginação =====
   int _currentPage = 1;
@@ -58,6 +68,56 @@ class MainContentTopicViewModel extends ChangeNotifier {
   int get currentPage => _currentPage;
   MainContentSortCriteria? get currentSortCriteria => _currentSortCriteria;
   bool get isManualFilterActive => _isManualFilterActive;
+  
+  // ===== Getters para User Details =====
+  UserDetailsModel? get userDetails => _userDetails;
+  bool get isLoadingUserDetails => _isLoadingUserDetails;
+  
+  /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
+  /// 
+  /// Lógica: Se ambos youtubeUserId E youtubeChannelId são não-nulos → CRIADOR
+  /// Qualquer outra combinação → CONSUMIDOR
+  bool get isContentCreator {
+    if (_userDetails == null) {
+      if (kDebugMode) {
+        debugPrint('🔍 [isContentCreator] _userDetails é NULL → retornando FALSE (CONSUMIDOR)');
+      }
+      return false;
+    }
+    
+    final hasYoutubeUserId = _userDetails!.youtubeUserId != null && 
+                              _userDetails!.youtubeUserId!.isNotEmpty;
+    final hasYoutubeChannelId = _userDetails!.youtubeChannelId != null && 
+                                 _userDetails!.youtubeChannelId!.isNotEmpty;
+    
+    final isCriador = hasYoutubeUserId && hasYoutubeChannelId;
+    
+    if (kDebugMode) {
+      debugPrint('🔍 [isContentCreator] Verificação:');
+      debugPrint('   youtubeUserId: ${_userDetails!.youtubeUserId ?? "NULL"} → hasYoutubeUserId: $hasYoutubeUserId');
+      debugPrint('   youtubeChannelId: ${_userDetails!.youtubeChannelId ?? "NULL"} → hasYoutubeChannelId: $hasYoutubeChannelId');
+      debugPrint('   Resultado: ${isCriador ? "CRIADOR" : "CONSUMIDOR"}');
+    }
+    
+    return isCriador;
+  }
+  
+  /// Retorna o label dinâmico para o header da tela de tópicos
+  /// Diferencia entre CRIADOR e CONSUMIDOR de conteúdo
+  String get topicHeaderLabel {
+    final label = isContentCreator 
+        ? '| TEMAS - Perfil CRIADOR de Conteúdo |' 
+        : '| TEMAS - Perfil CONSUMIDOR de Conteúdo |';
+    
+    if (kDebugMode) {
+      debugPrint('🏷️  [topicHeaderLabel] Retornando: "$label"');
+    }
+    
+    return label;
+  }
+  
+  /// Retorna o nome do usuário para personalização (usado na animação)
+  String get userName => _userDetails?.name ?? '';
 
   // ===== Gerenciamento de ToggleButtons por item =====
   
@@ -90,6 +150,46 @@ class MainContentTopicViewModel extends ChangeNotifier {
   }
 
   // ===== Ações =====
+  
+  /// Carrega os detalhes do usuário via API
+  /// 
+  /// Consome: GET /api/v1/users/{userId}/details
+  Future<void> loadUserDetails(String userId) async {
+    _isLoadingUserDetails = true;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('📡 [MainContentTopicViewModel] Carregando user details para userId: $userId');
+      }
+
+      _userDetails = await _userRepository.getUserDetails(userId);
+
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  ✅ USER DETAILS CARREGADOS COM SUCESSO                            ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   👤 Nome: ${_userDetails?.name}');
+        debugPrint('   📧 Email: ${_userDetails?.email}');
+        debugPrint('   📺 YouTube User ID: "${_userDetails?.youtubeUserId ?? "NULL"}"');
+        debugPrint('   📺 YouTube Channel ID: "${_userDetails?.youtubeChannelId ?? "NULL"}"');
+        debugPrint('   🎯 Tipo detectado: ${isContentCreator ? "CRIADOR" : "CONSUMIDOR"}');
+        debugPrint('   🏷️  Label: "$topicHeaderLabel"');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [MainContentTopicViewModel] Erro ao carregar user details: $e');
+      }
+      // Não propaga erro para não bloquear a tela, apenas log
+    } finally {
+      _isLoadingUserDetails = false;
+      notifyListeners();
+    }
+  }
+  
   Future<void> loadAllContents() async {
     _setLoading(true);
     try {
