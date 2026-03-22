@@ -71,7 +71,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         ),
         middle: const Text(
           'Guia - PORTUGAL - Relações',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         trailing: GestureDetector(
           onTap: () {
