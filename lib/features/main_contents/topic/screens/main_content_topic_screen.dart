@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_v
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_model.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -786,17 +789,48 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                       // Ações baseadas no botão selecionado
                       switch (index) {
                         case 0:
-                          // TODO: Implementar ação de PLAY
+                          // ✅ PLAY: Registra engagement antes de reproduzir
                           if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento (HISTÓRICO DE VÍDEOS NAVEGADOS)
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.clickToView,
+                            source: 'home',
+                          );
+                          
+                          // TODO: Implementar reprodução do vídeo
                           break;
                         case 1:
-                          // Exibe modal de detalhes
+                          // ✅ DETALHES: Registra engagement ao visualizar detalhes
                           if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento como PARTIAL_VIEW
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.partialView,
+                            source: 'home',
+                          );
+                          
                           _MainContentTopicScreenState._showDetailsActionSheet(context, content);
                           break;
                         case 2:
-                          // Verificar ownership antes de exibir modal de autoria
+                          // ✅ AUTORIA: Registra engagement ao verificar autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento como PARTIAL_VIEW
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.partialView,
+                            source: 'home',
+                          );
+                          
                           _MainContentTopicScreenState._handleAuthorshipCheck(
                             context,
                             content,
@@ -1606,6 +1640,87 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         ],
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  /// ✅ Helper estático para logar engagement de widgets estáticos
+  /// Necessário porque o _buildContentCard é estático e não tem acesso direto aos membros da instância
+  static Future<void> _logEngagementStatic(
+    BuildContext context, {
+    required String contentId,
+    required String contentTitle,
+    String engagementType = 'CLICK_TO_VIEW',
+    String source = 'home',
+  }) async {
+    try {
+      // Buscar instância do repository do injector
+      final engagementRepository = injector<UserEngagementRepositoryInterface>();
+      final tokenManager = injector<AuthTokenManager>();
+      
+      // Obter userId do token JWT
+      final userId = tokenManager.getUserId();
+      
+      if (userId == null) {
+        if (kDebugMode) {
+          debugPrint('⚠️  [EngagementTracking] UserId não encontrado - ignorando tracking');
+        }
+        return;
+      }
+
+      // Detectar plataforma
+      final platform = Platform.isAndroid ? 'Android' : 'iOS';
+      
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  📊 ENGAGEMENT TRACKING - Registrando interação do usuário        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   👤 UserId: $userId');
+        debugPrint('   🎬 ContentId: $contentId');
+        debugPrint('   📝 Title: $contentTitle');
+        debugPrint('   🔖 Type: $engagementType');
+        debugPrint('   🏠 Source: $source');
+        debugPrint('   📱 Platform: $platform');
+        debugPrint('   ⏰ Timestamp: ${DateTime.now().toIso8601String()}');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+      }
+
+      // Criar modelo de engagement
+      final engagement = UserEngagementModel(
+        userId: userId,
+        contentId: contentId,
+        engagementType: engagementType,
+        engagementStatus: UserEngagementStatus.active,
+        repeatCount: 1,
+        deviceType: 'mobile',
+        platform: platform,
+        source: source,
+        engagedAt: DateTime.now(),
+      );
+
+      // Enviar para API (não bloqueia a navegação)
+      final result = await engagementRepository.createEngagement(engagement);
+
+      if (result != null && kDebugMode) {
+        debugPrint('✅ Engagement registrado com sucesso!');
+        debugPrint('   🆔 ID gerado: ${result.id}');
+        debugPrint('   📊 Status: ${result.engagementStatus}');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      } else if (kDebugMode) {
+        debugPrint('⚠️  Falha ao registrar engagement (API pode estar indisponível)');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    } catch (e) {
+      // ✅ NÃO bloqueia a navegação do usuário se o tracking falhar
+      if (kDebugMode) {
+        debugPrint('❌ Erro ao logar engagement: $e');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
