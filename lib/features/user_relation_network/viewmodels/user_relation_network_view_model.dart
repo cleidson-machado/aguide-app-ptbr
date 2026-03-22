@@ -1,12 +1,72 @@
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/features/user/user_details_model.dart';
+import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import '../models/connection_profile_model.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
 /// MOCKADO - dados temporários para desenvolvimento da UI
 class UserRelationNetworkViewModel extends ChangeNotifier {
+  final UserRepositoryInterface _userRepository;
+
+  UserRelationNetworkViewModel({UserRepositoryInterface? userRepository})
+      : _userRepository = userRepository ?? injector<UserRepositoryInterface>();
+
   // Query de busca
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
+
+  // ===== Estado de User Details (para diferenciação CRIADOR/CONSUMIDOR) =====
+  UserDetailsModel? _userDetails;
+  bool _isLoadingUserDetails = false;
+
+  // ===== Getters para User Details =====
+  UserDetailsModel? get userDetails => _userDetails;
+  bool get isLoadingUserDetails => _isLoadingUserDetails;
+
+  /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
+  /// 
+  /// Lógica: Se ambos youtubeUserId E youtubeChannelId são não-nulos → CRIADOR
+  /// Qualquer outra combinação → CONSUMIDOR
+  bool get isContentCreator {
+    if (_userDetails == null) {
+      if (kDebugMode) {
+        debugPrint('🔍 [UserRelationNetworkVM] _userDetails é NULL → retornando FALSE (CONSUMIDOR)');
+      }
+      return false;
+    }
+
+    final hasYoutubeUserId = _userDetails!.youtubeUserId != null &&
+        _userDetails!.youtubeUserId!.isNotEmpty;
+    final hasYoutubeChannelId = _userDetails!.youtubeChannelId != null &&
+        _userDetails!.youtubeChannelId!.isNotEmpty;
+
+    final isCriador = hasYoutubeUserId && hasYoutubeChannelId;
+
+    if (kDebugMode) {
+      debugPrint('🔍 [UserRelationNetworkVM] Verificação:');
+      debugPrint('   youtubeUserId: ${_userDetails!.youtubeUserId ?? "NULL"} → hasYoutubeUserId: $hasYoutubeUserId');
+      debugPrint('   youtubeChannelId: ${_userDetails!.youtubeChannelId ?? "NULL"} → hasYoutubeChannelId: $hasYoutubeChannelId');
+      debugPrint('   Resultado: ${isCriador ? "CRIADOR" : "CONSUMIDOR"}');
+    }
+
+    return isCriador;
+  }
+
+  /// Retorna o título dinâmico da primeira seção
+  /// - CRIADOR: "Meus Vídeos - CRIADOS"
+  /// - CONSUMIDOR: "Conteúdo Visualizado"
+  String get meusVideosTitle {
+    final title = isContentCreator
+        ? 'Meus Vídeos - CRIADOS'
+        : 'Conteúdo Visualizado';
+
+    if (kDebugMode) {
+      debugPrint('🏷️  [UserRelationNetworkVM] meusVideosTitle: "$title"');
+    }
+
+    return title;
+  }
 
   // ========== DADOS MOCKADOS ==========
 
@@ -408,6 +468,45 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   void setSearchQuery(String query) {
     if (_searchQuery != query) {
       _searchQuery = query;
+      notifyListeners();
+    }
+  }
+
+  /// Carrega os detalhes do usuário via API
+  /// 
+  /// Consome: GET /api/v1/users/{userId}/details
+  Future<void> loadUserDetails(String userId) async {
+    _isLoadingUserDetails = true;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('📡 [UserRelationNetworkVM] Carregando user details para userId: $userId');
+      }
+
+      _userDetails = await _userRepository.getUserDetails(userId);
+
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  ✅ USER DETAILS CARREGADOS - UserRelationNetworkViewModel    ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+        debugPrint('   👤 Nome: ${_userDetails?.name}');
+        debugPrint('   📧 Email: ${_userDetails?.email}');
+        debugPrint('   📺 YouTube User ID: "${_userDetails?.youtubeUserId ?? "NULL"}"');
+        debugPrint('   📺 YouTube Channel ID: "${_userDetails?.youtubeChannelId ?? "NULL"}"');
+        debugPrint('   🎯 Tipo detectado: ${isContentCreator ? "CRIADOR" : "CONSUMIDOR"}');
+        debugPrint('   🏷️  Título: "$meusVideosTitle"');
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [UserRelationNetworkVM] Erro ao carregar user details: $e');
+      }
+      // Não propaga erro para não bloquear a tela, apenas log
+    } finally {
+      _isLoadingUserDetails = false;
       notifyListeners();
     }
   }
