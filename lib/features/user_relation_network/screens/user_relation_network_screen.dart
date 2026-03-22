@@ -66,14 +66,8 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+        leading: CupertinoNavigationBarBackButton(
           onPressed: () => _navigateToHome(context),
-          child: const Icon(
-            CupertinoIcons.chevron_left,
-            size: 28,
-            color: CupertinoColors.activeBlue,
-          ),
         ),
         middle: const Text(
           'Guia - PORTUGAL - Relações',

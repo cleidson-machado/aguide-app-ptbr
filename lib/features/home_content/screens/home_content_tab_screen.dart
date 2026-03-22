@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:portugal_guide/features/main_contents/relation/screens/connections_network_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';

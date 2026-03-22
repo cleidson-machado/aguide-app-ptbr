@@ -530,6 +530,31 @@ lib/features/auth_credentials/
 - Sempre fazer dispose de controllers
 - Separar lógica de UI (não colocar regras de negócio aqui)
 
+**Botão de Voltar Padrão:**
+- Usar **`CupertinoNavigationBarBackButton`** para botões de voltar tradicionais
+- Mantém consistência com design nativo iOS
+- Referência: [main_content_profile_settings_screen.dart](lib/features/main_contents/profile/screens/main_content_profile_settings_screen.dart)
+
+```dart
+// ✅ CORRETO - Botão voltar padrão do projeto
+CupertinoNavigationBar(
+  leading: CupertinoNavigationBarBackButton(
+    onPressed: () => Navigator.of(context).pop(),
+  ),
+  middle: const Text("Título"),
+)
+
+// ❌ EVITAR - Botão customizado desnecessariamente
+CupertinoNavigationBar(
+  leading: CupertinoButton(
+    child: Icon(CupertinoIcons.chevron_left),
+    onPressed: () => Navigator.of(context).pop(),
+  ),
+)
+```
+
+**Exemplo de Screen Completa:**
+
 ```dart
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -561,8 +586,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text("Título"),
+      navigationBar: CupertinoNavigationBar(
+        leading: CupertinoNavigationBarBackButton(
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        middle: const Text("Título"),
       ),
       child: // ... corpo da tela
     );
