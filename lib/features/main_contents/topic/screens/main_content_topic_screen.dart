@@ -15,6 +15,7 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_model.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
+import 'package:portugal_guide/util/ip_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -1691,6 +1692,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       // Detectar plataforma
       final platform = Platform.isAndroid ? 'Android' : 'iOS';
       
+      // 🆕 Coletar IP público do usuário
+      final userIp = await IpService.getPublicIP();
+      
       if (kDebugMode) {
         debugPrint('');
         debugPrint('╔════════════════════════════════════════════════════════════════════╗');
@@ -1702,6 +1706,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         debugPrint('   🔖 Type: $engagementType');
         debugPrint('   🏠 Source: $source');
         debugPrint('   📱 Platform: $platform');
+        debugPrint('   🌐 User IP: $userIp');
         debugPrint('   ⏰ Timestamp: ${DateTime.now().toIso8601String()}');
         debugPrint('───────────────────────────────────────────────────────────────────');
       }
@@ -1716,6 +1721,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         deviceType: 'mobile',
         platform: platform,
         source: source,
+        userIp: userIp,
         engagedAt: DateTime.now(),
       );
 
