@@ -17,6 +17,8 @@ class UserDetailsModel {
   final bool active;
   final String fullName;
   final List<UserPhoneModel> phones;
+  final String? youtubeUserId;
+  final String? youtubeChannelId;
 
   const UserDetailsModel({
     required this.id,
@@ -32,6 +34,8 @@ class UserDetailsModel {
     required this.active,
     required this.fullName,
     required this.phones,
+    this.youtubeUserId,
+    this.youtubeChannelId,
   });
 
   UserDetailsModel copyWith({
@@ -48,6 +52,8 @@ class UserDetailsModel {
     bool? active,
     String? fullName,
     List<UserPhoneModel>? phones,
+    String? youtubeUserId,
+    String? youtubeChannelId,
   }) {
     return UserDetailsModel(
       id: id ?? this.id,
@@ -63,6 +69,8 @@ class UserDetailsModel {
       active: active ?? this.active,
       fullName: fullName ?? this.fullName,
       phones: phones ?? this.phones,
+      youtubeUserId: youtubeUserId ?? this.youtubeUserId,
+      youtubeChannelId: youtubeChannelId ?? this.youtubeChannelId,
     );
   }
 
@@ -77,6 +85,8 @@ class UserDetailsModel {
       'updatedAt': updatedAt.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
       'oauthProvider': oauthProvider,
+      'youtubeUserId': youtubeUserId,
+      'youtubeChannelId': youtubeChannelId,
       'oauthId': oauthId,
       'active': active,
       'fullName': fullName,
@@ -110,6 +120,8 @@ class UserDetailsModel {
               ),
             )
           : [],
+      youtubeUserId: map['youtubeUserId'],
+      youtubeChannelId: map['youtubeChannelId'],
     );
   }
 

@@ -7,19 +7,18 @@ import 'package:portugal_guide/features/user/user_details_view_model.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'user_preferences_settings_screen.dart';
+import 'main_content_profile_settings_screen.dart';
 
-class MainContentRelationScreen extends StatefulWidget {
-  const MainContentRelationScreen({super.key});
+class MainContentProfileScreenBackupOldPlus extends StatefulWidget {
+  const MainContentProfileScreenBackupOldPlus({super.key});
 
   @override
-  _MainContentRelationScreenState createState() =>
-      _MainContentRelationScreenState();
+  _MainContentProfileScreenBackupOldPlusState createState() =>
+      _MainContentProfileScreenBackupOldPlusState();
 }
 
-class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
+class _MainContentProfileScreenBackupOldPlusState extends State<MainContentProfileScreenBackupOldPlus> {
   final UserDetailsViewModel viewModel = injector<UserDetailsViewModel>();
 
   @override
@@ -38,7 +37,7 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
   void _navigateToPreferences() {
     Navigator.of(context).push(
       CupertinoPageRoute(
-        builder: (context) => const UserPreferencesSettingsScreen(),
+        builder: (context) => const MainContentProfileSettingsScreen()
       ),
     );
   }
@@ -304,7 +303,7 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
     return Container(
       width: 120,
       height: 120,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: CupertinoColors.systemGrey4,
       ),
@@ -534,9 +533,6 @@ class _MainContentRelationScreenState extends State<MainContentRelationScreen> {
     }
   }
 
-  // Mostra diálogo de erro
-  void _showErrorDialog(String message) {
-    showCupertinoDialog(
   // Mostra diálogo de erro
   void _showErrorDialog(String message) {
     showCupertinoDialog(

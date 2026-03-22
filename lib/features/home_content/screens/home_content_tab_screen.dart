@@ -1,10 +1,10 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
-import 'package:portugal_guide/features/main_contents/relation/screens/main_content_relation_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
+import 'package:portugal_guide/features/user_relation_network/screens/user_relation_network_screen.dart';
 
 //RE-APROVEITA OS CÓDIGOGOS E VOLTA O NOME HomeScreen SE NECESSÁRIO...
 
@@ -12,22 +12,41 @@ class HomeContentTabScreen extends StatefulWidget {
   const HomeContentTabScreen({super.key});
 
   @override
-  _HomeContentTabScreenState createState() => _HomeContentTabScreenState();
+  HomeContentTabScreenState createState() => HomeContentTabScreenState();
 }
 
-class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
+class HomeContentTabScreenState extends State<HomeContentTabScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
-    const MainContentProfileScreen(), //#### RELAÇÕES
-    const MainContentRelationScreen(), //### PERFIL
+    // const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
+    const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE
+    const MainContentProfileScreen(), //### PERFIL / PROFILE
   ];
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  /// Método público para resetar tab para o índice 0 (TEMAS)
+  void resetToFirstTab() {
+    if (kDebugMode) {
+      print('📌 [HomeContentTabScreen] resetToFirstTab chamado');
+      print('   Current index: $_selectedIndex');
+    }
+    
+    if (mounted) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+      
+      if (kDebugMode) {
+        print('✅ [HomeContentTabScreen] Tab resetada para 0');
+      }
+    }
   }
 
   @override
@@ -37,7 +56,8 @@ class _HomeContentTabScreenState extends State<HomeContentTabScreen> {
       // Isso permite que AutomaticKeepAliveClientMixin funcione corretamente
       // Apenas alterna a visibilidade entre as tabs sem destruir os widgets
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      bottomNavigationBar: SafeArea(
+      // 🎯 SOLUÇÃO: Esconde bottomNavigationBar quando MainStepperFormScreen está ativa
+      bottomNavigationBar: _selectedIndex == 1 ? null : SafeArea(
         child: CupertinoTabBar(
           currentIndex: _selectedIndex,
           height: 65,

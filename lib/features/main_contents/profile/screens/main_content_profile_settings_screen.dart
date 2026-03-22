@@ -2,16 +2,16 @@
 
 import 'package:flutter/cupertino.dart';
 
-class UserPreferencesSettingsScreen extends StatefulWidget {
-  const UserPreferencesSettingsScreen({super.key});
+class MainContentProfileSettingsScreen extends StatefulWidget {
+  const MainContentProfileSettingsScreen({super.key});
 
   @override
-  _UserPreferencesSettingsScreenState createState() =>
-      _UserPreferencesSettingsScreenState();
+  _MainContentProfileSettingsScreenState createState() =>
+      _MainContentProfileSettingsScreenState();
 }
 
-class _UserPreferencesSettingsScreenState
-    extends State<UserPreferencesSettingsScreen> {
+class _MainContentProfileSettingsScreenState
+    extends State<MainContentProfileSettingsScreen> {
   final Map<String, bool> _settings = {
     "Money Receive": false,
     "Card Activation": true,

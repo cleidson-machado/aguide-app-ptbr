@@ -73,3 +73,4 @@ flutter:
     - .env.prod
     - assets/promo/
     - assets/animated/
+    - assets/forms/
