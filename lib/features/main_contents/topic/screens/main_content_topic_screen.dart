@@ -16,6 +16,7 @@ import 'package:portugal_guide/features/main_contents/topic/sorting/main_content
 import 'package:portugal_guide/features/user_engagement/user_engagement_model.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:portugal_guide/util/ip_service.dart';
+import 'package:portugal_guide/util/metadata_collector.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -1695,6 +1696,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       // 🆕 Coletar IP público do usuário
       final userIp = await IpService.getPublicIP();
       
+      // 📊 Coletar metadados do dispositivo, app e sessão
+      final metadata = await MetadataCollector.collectMetadata(
+        previousScreen: source,
+      );
+      final metadataJson = MetadataCollector.toJsonString(metadata);
+      
       if (kDebugMode) {
         debugPrint('');
         debugPrint('╔════════════════════════════════════════════════════════════════════╗');
@@ -1707,7 +1714,27 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         debugPrint('   🏠 Source: $source');
         debugPrint('   📱 Platform: $platform');
         debugPrint('   🌐 User IP: $userIp');
+        debugPrint('   📦 Metadata: ${metadata.keys.join(", ")}');
         debugPrint('   ⏰ Timestamp: ${DateTime.now().toIso8601String()}');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+        
+        // Exibir resumo dos metadados coletados
+        if (metadata.containsKey('device')) {
+          final device = metadata['device'] as Map<String, dynamic>;
+          debugPrint('   📦 Device: ${device['model']} - ${device['os']} ${device['osVersion']}');
+        }
+        if (metadata.containsKey('app')) {
+          final app = metadata['app'] as Map<String, dynamic>;
+          debugPrint('   📦 App: v${app['version']} (${app['buildNumber']})');
+        }
+        if (metadata.containsKey('network')) {
+          final network = metadata['network'] as Map<String, dynamic>;
+          debugPrint('   📦 Network: ${network['connectionType']}');
+        }
+        if (metadata.containsKey('performance')) {
+          final perf = metadata['performance'] as Map<String, dynamic>;
+          debugPrint('   📦 Battery: ${perf['batteryLevel']}% (${perf['batteryState']})');
+        }
         debugPrint('───────────────────────────────────────────────────────────────────');
       }
 
@@ -1722,6 +1749,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         platform: platform,
         source: source,
         userIp: userIp,
+        metadata: metadataJson,
         engagedAt: DateTime.now(),
       );
 
