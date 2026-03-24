@@ -15,8 +15,7 @@ import 'package:battery_plus/battery_plus.dart';
 /// - Debugging e reprodução de bugs
 /// - Auditoria e segurança
 /// - Otimização de performance e UX
-/// 
-/// Referência: x_temp_files/METADATA_TELEMETRIA_OPCOES_DISPONIVEIS.md
+///
 class UserEngagamentMetadataRepository {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
   static final Connectivity _connectivity = Connectivity();
