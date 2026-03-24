@@ -15,8 +15,8 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_model.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
-import 'package:portugal_guide/util/ip_service.dart';
-import 'package:portugal_guide/util/metadata_collector.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_net_address_repository.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagament_metadata_repository.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -1694,13 +1694,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       final platform = Platform.isAndroid ? 'Android' : 'iOS';
       
       // 🆕 Coletar IP público do usuário
-      final userIp = await IpService.getPublicIP();
+      final userIp = await UserEngagementNetAddressRepository.getPublicIP();
       
       // 📊 Coletar metadados do dispositivo, app e sessão
-      final metadata = await MetadataCollector.collectMetadata(
+      final metadata = await UserEngagamentMetadataRepository.collectMetadata(
         previousScreen: source,
       );
-      final metadataJson = MetadataCollector.toJsonString(metadata);
+      final metadataJson = UserEngagamentMetadataRepository.toJsonString(metadata);
       
       if (kDebugMode) {
         debugPrint('');

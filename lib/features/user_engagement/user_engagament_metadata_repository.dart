@@ -17,7 +17,7 @@ import 'package:battery_plus/battery_plus.dart';
 /// - Otimização de performance e UX
 /// 
 /// Referência: x_temp_files/METADATA_TELEMETRIA_OPCOES_DISPONIVEIS.md
-class MetadataCollector {
+class UserEngagamentMetadataRepository {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
   static final Connectivity _connectivity = Connectivity();
   static final Battery _battery = Battery();
@@ -56,7 +56,7 @@ class MetadataCollector {
       };
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ [MetadataCollector] Erro ao coletar metadados: $e');
+        debugPrint('❌ [UserEngagamentMetadataRepository] Erro ao coletar metadados: $e');
       }
       return _getFallbackMetadata();
     }
@@ -65,7 +65,7 @@ class MetadataCollector {
   /// Coleta informações estáticas (só precisa coletar uma vez por sessão)
   static Future<Map<String, dynamic>> _collectStaticInfo() async {
     if (kDebugMode) {
-      debugPrint('🔧 [MetadataCollector] Coletando informações estáticas...');
+      debugPrint('🔧 [UserEngagamentMetadataRepository] Coletando informações estáticas...');
     }
 
     final metadata = <String, dynamic>{};
@@ -83,7 +83,7 @@ class MetadataCollector {
     metadata['device']['screen'] = _getScreenInfo();
 
     if (kDebugMode) {
-      debugPrint('✅ [MetadataCollector] Informações estáticas coletadas');
+      debugPrint('✅ [UserEngagamentMetadataRepository] Informações estáticas coletadas');
     }
 
     return metadata;
@@ -385,7 +385,7 @@ class MetadataCollector {
       return jsonEncode(metadata);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ [MetadataCollector] Erro ao serializar JSON: $e');
+        debugPrint('❌ [UserEngagamentMetadataRepository] Erro ao serializar JSON: $e');
       }
       return '{}';
     }
@@ -405,7 +405,7 @@ class MetadataCollector {
     _cachedStaticInfo = null;
     _sessionStartTime = null;
     if (kDebugMode) {
-      debugPrint('🗑️  [MetadataCollector] Cache limpo');
+      debugPrint('🗑️  [UserEngagamentMetadataRepository] Cache limpo');
     }
   }
 
@@ -435,7 +435,7 @@ class MetadataCollector {
   static void startSession() {
     _sessionStartTime = DateTime.now();
     if (kDebugMode) {
-      debugPrint('🚀 [MetadataCollector] Sessão iniciada: $_sessionStartTime');
+      debugPrint('🚀 [UserEngagamentMetadataRepository] Sessão iniciada: $_sessionStartTime');
     }
   }
 }

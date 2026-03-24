@@ -6,7 +6,7 @@ import 'package:get_ip_address/get_ip_address.dart';
 /// Utilizado para enriquecer logs de telemetria, auditoria de sessão e rastreamento de ações.
 /// 
 /// Referência: FLUTTER_ENGAGEMENT_COLETA_IP_ADDRESS_E_AFINS.md
-class IpService {
+class UserEngagementNetAddressRepository {
   static String? _cachedIP;
 
   /// Retorna o IP público do usuário.
@@ -21,14 +21,14 @@ class IpService {
     // Se já foi coletado na sessão, reutilizar
     if (_cachedIP != null) {
       if (kDebugMode) {
-        debugPrint('🌐 [IpService] IP público em cache: $_cachedIP');
+        debugPrint('🌐 [UserEngagementNetAddressRepository] IP público em cache: $_cachedIP');
       }
       return _cachedIP!;
     }
 
     try {
       if (kDebugMode) {
-        debugPrint('🌐 [IpService] Coletando IP público via api64.ipify.org...');
+        debugPrint('🌐 [UserEngagementNetAddressRepository] Coletando IP público via api64.ipify.org...');
       }
 
       final ipAddress = IpAddress(type: RequestType.json);
@@ -37,17 +37,17 @@ class IpService {
       _cachedIP = data['ip'] as String? ?? 'unknown';
       
       if (kDebugMode) {
-        debugPrint('✅ [IpService] IP público coletado com sucesso: $_cachedIP');
+        debugPrint('✅ [UserEngagementNetAddressRepository] IP público coletado com sucesso: $_cachedIP');
       }
     } on IpAddressException catch (e) {
       _cachedIP = 'unavailable';
       if (kDebugMode) {
-        debugPrint('⚠️  [IpService] Falha ao coletar IP público (IpAddressException): $e');
+        debugPrint('⚠️  [UserEngagementNetAddressRepository] Falha ao coletar IP público (IpAddressException): $e');
       }
     } catch (e) {
       _cachedIP = 'error';
       if (kDebugMode) {
-        debugPrint('❌ [IpService] Erro ao coletar IP público: $e');
+        debugPrint('❌ [UserEngagementNetAddressRepository] Erro ao coletar IP público: $e');
       }
     }
 
@@ -62,7 +62,7 @@ class IpService {
   /// - Nova sessão de autenticação
   static void clearCache() {
     if (kDebugMode && _cachedIP != null) {
-      debugPrint('🗑️  [IpService] Cache de IP limpo (valor anterior: $_cachedIP)');
+      debugPrint('🗑️  [UserEngagementNetAddressRepository] Cache de IP limpo (valor anterior: $_cachedIP)');
     }
     _cachedIP = null;
   }
