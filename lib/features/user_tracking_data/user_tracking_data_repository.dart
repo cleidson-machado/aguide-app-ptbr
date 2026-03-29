@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/auth/auth_http_interceptor.dart';
+import 'package:portugal_guide/app/core/config/correlation_id_interceptor.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_model.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
@@ -26,6 +27,8 @@ class UserTrackingDataRepository
 
   /// Configuração do Dio com interceptor de autenticação
   /// ✅ Usa AuthHttpInterceptor global para JWT token management
+  /// ✅ Usa CorrelationIdInterceptor para rastreamento end-to-end
+  /// ✅ Usa LatencyInterceptor para métricas de performance
   static Dio _setupDio() {
     final dio = Dio(
       BaseOptions(
@@ -46,6 +49,12 @@ class UserTrackingDataRepository
         fallbackToken: devToken,
       ),
     );
+    
+    // ✅ Interceptor de Correlation ID (rastreamento de requisições)
+    dio.interceptors.add(CorrelationIdInterceptor());
+    
+    // ✅ Interceptor de Latência (métricas de performance)
+    dio.interceptors.add(LatencyInterceptor());
 
     return dio;
   }

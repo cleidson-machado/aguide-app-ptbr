@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_model.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_validator.dart';
 
 /// Service responsável pela lógica de negócio de rastreamento de usuários
 /// 
@@ -77,7 +78,11 @@ class UserTrackingDataService {
 
   /// Cria ranking inicial para novo usuário
   Future<UserTrackingDataModel?> _createInitialRanking(String userId) async {
+    // Validações client-side
+    UserTrackingValidator.validateUserId(userId);
+    
     final now = DateTime.now().toUtc();
+    UserTrackingValidator.validateTimestamp(now, 'lastLoginAt');
 
     final initialTracking = UserTrackingDataModel(
       userId: userId,
@@ -103,17 +108,30 @@ class UserTrackingDataService {
   /// Atualiza ranking existente em login recorrente
   Future<UserTrackingDataModel?> _updateExistingRanking(
       UserTrackingDataModel existing) async {
+    // Validações client-side
+    UserTrackingValidator.validateUserId(existing.userId);
+    
     final now = DateTime.now().toUtc();
+    UserTrackingValidator.validateTimestamp(now, 'lastLoginAt');
+    
     final lastLogin = existing.lastLoginAt;
+    final isSameDay = _isSameDay(now, lastLogin);
 
     // Verificar se é um novo dia
-    if (!_isSameDay(now, lastLogin)) {
+    if (!isSameDay) {
       if (kDebugMode) {
         print('📅 [UserTrackingDataService] Novo dia detectado!');
       }
 
       // Calcular novo streak
       final newStreak = _calculateStreak(now, lastLogin, existing.consecutiveDaysStreak);
+      
+      // Validar streak antes de enviar
+      UserTrackingValidator.validateStreak(
+        oldStreak: existing.consecutiveDaysStreak,
+        newStreak: newStreak,
+        isSameDay: false,
+      );
 
       // Incrementar dias ativos
       final newActiveDays = existing.totalActiveDays + 1;
@@ -130,13 +148,30 @@ class UserTrackingDataService {
       final result = await _repository.updateUserTracking(existing.id!, updated);
 
       if (result != null) {
-        // Adicionar +1 ponto pelo login do dia
-        final withPoints = await _repository.addPoints(existing.userId, 1);
+        // ✅ OTIMIZAÇÃO: Calcular pontos totais e enviar em UMA chamada
+        // Evita race condition do backend (conforme análise do time backend)
+        final totalPointsToAdd = _calculateTotalPointsForDay(newStreak);
+        
+        if (totalPointsToAdd > 0) {
+          // Validar antes de adicionar
+          UserTrackingValidator.validateScoreAfterAddition(
+            currentScore: result.totalScore,
+            pointsToAdd: totalPointsToAdd,
+          );
+          
+          if (kDebugMode) {
+            print('➕ [UserTrackingDataService] Adicionando $totalPointsToAdd pontos totais');
+          }
+          
+          final withPoints = await _repository.addPoints(
+            existing.userId,
+            totalPointsToAdd,
+          );
+          
+          return withPoints ?? result;
+        }
 
-        // Verificar bônus de streak
-        await _checkStreakBonus(existing.userId, newStreak);
-
-        return withPoints ?? result;
+        return result;
       }
 
       return result;
@@ -211,31 +246,40 @@ class UserTrackingDataService {
         utc1.day == utc2.day;
   }
 
-  /// Verifica e adiciona bônus por streaks especiais
+  /// Calcula pontos totais a adicionar para o dia (login + bônus streak)
   /// 
-  /// Bônus:
-  /// - 7 dias consecutivos: +5 pontos
-  /// - 30 dias consecutivos: +20 pontos
-  /// - 60 dias consecutivos: +50 pontos (futuro)
+  /// ✅ OTIMIZAÇÃO: Retorna soma total para enviar em UMA única chamada
+  /// Evita race condition no backend ao fazer múltiplos add-points
   /// 
-  /// ⚠️ Bônus é adicionado apenas 1x quando atingir a marca
-  Future<void> _checkStreakBonus(String userId, int streak) async {
+  /// Pontos:
+  /// - Login diário: +1 ponto
+  /// - Bônus 7 dias consecutivos: +5 pontos
+  /// - Bônus 30 dias consecutivos: +20 pontos
+  /// - Bônus 60 dias consecutivos: +50 pontos
+  /// 
+  /// Exemplo: Se streak == 7, retorna 6 (1 login + 5 bônus)
+  int _calculateTotalPointsForDay(int streak) {
+    int totalPoints = 1; // Login diário sempre adiciona 1
+    
+    // Adicionar bônus de streaks especiais
     if (streak == 7) {
       if (kDebugMode) {
         print('🎉 [UserTrackingDataService] BÔNUS: 7 dias consecutivos! +5 pontos');
       }
-      await _repository.addPoints(userId, 5);
+      totalPoints += 5;
     } else if (streak == 30) {
       if (kDebugMode) {
         print('🏆 [UserTrackingDataService] BÔNUS: 30 dias consecutivos! +20 pontos');
       }
-      await _repository.addPoints(userId, 20);
+      totalPoints += 20;
     } else if (streak == 60) {
       if (kDebugMode) {
         print('💎 [UserTrackingDataService] BÔNUS: 60 dias consecutivos! +50 pontos');
       }
-      await _repository.addPoints(userId, 50);
+      totalPoints += 50;
     }
+    
+    return totalPoints;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -255,6 +299,10 @@ class UserTrackingDataService {
   /// ```
   Future<UserTrackingDataModel?> addCustomPoints(
       String userId, int points, String reason) async {
+    // Validações client-side
+    UserTrackingValidator.validateUserId(userId);
+    UserTrackingValidator.validatePointsToAdd(points);
+    
     if (kDebugMode) {
       print('✨ [UserTrackingDataService] Adicionando pontos customizados:');
       print('   - Razão: $reason');
