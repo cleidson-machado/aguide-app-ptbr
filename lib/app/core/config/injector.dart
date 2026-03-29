@@ -24,6 +24,10 @@ import 'package:portugal_guide/features/user_choice/user_choice_repository_inter
 import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final injector =
@@ -121,6 +125,21 @@ Future<void> setupDependencies() async {
   //### For User Engagement (Content Tracking) ###
   injector.registerLazySingleton<UserEngagementRepositoryInterface>(
     () => UserEngagementRepository(),
+  );
+
+  //### For User Tracking Data (Ranking/Gamification System) ###
+  injector.registerLazySingleton<UserTrackingDataRepositoryInterface>(
+    () => UserTrackingDataRepository(),
+  );
+  injector.registerLazySingleton<UserTrackingDataService>(
+    () => UserTrackingDataService(
+      injector<UserTrackingDataRepositoryInterface>(),
+    ),
+  );
+  injector.registerFactory<UserTrackingDataViewModel>(
+    () => UserTrackingDataViewModel(
+      injector<UserTrackingDataService>(),
+    ),
   );
 }
 
