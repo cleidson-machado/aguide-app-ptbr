@@ -14,9 +14,16 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_repository
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
+import 'package:portugal_guide/features/user/user_details_view_model.dart';
+import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository_interface.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_view_model.dart';
+import 'package:portugal_guide/features/user_choice/user_choice_repository.dart';
+import 'package:portugal_guide/features/user_choice/user_choice_repository_interface.dart';
+import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final injector =
@@ -69,6 +76,12 @@ Future<void> setupDependencies() async {
   injector.registerFactory<UserViewModel>(
     () => UserViewModel(repository: injector<UserRepositoryInterface>()),
   );
+  injector.registerFactory<UserDetailsViewModel>(
+    () => UserDetailsViewModel(repository: injector<UserRepositoryInterface>()),
+  );
+  injector.registerFactory<ProfileWelcomeViewModel>(
+    () => ProfileWelcomeViewModel(injector<UserRepositoryInterface>()),
+  );
 
   //### For Main Content Topic ###
   injector.registerLazySingleton<MainContentTopicRepositoryInterface>(
@@ -93,6 +106,21 @@ Future<void> setupDependencies() async {
     () => UserVerifiedContentViewModel(
       repository: injector<UserVerifiedContentRepositoryInterface>(),
     ),
+  );
+
+  //### For User Choice (Onboarding Form) ###
+  injector.registerLazySingleton<UserChoiceRepositoryInterface>(
+    () => UserChoiceRepository(),
+  );
+  injector.registerFactory<UserChoiceViewModel>(
+    () => UserChoiceViewModel(
+      injector<UserChoiceRepositoryInterface>(),
+    ),
+  );
+
+  //### For User Engagement (Content Tracking) ###
+  injector.registerLazySingleton<UserEngagementRepositoryInterface>(
+    () => UserEngagementRepository(),
   );
 }
 

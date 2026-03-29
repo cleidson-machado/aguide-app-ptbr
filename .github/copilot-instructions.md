@@ -530,6 +530,31 @@ lib/features/auth_credentials/
 - Sempre fazer dispose de controllers
 - Separar lógica de UI (não colocar regras de negócio aqui)
 
+**Botão de Voltar Padrão:**
+- Usar **`CupertinoNavigationBarBackButton`** para botões de voltar tradicionais
+- Mantém consistência com design nativo iOS
+- Referência: [main_content_profile_settings_screen.dart](lib/features/main_contents/profile/screens/main_content_profile_settings_screen.dart)
+
+```dart
+// ✅ CORRETO - Botão voltar padrão do projeto
+CupertinoNavigationBar(
+  leading: CupertinoNavigationBarBackButton(
+    onPressed: () => Navigator.of(context).pop(),
+  ),
+  middle: const Text("Título"),
+)
+
+// ❌ EVITAR - Botão customizado desnecessariamente
+CupertinoNavigationBar(
+  leading: CupertinoButton(
+    child: Icon(CupertinoIcons.chevron_left),
+    onPressed: () => Navigator.of(context).pop(),
+  ),
+)
+```
+
+**Exemplo de Screen Completa:**
+
 ```dart
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -561,8 +586,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text("Título"),
+      navigationBar: CupertinoNavigationBar(
+        leading: CupertinoNavigationBarBackButton(
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        middle: const Text("Título"),
       ),
       child: // ... corpo da tela
     );
@@ -701,6 +729,91 @@ class MainContentTopicModel {
   }
 }
 ```
+
+### 5. Backup de Views (Screens)
+
+Quando solicitar backup de uma view Flutter, seguir este padrão estruturado:
+
+**❌ ERRADO - Cópia simples com nome diferente:**
+```dart
+// Apenas copiar o arquivo com sufixo "_backup" no nome
+// main_content_profile_screen_backup.dart
+class MainContentProfileScreen extends StatefulWidget { ... }
+```
+
+**✅ CORRETO - Backup estruturado e documentado:**
+
+1. **Nome do Arquivo:** `[nome_original]_backup.dart` (Ex: `main_content_profile_screen_backup.dart`)
+2. **Localização:** Mesmo diretório da view original (facilita localização)
+3. **Cabeçalho Obrigatório:**
+
+```dart
+// ======================================================================
+// BACKUP DA VIEW ORIGINAL - [NomeClasse]
+// Data do backup: [data atual]
+// 
+// Contexto: [onde a view é usada - ex: TabView default, Perfil user, etc.]
+// Preservada para facilitar reutilização futura se necessário.
+//
+// Para restaurar: renomear este arquivo removendo o sufixo "_backup"
+// ======================================================================
+
+// ignore_for_file: library_private_types_in_public_api
+
+import 'package:flutter/cupertino.dart';
+// ... demais imports
+```
+
+4. **Nomenclatura de Classes - CRÍTICO:**
+
+A classe do backup **DEVE** ter sufixo `Backup` para evitar conflitos:
+
+```dart
+// ✅ Nomenclatura correta
+class MainContentProfileScreenBackup extends StatefulWidget {
+  const MainContentProfileScreenBackup({super.key});
+  
+  @override
+  _MainContentProfileScreenBackupState createState() => 
+      _MainContentProfileScreenBackupState();
+}
+
+class _MainContentProfileScreenBackupState 
+    extends State<MainContentProfileScreenBackup> {
+  // ... código da view
+}
+```
+
+**Por que isso é importante:**
+- ✅ Evita conflito de nomes de classes no mesmo projeto
+- ✅ Permite ter ambas as versões (original e backup) no código simultaneamente
+- ✅ Facilita comparação lado a lado durante refatorações
+- ✅ O arquivo pode ser facilmente restaurado (renomear classe de volta)
+
+**Exemplo Prático - Processo Completo:**
+
+```bash
+# View original
+lib/features/main_contents/profile/screens/main_content_profile_screen.dart
+  ↓
+  classe: MainContentProfileScreen
+
+# Backup criado
+lib/features/main_contents/profile/screens/main_content_profile_screen_backup.dart
+  ↓
+  classe: MainContentProfileScreenBackup + cabeçalho documentado
+```
+
+**Quando Criar Backups:**
+- Antes de refatorações grandes em views funcionais
+- Quando view será substituída por nova implementação
+- Para preservar UI de referência (mockups, protótipos)
+- Ao migrar de Cupertino para Material (ou vice-versa)
+
+**Restauração:**
+1. Renomear arquivo: remover sufixo `_backup`
+2. Renomear classes: remover sufixo `Backup`
+3. Ajustar imports se necessário
 
 ## Tratamento de Exceções
 - Usar try-catch em operações assíncronas
@@ -1152,6 +1265,8 @@ flutter:
 ❌ AnimatedBuilder genérico em listas grandes
 ❌ Pular testes no CI/CD
 ❌ Comitar arquivos `.env` ou credenciais
+❌ **Usar `Navigator.pop()` em telas que são TABS (causa tela preta)**
+❌ **Fazer `setState()` imediatamente antes de `Navigator.pop()`**
 
 ## Recursos Flutter a Utilizar
 ✅ Hot Reload: `r` no terminal (desenvolvimento rápido)
@@ -1163,6 +1278,196 @@ flutter:
 ✅ Skeletonizer: Loading states elegantes
 ✅ CachedNetworkImage: Cache de imagens
 ✅ Cupertino widgets: Design nativo iOS
+
+---
+
+## 🚨 Problema: Tela Preta ao Fechar Dialogs em Tabs
+
+### ⚠️ CAUSA RAIZ
+
+Quando uma tela está **dentro de uma TAB** (usando `IndexedStack`, `TabBarView`, etc.) e tenta fazer `Navigator.of(context).pop()` após fechar um dialog, o app pode travar em **tela preta**.
+
+**Por que isso acontece?**
+- A tela **não foi navegada** com `Navigator.push()` ou `Modular.to.navigate()`
+- Ela é um **widget filho direto** de um sistema de tabs
+- `Navigator.pop()` tenta voltar para uma rota anterior **que não existe**
+- Resultado: **Tela preta** ou comportamento indefinido
+
+### 🔍 Como Identificar o Problema
+
+#### Checklist: Sua tela é uma TAB ou ROTA navegada?
+
+**É uma TAB se:**
+- [ ] Está dentro de `TabBarView`, `CupertinoTabView`, ou `IndexedStack`
+- [ ] É filha direta de `HomeContentTabScreen` ou similar
+- [ ] Não foi aberta com `Navigator.push()` ou `Modular.to.navigate()`
+- [ ] Aparece na barra de tabs inferior
+- [ ] `Navigator.of(context).canPop()` retorna `false`
+
+**É uma ROTA navegada se:**
+- [x] Foi registrada em `app_route_module.dart`
+- [x] Foi aberta com `Navigator.push()` ou `Modular.to.navigate()`
+- [x] Tem um `NavigationBar` próprio com botão de voltar
+- [x] Ocupa tela inteira fora das tabs
+- [x] `Navigator.of(context).canPop()` retorna `true`
+
+### ✅ SOLUÇÕES
+
+#### 1. Para Telas em TAB → Acessar o Estado Pai
+
+```dart
+// ❌ ERRADO - Tela em tab tentando fazer pop
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    Navigator.of(context).pop();  // ← ERRO: não há para onde voltar!
+  }
+}
+
+// ✅ CORRETO - Resetar tab para o índice 0
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    _resetForm();
+    
+    // Busca o HomeContentTabScreen na árvore de widgets
+    final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
+    homeState?.resetToFirstTab();  // ← Reseta para primeira tab
+  }
+}
+```
+
+**Implementação do método no pai (HomeContentTabScreen):**
+
+```dart
+// Tornar a classe State pública (remover underscore)
+class HomeContentTabScreenState extends State<HomeContentTabScreen> {
+  int _selectedIndex = 0;
+  
+  /// Método público para resetar tab para o índice 0
+  void resetToFirstTab() {
+    if (mounted) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
+  }
+  
+  // Ou método genérico para qualquer índice
+  void switchToTab(int index) {
+    if (mounted && index >= 0 && index < _pages.length) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+}
+```
+
+#### 2. Para Telas NAVEGADAS → pop() OU navigate()
+
+```dart
+// ✅ CORRETO - Tela navegada pode usar pop
+Future<void> _handleCancel() async {
+  final result = await showCupertinoDialog<bool>(...);
+  
+  if (result == true && mounted) {
+    // Opção 1: Voltar na pilha
+    Navigator.of(context).pop();
+    
+    // Opção 2: Navegar para rota específica
+    // Modular.to.navigate(AppRoutes.main);
+  }
+}
+```
+
+#### 3. Dialog → SEMPRE fechar antes de ações de navegação
+
+```dart
+// ✅ PADRÃO CORRETO
+final result = await showCupertinoDialog<bool>(
+  context: context,
+  builder: (context) => CupertinoAlertDialog(
+    title: const Text('Confirmar?'),
+    actions: [
+      CupertinoDialogAction(
+        onPressed: () => Navigator.of(context).pop(false),  // ← Fecha dialog
+        child: const Text('Não'),
+      ),
+      CupertinoDialogAction(
+        onPressed: () => Navigator.of(context).pop(true),  // ← Fecha dialog
+        child: const Text('Sim'),
+      ),
+    ],
+  ),
+);
+
+// Só depois navega baseado no resultado
+if (result == true && mounted) {
+  // Ações de navegação aqui
+}
+```
+
+### 📊 Arquiteturas e Soluções
+
+| Tipo de Tela | Como Cancelar | Exemplo |
+|--------------|---------------|---------|
+| **TAB** | `context.findAncestorStateOfType<>()` + `resetToFirstTab()` | `MainStepperFormScreen` |
+| **ROTA navegada** | `Navigator.pop()` ou `Modular.to.navigate()` | `UserVerifiedContentWizardScreen` |
+| **DIALOG** | `Navigator.pop(result)` para fechar | Qualquer `CupertinoAlertDialog` |
+
+### 🛠️ Debugging
+
+```dart
+// Verificar se pode fazer pop (no initState ou build)
+@override
+void initState() {
+  super.initState();
+  
+  final canPop = Navigator.of(context).canPop();
+  debugPrint('🔍 Pode fazer pop? $canPop');
+  // false = É tab ou rota raiz
+  // true = É rota navegada
+}
+```
+
+### ⚠️ Erros Comuns a EVITAR
+
+```dart
+// ❌ NUNCA fazer setState imediatamente antes de pop
+if (result == true) {
+  _resetForm();  // setState que pode invalidar contexto
+  Navigator.pop(context);  // Pode causar tela preta
+}
+
+// ❌ NUNCA usar pop() em tela que é tab
+if (result == true) {
+  Navigator.of(context).pop();  // Não há para onde voltar!
+}
+
+// ❌ NUNCA tentar navegar dentro do onPressed do dialog
+CupertinoDialogAction(
+  onPressed: () {
+    Navigator.pop(context);
+    Navigator.pop(context);  // ← Conflito! Dois pops simultâneos
+  },
+)
+```
+
+### 📁 Exemplos no Projeto
+
+**Tela em TAB:**
+- `lib/features/main_contents/profile/screens/main_stepper_form_screen.dart`
+- Usa `context.findAncestorStateOfType<HomeContentTabScreenState>()`
+
+**Tela NAVEGADA:**
+- `lib/features/user_verified_content/screens/user_verified_content_wizard_screen.dart`
+- Usa `Modular.to.navigate(AppRoutes.main)`
+
+**Referência Completa:**
+- `x_temp_files/SOLUCAO_TELA_PRETA_NAVIGATOR_POP.md`
 
 ---
 

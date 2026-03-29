@@ -1,9 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
-import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
@@ -12,29 +10,22 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'main_content_profile_settings_screen.dart';
 
-class MainContentProfileScreen extends StatefulWidget {
-  const MainContentProfileScreen({super.key});
+class MainContentProfileScreenBackupOldPlus extends StatefulWidget {
+  const MainContentProfileScreenBackupOldPlus({super.key});
 
   @override
-  _MainContentProfileScreenState createState() =>
-      _MainContentProfileScreenState();
+  _MainContentProfileScreenBackupOldPlusState createState() =>
+      _MainContentProfileScreenBackupOldPlusState();
 }
 
-class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
+class _MainContentProfileScreenBackupOldPlusState extends State<MainContentProfileScreenBackupOldPlus> {
   final UserDetailsViewModel viewModel = injector<UserDetailsViewModel>();
-  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
 
   @override
   void initState() {
     super.initState();
-    // Carregar detalhes do usuário logado (userId extraído do token JWT)
-    final userId = _tokenManager.getUserId();
-    if (userId != null) {
-      viewModel.loadUserDetails(userId);
-    } else {
-      // Se não houver userId no token, definir erro no viewModel
-      viewModel.setError('Usuário não autenticado. Por favor, faça login novamente.');
-    }
+    // Carregar detalhes do usuário (ID hardcoded do exemplo fornecido)
+    viewModel.loadUserDetails('aa736f39-4f54-4741-a6c4-6d7b0ba6e7cf');
   }
 
   @override
@@ -56,11 +47,23 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: false,
-        backgroundColor: CupertinoColors.systemGroupedBackground, // ✅ Força cor fixa (cinza claro iOS)
-        border: null, // ✅ Remove borda que aparece com scroll
-        middle: const Text(
-          "Guia - PORTUGAL",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+        middle: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Guia - PORTUGAL",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 6),
+            Text(
+              "| Painel de Configuração |",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: CupertinoColors.systemPink,
+              ),
+            ),
+          ],
         ),
         trailing: GestureDetector(
           onTap: () {
@@ -71,105 +74,34 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
       ),
       child: Column(
         children: [
-          // ✅ Header com texto fixo (sem animação)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: CupertinoColors.separator,
-                  width: 0.5,
-                ),
-              ),
-            ),
-            child: const SizedBox(
-              height: 24,
-              child: Center(
-                child: Text(
-                  "| Painel de Configuração |",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: CupertinoColors.systemPink,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
           // Horizontal Navigation Section
-          Container(
-            height: 70,
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: CupertinoColors.separator,
-                  width: 0.5,
-                ),
-              ),
-            ),
+          SizedBox(
+            height: 60,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               children: [
-                _buildNavigationButton(
-                  "Configurações",
-                  CupertinoIcons.settings,
-                  () {
-                    _navigateToPreferences();
-                  },
-                ),
-                _buildNavigationButton(
-                  "SPONSORS",
-                  CupertinoIcons.star_fill,
-                  () {
-                    // Navigate to Users List
-                  },
-                  isSponsors: true,
-                ),
-                _buildNavigationButton(
-                  "Ganhos e Views",
-                  CupertinoIcons.money_dollar_circle,
-                  () {
-                    // Navigate to Users List
-                  },
-                ),
-                _buildNavigationButton(
-                  "Históricos",
-                  CupertinoIcons.clock,
-                  () {
-                    // Navigate to Transactions
-                  },
-                ),
-                _buildNavigationButton(
-                  "Avaliações",
-                  CupertinoIcons.star,
-                  () {
-                    // Navigate to Settings
-                  },
-                ),
-                _buildNavigationButton(
-                  "Métricas de Engajamento",
-                  CupertinoIcons.chart_bar,
-                  () {
-                    // Navigate to Reports
-                  },
-                ),
-                _buildNavigationButton(
-                  "Relatórios",
-                  CupertinoIcons.doc_text,
-                  () {
-                    // Navigate to Reports
-                  },
-                ),
-                _buildNavigationButton(
-                  "Extrato de Pagamentos",
-                  CupertinoIcons.creditcard,
-                  () {
-                    // Navigate to Reports
-                  },
-                ),
+                _buildNavigationButton("Minhas Preferências e Ajustes", () {
+                  _navigateToPreferences();
+                }),
+                _buildNavigationButton("Add New Tema", () {
+                  // Navigate to Users List
+                }),
+                _buildNavigationButton("Transactions", () {
+                  // Navigate to Transactions
+                }),
+                _buildNavigationButton("Settings", () {
+                  // Navigate to Settings
+                }),
+                _buildNavigationButton("Reports", () {
+                  // Navigate to Reports
+                }),
+                _buildNavigationButton("Reports", () {
+                  // Navigate to Reports
+                }),
+                _buildNavigationButton("Reports", () {
+                  // Navigate to Reports
+                }),
               ],
             ),
           ),
@@ -251,11 +183,6 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
             textAlign: TextAlign.center,
           ),
           
-          const SizedBox(height: 12),
-          
-          // Emblema OAuth Provider ou Local User
-          _buildOAuthProviderBadge(user.oauthProvider),
-          
           const SizedBox(height: 16),
           
           // E-mail
@@ -264,7 +191,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             margin: const EdgeInsets.symmetric(horizontal: 24),
             decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey5,
+              color: CupertinoColors.systemGrey6,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -298,7 +225,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             margin: const EdgeInsets.symmetric(horizontal: 24),
             decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey5,
+              color: CupertinoColors.systemGrey6,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -373,140 +300,17 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
 
   // Avatar mocado circular
   Widget _buildMockedAvatar() {
-    // ════════════════════════════════════════════════════════════════════════════
-    // ⚠️  TODO: IMPLEMENTAR ARMAZENAMENTO E EXIBIÇÃO DE FOTO DE PERFIL DO USUÁRIO
-    // ════════════════════════════════════════════════════════════════════════════
-    // PENDENTE: Definir estratégia de armazenamento de imagens de perfil:
-    //   - Opção 1: Cloud Storage (AWS S3, Firebase Storage, etc.)
-    //   - Opção 2: CDN própria
-    //   - Opção 3: Base64 no banco de dados (não recomendado para produção)
-    // 
-    // Após decisão, atualizar UserDetailsModel para incluir campo photoUrl
-    // e substituir URL mockada abaixo pela URL real do usuário.
-    // ════════════════════════════════════════════════════════════════════════════
-    
     return Container(
-      decoration: BoxDecoration(
+      width: 120,
+      height: 120,
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: CupertinoColors.black.withValues(alpha: 0.15),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: CupertinoColors.systemGrey4,
       ),
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          const CircleAvatar(
-            radius: 60, // 120px de diâmetro total
-            backgroundImage: NetworkImage(
-              "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-            ),
-          ),
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              // TODO: Implementar lógica de troca de imagem
-              // Opções: Câmera, Galeria, Remover foto
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: CupertinoColors.black,
-              ),
-              padding: const EdgeInsets.all(8),
-              child: const Icon(
-                CupertinoIcons.pencil,
-                color: CupertinoColors.white,
-                size: 18,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Emblema/Badge do OAuth Provider ou Local User
-  Widget _buildOAuthProviderBadge(String? oauthProvider) {
-    // Determinar cor e ícone baseado no provider
-    Color badgeColor;
-    IconData badgeIcon;
-    String displayText;
-    Color textColor;
-
-    // Se for null, é um usuário local restrito
-    if (oauthProvider == null) {
-      badgeColor = const Color(0xFFFFCDD2); // Vermelho claro (Red 100)
-      badgeIcon = CupertinoIcons.person_crop_circle_badge_xmark;
-      displayText = 'Restricted Local User';
-      textColor = CupertinoColors.black;
-    } else {
-      textColor = CupertinoColors.white;
-      
-      switch (oauthProvider.toUpperCase()) {
-      case 'GOOGLE':
-        badgeColor = const Color(0xFF4285F4); // Google Blue
-        badgeIcon = CupertinoIcons.globe;
-        displayText = 'Google Account';
-        break;
-      case 'FACEBOOK':
-        badgeColor = const Color(0xFF1877F2); // Facebook Blue
-        badgeIcon = CupertinoIcons.person_circle_fill;
-        displayText = 'Facebook Account';
-        break;
-      case 'APPLE':
-        badgeColor = CupertinoColors.black;
-        badgeIcon = CupertinoIcons.device_phone_portrait;
-        displayText = 'Apple ID';
-        break;
-      case 'LINKEDIN':
-        badgeColor = const Color(0xFF0A66C2); // LinkedIn Blue
-        badgeIcon = CupertinoIcons.briefcase_fill;
-        displayText = 'LinkedIn Account';
-        break;
-        default:
-          badgeColor = const Color(0xFF6C757D); // Cinza neutro
-          badgeIcon = CupertinoIcons.checkmark_seal_fill;
-          displayText = '$oauthProvider Account';
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: badgeColor.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            badgeIcon,
-            size: 18,
-            color: textColor,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            displayText,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
+      child: const Icon(
+        CupertinoIcons.person_fill,
+        size: 60,
+        color: CupertinoColors.white,
       ),
     );
   }
@@ -589,7 +393,7 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: CupertinoColors.systemGrey5,
+        color: CupertinoColors.systemGrey6,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -746,62 +550,24 @@ class _MainContentProfileScreenState extends State<MainContentProfileScreen> {
     );
   }
 
-  Widget _buildNavigationButton(
-    String title,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isSponsors = false,
-  }) {
+  Widget _buildNavigationButton(String title, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isSponsors
-                ? [
-                    const Color(0xFFE53935), // Vermelho elegante
-                    const Color(0xFFD32F2F), // Vermelho mais profundo
-                  ]
-                : [
-                    const Color.fromARGB(255, 67, 123, 208), // Azul profundo
-                    const Color.fromARGB(255, 92, 111, 119), // Ciano vibrante
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: CupertinoColors.systemGrey5,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: isSponsors
-                  ? const Color(0xFFE53935).withValues(alpha: 0.3)
-                  : const Color(0xFF007AFF).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
         ),
         child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: CupertinoColors.white,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: CupertinoColors.white,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.activeBlue,
+            ),
           ),
         ),
       ),

@@ -6,6 +6,7 @@ class AuthTokenManager {
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'auth_refresh_token';
   static const String _userEmailKey = 'auth_user_email';
+  static const String _userNameKey = 'auth_user_name';
 
   final SharedPreferences _prefs;
 
@@ -41,6 +42,16 @@ class AuthTokenManager {
     return _prefs.getString(_userEmailKey);
   }
 
+  /// Salva o nome completo do usuário logado
+  Future<bool> saveUserName(String name) async {
+    return await _prefs.setString(_userNameKey, name);
+  }
+
+  /// Recupera o nome completo do usuário logado
+  String? getUserName() {
+    return _prefs.getString(_userNameKey);
+  }
+
   /// Verifica se o usuário está autenticado
   bool isAuthenticated() {
     final token = getToken();
@@ -52,7 +63,8 @@ class AuthTokenManager {
     final tokenRemoved = await _prefs.remove(_tokenKey);
     final refreshTokenRemoved = await _prefs.remove(_refreshTokenKey);
     final emailRemoved = await _prefs.remove(_userEmailKey);
-    return tokenRemoved && refreshTokenRemoved && emailRemoved;
+    final nameRemoved = await _prefs.remove(_userNameKey);
+    return tokenRemoved && refreshTokenRemoved && emailRemoved && nameRemoved;
   }
 
   /// Retorna o token formatado para uso em headers HTTP

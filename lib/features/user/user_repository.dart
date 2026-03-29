@@ -5,6 +5,7 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_model.dart';
+import 'package:portugal_guide/features/user/user_details_model.dart';
 
 class UserRepository extends GenCrudRepository<UserModel>
     implements UserRepositoryInterface {
@@ -85,6 +86,27 @@ class UserRepository extends GenCrudRepository<UserModel>
       return user != null;
     } catch (e) {
       throw Exception('Error checking if email is registered: $e');
+    }
+  }
+
+  /// Helper privado: Constrói endpoint de detalhes do usuário (Single Source of Truth)
+  String _buildUserDetailsEndpoint(String userId) {
+    return '$endpointGenCrudRepo/$userId/details';
+  }
+
+  @override
+  Future<UserDetailsModel> getUserDetails(String userId) async {
+    try {
+      final endpoint = _buildUserDetailsEndpoint(userId);
+      final response = await dioGenCrudRepo.get(endpoint);
+
+      if (response.statusCode == 200) {
+        return UserDetailsModel.fromMap(response.data as Map<String, dynamic>);
+      } else {
+        throw Exception('Failed to get user details: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error getting user details: $e');
     }
   }
 }

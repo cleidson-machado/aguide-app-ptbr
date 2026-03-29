@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +7,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_model.dart';
+import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class MainContentTopicScreen extends StatefulWidget {
   const MainContentTopicScreen({super.key});
@@ -26,6 +31,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     with AutomaticKeepAliveClientMixin {
   final MainContentTopicViewModel viewModel =
       injector<MainContentTopicViewModel>();
+  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
@@ -43,6 +49,43 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     _scrollController.addListener(_onScroll);
     // Carrega apenas se for a primeira vez (viewModel não inicializado)
     viewModel.loadPagedContentsIfNeeded();
+    // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
+    _loadUserDetails();
+  }
+
+  /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
+  Future<void> _loadUserDetails() async {
+    final userId = _tokenManager.getUserId();
+    if (userId != null && userId.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  👤 INICIANDO CARREGAMENTO DE USER DETAILS                         ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   🆔 UserId: $userId');
+        debugPrint('   📍 Origem: MainContentTopicScreen.initState()');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+      }
+      
+      await viewModel.loadUserDetails(userId);
+      
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🔄 USER DETAILS CARREGADO - ESTADO ATUAL DO VIEWMODEL             ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   📊 userDetails: ${viewModel.userDetails != null ? "CARREGADO" : "NULL"}');
+        debugPrint('   🎯 isContentCreator: ${viewModel.isContentCreator}');
+        debugPrint('   🏷️  topicHeaderLabel: "${viewModel.topicHeaderLabel}"');
+        debugPrint('   👤 userName: "${viewModel.userName}"');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️  [MainContentTopicScreen] UserId não disponível - não é possível carregar user details');
+      }
+    }
   }
 
   @override
@@ -155,23 +198,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: false,
-        middle: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Guia - PORTUGAL",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 6),
-            Text(
-              "| TEMAS - Perfil CRIADOR de Conteúdo |",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: CupertinoColors.systemPink,
-              ),
-            ),
-          ],
+        backgroundColor: CupertinoColors.systemGroupedBackground, // ✅ Força cor fixa (cinza claro iOS)
+        border: null, // ✅ Remove borda que aparece com scroll
+        middle: const Text(
+          "Guia - PORTUGAL",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
         trailing: GestureDetector(
           onTap: () {
@@ -187,10 +218,76 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             children: [
               Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: CupertinoSearchTextField(
-                      onChanged: _onSearchChanged, // Usa handler com debounce
+                  // 🆕 Header com animação de texto dinâmico (CRIADOR/CONSUMIDOR)
+                  // ✅ Key única força reconstrução da animação quando viewModel muda
+                  Container(
+                    key: ValueKey('header_${viewModel.isContentCreator}_${viewModel.userName}'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: SizedBox(
+                      height: 24, // ✅ Altura adequada para a animação
+                      child: Center(
+                        child: AnimatedTextKit(
+                          key: ValueKey('anim_${viewModel.isContentCreator}_${viewModel.userName}_${DateTime.now().millisecondsSinceEpoch}'),
+                          animatedTexts: [
+                            RotateAnimatedText(
+                              viewModel.topicHeaderLabel, // ✅ Dinâmico: CRIADOR ou CONSUMIDOR
+                              textStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: CupertinoColors.systemPink,
+                              ),
+                              textAlign: TextAlign.center,
+                              rotateOut: false, // ✅ Sem rotação de saída
+                              duration: const Duration(milliseconds: 800), // ✅ Duração da animação de entrada
+                            ),
+                            if (viewModel.userName.isNotEmpty)
+                              RotateAnimatedText(
+                                "Bem-Vindo - ${viewModel.userName}!", // ✅ Usa nome da API
+                                textStyle: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: CupertinoColors.systemPink,
+                                ),
+                                textAlign: TextAlign.center,
+                                rotateOut: false, // ✅ Sem rotação de saída
+                                duration: const Duration(milliseconds: 800), // ✅ Duração da animação de entrada
+                              ),
+                          ],
+                          repeatForever: true,
+                          pause: const Duration(milliseconds: 15000), // 15 segundos pausado
+                          displayFullTextOnTap: false,
+                          stopPauseOnTap: false,
+                          isRepeatingAnimation: true,
+                          totalRepeatCount: 999999, // Loop infinito
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Campo de busca
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: CupertinoSearchTextField(
+                        placeholder: 'Pesquisar',
+                        onChanged: _onSearchChanged, // Usa handler com debounce
+                      ),
                     ),
                   ),
                   Expanded(child: _buildBody()),
@@ -712,17 +809,48 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                       // Ações baseadas no botão selecionado
                       switch (index) {
                         case 0:
-                          // TODO: Implementar ação de PLAY
+                          // ✅ PLAY: Registra engagement antes de reproduzir
                           if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento (HISTÓRICO DE VÍDEOS NAVEGADOS)
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.clickToView,
+                            source: 'home',
+                          );
+                          
+                          // TODO: Implementar reprodução do vídeo
                           break;
                         case 1:
-                          // Exibe modal de detalhes
+                          // ✅ DETALHES: Registra engagement ao visualizar detalhes
                           if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento como PARTIAL_VIEW
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.partialView,
+                            source: 'home',
+                          );
+                          
                           _MainContentTopicScreenState._showDetailsActionSheet(context, content);
                           break;
                         case 2:
-                          // Verificar ownership antes de exibir modal de autoria
+                          // ✅ AUTORIA: Registra engagement ao verificar autoria
                           if (kDebugMode) debugPrint('✍️ AUTORIA selecionado - Item: ${content.id}');
+                          
+                          // Logar engajamento como PARTIAL_VIEW
+                          _MainContentTopicScreenState._logEngagementStatic(
+                            context,
+                            contentId: content.id,
+                            contentTitle: content.title,
+                            engagementType: UserEngagementType.partialView,
+                            source: 'home',
+                          );
+                          
                           _MainContentTopicScreenState._handleAuthorshipCheck(
                             context,
                             content,
@@ -1532,6 +1660,87 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         ],
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  /// ✅ Helper estático para logar engagement de widgets estáticos
+  /// Necessário porque o _buildContentCard é estático e não tem acesso direto aos membros da instância
+  static Future<void> _logEngagementStatic(
+    BuildContext context, {
+    required String contentId,
+    required String contentTitle,
+    String engagementType = 'CLICK_TO_VIEW',
+    String source = 'home',
+  }) async {
+    try {
+      // Buscar instância do repository do injector
+      final engagementRepository = injector<UserEngagementRepositoryInterface>();
+      final tokenManager = injector<AuthTokenManager>();
+      
+      // Obter userId do token JWT
+      final userId = tokenManager.getUserId();
+      
+      if (userId == null) {
+        if (kDebugMode) {
+          debugPrint('⚠️  [EngagementTracking] UserId não encontrado - ignorando tracking');
+        }
+        return;
+      }
+
+      // Detectar plataforma
+      final platform = Platform.isAndroid ? 'Android' : 'iOS';
+      
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  📊 ENGAGEMENT TRACKING - Registrando interação do usuário        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   👤 UserId: $userId');
+        debugPrint('   🎬 ContentId: $contentId');
+        debugPrint('   📝 Title: $contentTitle');
+        debugPrint('   🔖 Type: $engagementType');
+        debugPrint('   🏠 Source: $source');
+        debugPrint('   📱 Platform: $platform');
+        debugPrint('   ⏰ Timestamp: ${DateTime.now().toIso8601String()}');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+      }
+
+      // Criar modelo de engagement
+      final engagement = UserEngagementModel(
+        userId: userId,
+        contentId: contentId,
+        engagementType: engagementType,
+        engagementStatus: UserEngagementStatus.active,
+        repeatCount: 1,
+        deviceType: 'mobile',
+        platform: platform,
+        source: source,
+        engagedAt: DateTime.now(),
+      );
+
+      // Enviar para API (não bloqueia a navegação)
+      final result = await engagementRepository.createEngagement(engagement);
+
+      if (result != null && kDebugMode) {
+        debugPrint('✅ Engagement registrado com sucesso!');
+        debugPrint('   🆔 ID gerado: ${result.id}');
+        debugPrint('   📊 Status: ${result.engagementStatus}');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      } else if (kDebugMode) {
+        debugPrint('⚠️  Falha ao registrar engagement (API pode estar indisponível)');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    } catch (e) {
+      // ✅ NÃO bloqueia a navegação do usuário se o tracking falhar
+      if (kDebugMode) {
+        debugPrint('❌ Erro ao logar engagement: $e');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2601,13 +2810,13 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
             debugPrint('✅ [ERROR MODAL] Builder executado, criando dialog');
           }
           
-          return WillPopScope(
-            onWillPop: () async {
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (bool didPop, dynamic result) {
               // Previne fechar com botão voltar
               if (kDebugMode) {
                 debugPrint('⚠️ [ERROR MODAL] Tentativa de fechar com back button bloqueada');
               }
-              return false;
             },
             child: const CupertinoAlertDialog(
               title: Icon(
@@ -2698,9 +2907,9 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       showDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor: Colors.black.withOpacity(0.5), // Fundo semi-transparente
-        builder: (dialogContext) => WillPopScope(
-          onWillPop: () async => false, // Impede fechar com back button
+        barrierColor: Colors.black.withValues(alpha: 0.5), // Fundo semi-transparente
+        builder: (dialogContext) => PopScope(
+          canPop: false, // Impede fechar com back button
           child: Center(
             child: SizedBox(
               width: 200,
