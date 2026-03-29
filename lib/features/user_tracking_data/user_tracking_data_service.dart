@@ -142,11 +142,16 @@ class UserTrackingDataService {
       return result;
     } else {
       if (kDebugMode) {
-        print('⏰ [UserTrackingDataService] Mesmo dia - sem atualização');
+        print('⏰ [UserTrackingDataService] Mesmo dia - atualizando timestamps');
       }
 
-      // Apenas atualizar lastActivityAt (sem incrementar contadores)
-      final updated = existing.copyWith(lastActivityAt: now);
+      // ✅ SEMPRE atualizar lastLoginAt e lastActivityAt (mesmo que seja o mesmo dia)
+      // Motivo: Precisão temporal para análises, sessões múltiplas, segurança
+      // Referência: Firebase Analytics, Mixpanel, Amplitude
+      final updated = existing.copyWith(
+        lastLoginAt: now,      // ✅ Atualiza para horário atual do login
+        lastActivityAt: now,   // ✅ Atualiza última atividade
+      );
       return await _repository.updateUserTracking(existing.id!, updated);
     }
   }
