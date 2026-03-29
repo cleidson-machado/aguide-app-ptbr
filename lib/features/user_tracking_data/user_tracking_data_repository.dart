@@ -8,6 +8,7 @@ import 'package:portugal_guide/app/core/auth/auth_http_interceptor.dart';
 import 'package:portugal_guide/app/core/config/correlation_id_interceptor.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_model.dart';
+import 'package:portugal_guide/features/user_tracking_data/points_history_model.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
 
 /// Implementação concreta do UserTrackingDataRepository
@@ -92,6 +93,14 @@ class UserTrackingDataRepository
   /// ✅ DRY: Endpoint para buscar por engagement level
   String _buildEngagementLevelEndpoint(String level) {
     return '${_buildBaseEndpoint()}/engagement/$level';
+  }
+
+  /// ✅ DRY: Endpoint para histórico de pontos (auditoria)
+  /// 
+  /// Ref: GET /user/{userId}/points-history?limit={limit}
+  String _buildPointsHistoryEndpoint(String userId, {int? limit}) {
+    final base = '${_buildUserEndpoint(userId)}/points-history';
+    return limit != null ? '$base?limit=$limit' : base;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -425,6 +434,83 @@ class UserTrackingDataRepository
       if (kDebugMode) {
         print(
             '❌ [UserTrackingDataRepository] Erro ao buscar por engagement: $e');
+      }
+      return [];
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📜 HISTÓRICO DE PONTOS (AUDITORIA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Busca histórico de adição de pontos do usuário
+  /// 
+  /// Endpoint: GET /user/{userId}/points-history?limit={limit}
+  /// 
+  /// **Segurança:**
+  /// - JWT obrigatório (AuthHttpInterceptor adiciona automaticamente)
+  /// - Backend valida que userId no path corresponde ao JWT
+  /// - Se userId divergir, backend retorna 403 Forbidden
+  /// 
+  /// **Parâmetros:**
+  /// - [userId]: ID do usuário (UUID) - DEVE ser do usuário logado
+  /// - [limit]: Quantidade de registros (default: 10, máximo: 100)
+  /// 
+  /// **Retorno:**
+  /// - Lista de [PointsHistoryModel] ordenados por data (mais recente primeiro)
+  /// - Lista vazia em caso de erro ou sem histórico
+  /// 
+  /// **Uso:**
+  /// ```dart
+  /// final history = await repository.getPointsHistory(userId, limit: 20);
+  /// ```
+  Future<List<PointsHistoryModel>> getPointsHistory(
+    String userId, {
+    int? limit,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('📜 [UserTrackingDataRepository] Buscando histórico de pontos:');
+        print('   - userId: $userId');
+        print('   - limit: ${limit ?? 10}');
+      }
+
+      final response = await _dio.get(
+        _buildPointsHistoryEndpoint(userId, limit: limit),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data as List<dynamic>;
+
+        if (kDebugMode) {
+          print('✅ [UserTrackingDataRepository] ${data.length} registros de histórico carregados');
+        }
+
+        return data
+            .map((json) =>
+                PointsHistoryModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+
+      if (kDebugMode) {
+        print('⚠️  [UserTrackingDataRepository] Status inesperado: ${response.statusCode}');
+      }
+      return [];
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataRepository] Erro ao buscar histórico:');
+        print('   - Status Code: ${e.response?.statusCode}');
+        print('   - Mensagem: ${e.message}');
+
+        if (e.response?.statusCode == 403) {
+          print('   🚨 ERRO CRÍTICO: userId no path não corresponde ao JWT!');
+          print('   → BUG: App tentou acessar dados de outro usuário');
+        }
+      }
+      return [];
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataRepository] Erro inesperado: $e');
       }
       return [];
     }

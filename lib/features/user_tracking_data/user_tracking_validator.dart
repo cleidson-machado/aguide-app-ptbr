@@ -165,15 +165,27 @@ class UserTrackingValidator {
   // 🛡️ VALIDAÇÕES DE PONTOS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Valida que pontos a adicionar são positivos
+  /// Limite mínimo de pontos por chamada de addPoints (conforme backend)
+  static const int minPointsPerCall = 1;
+  
+  /// Limite máximo de pontos por chamada de addPoints (conforme backend)
+  static const int maxPointsPerCall = 1000;
+
+  /// Valida que pontos a adicionar estão dentro dos limites permitidos
   /// 
-  /// Backend aceita negativos sem validar, então validamos aqui.
+  /// Backend requer: 1 ≤ points ≤ 1000 por chamada
   /// 
-  /// Throws: [ValidationException] se pontos <= 0
+  /// Throws: [ValidationException] se pontos fora do intervalo [1, 1000]
   static void validatePointsToAdd(int points) {
-    if (points <= 0) {
+    if (points < minPointsPerCall) {
       throw ValidationException(
-        'Pontos devem ser positivos (recebido: $points)',
+        'Pontos devem ser no mínimo $minPointsPerCall (recebido: $points)',
+      );
+    }
+    
+    if (points > maxPointsPerCall) {
+      throw ValidationException(
+        'Pontos não podem exceder $maxPointsPerCall por chamada (recebido: $points)',
       );
     }
   }

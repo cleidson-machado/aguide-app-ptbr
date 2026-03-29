@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_model.dart';
+import 'package:portugal_guide/features/user_tracking_data/points_history_model.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_validator.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
 
 /// Service responsável pela lógica de negócio de rastreamento de usuários
 /// 
@@ -352,6 +354,75 @@ class UserTrackingDataService {
         print('❌ [UserTrackingDataService] Erro ao calcular posição: $e');
       }
       return null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📜 HISTÓRICO DE PONTOS (AUDITORIA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Busca histórico de adição de pontos do usuário (auditoria)
+  /// 
+  /// Endpoint: GET /user/{userId}/points-history?limit={limit}
+  /// 
+  /// **Segurança:**
+  /// - userId DEVE ser do usuário logado (backend valida JWT)
+  /// - Se tentar acessar dados de outro usuário, backend retorna 403
+  /// 
+  /// **Uso:**
+  /// Tela "Meu Histórico de Pontos" para mostrar timeline de conquistas
+  /// 
+  /// **Exemplo:**
+  /// ```dart
+  /// final history = await service.getPointsHistory(currentUserId, limit: 20);
+  /// for (final entry in history) {
+  ///   print('${entry.date}: +${entry.points} - ${entry.getReasonDescription()}');
+  /// }
+  /// ```
+  /// 
+  /// **Parâmetros:**
+  /// - [userId]: ID do usuário (UUID) - DEVE ser do logado
+  /// - [limit]: Quantidade de registros (default: 10, max: 100)
+  /// 
+  /// **Retorno:**
+  /// - Lista de [PointsHistoryModel] ordenados por data (mais recente primeiro)
+  /// - Lista vazia se sem histórico ou erro
+  Future<List<PointsHistoryModel>> getPointsHistory(
+    String userId, {
+    int? limit,
+  }) async {
+    try {
+      // Validações client-side
+      UserTrackingValidator.validateUserId(userId);
+      
+      if (limit != null && (limit < 1 || limit > 100)) {
+        if (kDebugMode) {
+          print('⚠️  [UserTrackingDataService] Limit fora do intervalo [1, 100]: $limit');
+          print('   → Ajustando para padrão 10');
+        }
+        limit = 10;
+      }
+
+      if (kDebugMode) {
+        print('📜 [UserTrackingDataService] Buscando histórico de pontos');
+        print('   - userId: $userId');
+        print('   - limit: ${limit ?? 10}');
+      }
+
+      // Downcast seguro para implementação concreta
+      final repository = _repository as UserTrackingDataRepository;
+      final history = await repository.getPointsHistory(userId, limit: limit);
+
+      if (kDebugMode) {
+        print('✅ [UserTrackingDataService] ${history.length} registros encontrados');
+      }
+
+      return history;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao buscar histórico: $e');
+      }
+      return [];
     }
   }
 
