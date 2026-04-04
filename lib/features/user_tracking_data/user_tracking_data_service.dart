@@ -579,22 +579,27 @@ class UserTrackingDataService {
     }
   }
 
-  /// 🆕 PHASE B: Atualiza percentual de conclusão do perfil
+  /// 🆕 PHASE B: Atualiza percentual de conclusão do perfil e dados de telefone
   /// 
   /// Fluxo:
   /// 1. Valida percentual (0-100)
-  /// 2. Atualiza profileCompletionPercentage
+  /// 2. Atualiza profileCompletionPercentage e phone tracking fields
   /// 3. Backend detecta milestone de 50% e 100% automaticamente
   /// 
   /// **Quando usar:**
   /// - Durante wizard de perfil (a cada step concluído)
   /// - Ao editar informações do perfil
+  /// - Ao adicionar/remover telefones
   /// 
   /// **Exemplo:**
   /// ```dart
   /// await service.trackProfileCompletion(
   ///   userId: currentUserId,
   ///   percentage: 50,
+  ///   hasPhones: true,
+  ///   totalPhones: 2,
+  ///   hasWhatsapp: true,
+  ///   hasTelegram: false,
   /// );
   /// ```
   /// 
@@ -606,6 +611,10 @@ class UserTrackingDataService {
   Future<UserTrackingDataModel?> trackProfileCompletion({
     required String userId,
     required int percentage,
+    bool? hasPhones,
+    int? totalPhones,
+    bool? hasWhatsapp,
+    bool? hasTelegram,
   }) async {
     try {
       // Validações client-side
@@ -615,6 +624,10 @@ class UserTrackingDataService {
       if (kDebugMode) {
         print('📝 [UserTrackingDataService] Atualizando profile completion');
         print('   - Percentual: $percentage%');
+        print('   - hasPhones: $hasPhones');
+        print('   - totalPhones: $totalPhones');
+        print('   - hasWhatsapp: $hasWhatsapp');
+        print('   - hasTelegram: $hasTelegram');
       }
 
       // Buscar ranking atual
@@ -630,15 +643,35 @@ class UserTrackingDataService {
       final now = DateTime.now().toUtc();
       final updated = existing.copyWith(
         profileCompletionPercentage: percentage,
+        hasPhones: hasPhones,
+        totalPhones: totalPhones,
+        hasWhatsapp: hasWhatsapp,
+        hasTelegram: hasTelegram,
         lastActivityAt: now,
       );
+
+      // 🐛 DEBUG: Logar payload antes de enviar
+      if (kDebugMode) {
+        print('');
+        print('🔍 [DEBUG] Payload a ser enviado ao backend:');
+        print('   - ID do ranking: ${existing.id}');
+        print('   - JSON completo:');
+        final jsonPayload = updated.toJson();
+        jsonPayload.forEach((key, value) {
+          print('      "$key": $value');
+        });
+        print('');
+      }
 
       // Enviar para backend (PUT)
       final result = await _repository.updateUserTracking(existing.id!, updated);
 
       if (result != null && kDebugMode) {
         print('✅ [UserTrackingDataService] Profile completion atualizado!');
-        print('   - Percentual: ${result.profileCompletionPercentage}%');
+        print('   - Percentual ENVIADO: $percentage%');
+        print('   - Percentual RETORNADO pelo backend: ${result.profileCompletionPercentage}%');
+        print('   - hasPhones ENVIADO: $hasPhones → RETORNADO: ${result.hasPhones}');
+        print('   - totalPhones ENVIADO: $totalPhones → RETORNADO: ${result.totalPhones}');
         
         // Avisar sobre milestones
         if (percentage == 50) {
@@ -646,6 +679,8 @@ class UserTrackingDataService {
         } else if (percentage == 100) {
           print('   🏆 Milestone atingido: 100% (+10 pontos bônus!)');
         }
+      } else if (result == null && kDebugMode) {
+        print('❌ [UserTrackingDataService] Backend retornou NULL - atualização FALHOU!');
       }
 
       return result;
@@ -882,6 +917,20 @@ class UserTrackingDataService {
       final hasYoutubeChannelId = userDetails.youtubeChannelId != null && 
                                    userDetails.youtubeChannelId.toString().trim().isNotEmpty;
 
+      // 🆕 Extrair dados de telefone para tracking
+      final phones = userDetails.phones as List<dynamic>? ?? [];
+      final hasPhonesData = phones.isNotEmpty;
+      final totalPhonesData = phones.length;
+
+      // Verificar WhatsApp/Telegram
+      bool hasWhatsappData = false;
+      bool hasTelegramData = false;
+
+      for (var phone in phones) {
+        if (phone.hasWhatsApp == true) hasWhatsappData = true;
+        if (phone.hasTelegram == true) hasTelegramData = true;
+      }
+
       // Cálculo de porcentagem
       double percentage = 0.0;
 
@@ -910,19 +959,30 @@ class UserTrackingDataService {
         print('      - youtubeChannelId: ${hasYoutubeChannelId ? "✅ +16.67%" : "❌"}');
         print('');
         print('   📊 COMPLETION TOTAL: $completionPercentage%');
+        print('');
+        print('   📞 Phone Tracking Data:');
+        print('      - hasPhones: $hasPhonesData');
+        print('      - totalPhones: $totalPhonesData');
+        print('      - hasWhatsapp: $hasWhatsappData');
+        print('      - hasTelegram: $hasTelegramData');
         print('───────────────────────────────────────────────────────────────────');
       }
 
-      // Chamar trackProfileCompletion
+      // Chamar trackProfileCompletion com dados de telefone
       await trackProfileCompletion(
         userId: userId,
-        percentage: completionPercentage,
+        percentage: completionPercentage,  // Valor real calculado
+        hasPhones: hasPhonesData,
+        totalPhones: totalPhonesData,
+        hasWhatsapp: hasWhatsappData,
+        hasTelegram: hasTelegramData,
       );
 
       if (kDebugMode) {
         print('✅ [UserTrackingDataService] Profile completion rastreado!');
-        print('   - Backend detectará milestones automaticamente');
-        print('   - 50%: +3 pontos | 100%: +10 pontos');
+        print('   - Percentual: $completionPercentage%');
+        print('   - hasPhones: $hasPhonesData');
+        print('   - totalPhones: $totalPhonesData');
         print('╚════════════════════════════════════════════════════════════════════╝');
         print('');
       }

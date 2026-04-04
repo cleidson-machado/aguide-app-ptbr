@@ -90,6 +90,22 @@ class UserTrackingDataModel {
   /// Atualizado a cada tracking de content view
   final DateTime? lastContentViewAt;
 
+  /// Indica se o usuário tem telefones cadastrados
+  /// Atualizado durante tracking de profile completion
+  final bool? hasPhones;
+
+  /// Total de telefones cadastrados pelo usuário
+  /// Range: >= 0
+  final int? totalPhones;
+
+  /// Indica se pelo menos 1 telefone tem WhatsApp habilitado
+  /// Derivado do campo hasWhatsApp de UserPhoneModel
+  final bool? hasWhatsapp;
+
+  /// Indica se pelo menos 1 telefone tem Telegram habilitado
+  /// Derivado do campo hasTelegram de UserPhoneModel
+  final bool? hasTelegram;
+
   const UserTrackingDataModel({
     this.id,
     required this.userId,
@@ -110,6 +126,11 @@ class UserTrackingDataModel {
     this.favoriteContentType,
     this.profileCompletionPercentage,
     this.lastContentViewAt,
+    // 🆕 PHASE B: Phone tracking telemetry
+    this.hasPhones,
+    this.totalPhones,
+    this.hasWhatsapp,
+    this.hasTelegram,
   });
 
   /// Converte JSON da API para Model
@@ -161,6 +182,11 @@ class UserTrackingDataModel {
       lastContentViewAt: json['lastContentViewAt'] != null
           ? DateTime.parse(json['lastContentViewAt'] as String)
           : null,
+      // 🆕 PHASE B: Phone tracking fields
+      hasPhones: json['hasPhones'] as bool?,
+      totalPhones: json['totalPhones'] as int?,
+      hasWhatsapp: json['hasWhatsapp'] as bool?,
+      hasTelegram: json['hasTelegram'] as bool?,
     );
   }
 
@@ -171,11 +197,20 @@ class UserTrackingDataModel {
   /// - PUT /api/v1/user-rankings/{id} (atualizar timestamps/contadores)
   /// 
   /// Campos opcionais são incluídos apenas se não-null
-  Map<String, dynamic> toJson() {
+  /// 
+  /// **IMPORTANTE**: Quando [forUpdate] é true, totalScore é OMITIDO do JSON.
+  /// Isso permite que o backend calcule automaticamente o totalScore com base
+  /// em milestones (ex: profileCompletionPercentage 50% = +3 pts, 100% = +10 pts).
+  /// 
+  /// Se totalScore for incluído no PUT, o backend irá usar o valor enviado
+  /// em vez de calcular automaticamente, causando perda de pontos de milestones.
+  Map<String, dynamic> toJson({bool forUpdate = false}) {
     return {
       if (id != null) 'id': id,
       'userId': userId,
-      'totalScore': totalScore,
+      // ⚠️ CRITICAL: totalScore deve ser omitido em updates (PUT)
+      // para permitir cálculo automático de milestones no backend
+      if (!forUpdate) 'totalScore': totalScore,
       'lastLoginAt': lastLoginAt.toIso8601String(),
       'lastActivityAt': lastActivityAt.toIso8601String(),
       'totalActiveDays': totalActiveDays,
@@ -195,6 +230,11 @@ class UserTrackingDataModel {
         'profileCompletionPercentage': profileCompletionPercentage,
       if (lastContentViewAt != null)
         'lastContentViewAt': lastContentViewAt!.toIso8601String(),
+      // 🆕 PHASE B: Phone tracking serialization
+      if (hasPhones != null) 'hasPhones': hasPhones,
+      if (totalPhones != null) 'totalPhones': totalPhones,
+      if (hasWhatsapp != null) 'hasWhatsapp': hasWhatsapp,
+      if (hasTelegram != null) 'hasTelegram': hasTelegram,
     };
   }
 
@@ -223,6 +263,11 @@ class UserTrackingDataModel {
     FavoriteContentType? favoriteContentType,
     int? profileCompletionPercentage,
     DateTime? lastContentViewAt,
+    // 🆕 PHASE B: Phone tracking telemetry
+    bool? hasPhones,
+    int? totalPhones,
+    bool? hasWhatsapp,
+    bool? hasTelegram,
   }) {
     return UserTrackingDataModel(
       id: id ?? this.id,
@@ -246,6 +291,11 @@ class UserTrackingDataModel {
       profileCompletionPercentage:
           profileCompletionPercentage ?? this.profileCompletionPercentage,
       lastContentViewAt: lastContentViewAt ?? this.lastContentViewAt,
+      // 🆕 PHASE B: Phone tracking fields copy
+      hasPhones: hasPhones ?? this.hasPhones,
+      totalPhones: totalPhones ?? this.totalPhones,
+      hasWhatsapp: hasWhatsapp ?? this.hasWhatsapp,
+      hasTelegram: hasTelegram ?? this.hasTelegram,
     );
   }
 

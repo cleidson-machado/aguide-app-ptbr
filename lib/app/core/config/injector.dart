@@ -81,7 +81,10 @@ Future<void> setupDependencies() async {
     () => UserViewModel(repository: injector<UserRepositoryInterface>()),
   );
   injector.registerFactory<UserDetailsViewModel>(
-    () => UserDetailsViewModel(repository: injector<UserRepositoryInterface>()),
+    () => UserDetailsViewModel(
+      repository: injector<UserRepositoryInterface>(),
+      trackingService: injector<UserTrackingDataService>(),
+    ),
   );
   injector.registerFactory<ProfileWelcomeViewModel>(
     () => ProfileWelcomeViewModel(injector<UserRepositoryInterface>()),
