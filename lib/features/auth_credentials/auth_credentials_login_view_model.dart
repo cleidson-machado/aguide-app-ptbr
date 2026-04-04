@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/auth/auth_exception.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_service.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
 
 /// Estados possíveis do login
 enum LoginState {
@@ -86,6 +88,25 @@ class AuthCredentialsLoginViewModel extends ChangeNotifier {
         await _tokenManager.saveUserName(response.user!.name!);
         if (kDebugMode) {
           print('👤 [AuthCredentialsLoginViewModel] Nome salvo: ${response.user!.name}');
+        }
+      }
+
+      // ✅ TRACKING: Registrar login no sistema de ranking/gamificação
+      // ⚠️ NÃO bloqueia o login - erros são logados mas não propagados
+      if (response.user?.id != null) {
+        try {
+          final trackingService = injector<UserTrackingDataService>();
+          await trackingService.trackLoginEvent(response.user!.id!);
+
+          if (kDebugMode) {
+            print('📊 [AuthCredentialsLoginViewModel] Login rastreado no sistema de ranking');
+          }
+        } catch (e) {
+          // Apenas loga o erro - não impede o login
+          if (kDebugMode) {
+            print('⚠️  [AuthCredentialsLoginViewModel] Falha ao rastrear login: $e');
+            print('   → Continuando login normalmente. Ranking será sincronizado depois.');
+          }
         }
       }
 

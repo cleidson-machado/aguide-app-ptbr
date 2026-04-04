@@ -44,6 +44,13 @@ dependencies:
   shared_preferences: ^2.5.3        ############################ Para armazenamento local de dados simples (chave-valor), como tokens de autenticação e preferências do usuário.
   google_sign_in: ^6.2.1            ############################ Para autenticação com Google OAuth 2.0 e acesso a APIs Google (YouTube, etc.)
   url_launcher: ^6.3.1              ############################ Para abrir URLs externas (WhatsApp, Telegram, navegador, etc.)
+  
+  # TELEMETRIA & ANALYTICS
+  get_ip_address: ^0.0.7            ############################ Para coletar endereço IP público do usuário (tracking e auditoria de sessão).
+  device_info_plus: ^10.1.2         ############################ Informações do dispositivo (modelo, OS, versão) para debug e analytics.
+  package_info_plus: ^8.0.2         ############################ Informações do app (versão, build number) para rastreamento de bugs e forçar updates.
+  connectivity_plus: ^6.0.5         ############################ Tipo de conexão (WiFi, 4G, 5G) para ajustar qualidade de vídeo e detectar problemas de rede.
+  battery_plus: ^6.0.2              ############################ Nível de bateria e estado de carga para detectar battery drain e otimizar performance.
 
 dev_dependencies:
   # TESTES E QUALIDADE DE CÓDIGO

@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/auth_credentials/auth_credentials_model.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_model.dart';
 import 'package:portugal_guide/features/auth_google/auth_google_service.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
 
 /// ViewModel responsável pela lógica de login com Google OAuth
 class AuthGoogleViewModel extends ChangeNotifier {
@@ -98,6 +100,25 @@ class AuthGoogleViewModel extends ChangeNotifier {
         final userName = response.user?.name ?? googleData.displayName ?? '';
         print('👤 [AuthGoogleViewModel] Usuário: $userName');
         print('📧 [AuthGoogleViewModel] Email: $userEmail');
+      }
+
+      // ✅ TRACKING: Registrar login no sistema de ranking/gamificação
+      // ⚠️ NÃO bloqueia o login - erros são logados mas não propagados
+      if (response.user?.id != null) {
+        try {
+          final trackingService = injector<UserTrackingDataService>();
+          await trackingService.trackLoginEvent(response.user!.id!);
+
+          if (kDebugMode) {
+            print('📊 [AuthGoogleViewModel] Login Google rastreado no sistema de ranking');
+          }
+        } catch (e) {
+          // Apenas loga o erro - não impede o login
+          if (kDebugMode) {
+            print('⚠️  [AuthGoogleViewModel] Falha ao rastrear login Google: $e');
+            print('   → Continuando login normalmente. Ranking será sincronizado depois.');
+          }
+        }
       }
 
       _state = OAuthState.success;
