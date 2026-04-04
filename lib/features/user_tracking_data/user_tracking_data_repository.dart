@@ -322,17 +322,30 @@ class UserTrackingDataRepository
   // ═══════════════════════════════════════════════════════════════════════════
 
   @override
-  Future<UserTrackingDataModel?> addPoints(String userId, int points) async {
+  Future<UserTrackingDataModel?> addPoints(
+    String userId,
+    int points, {
+    String? reason, // 🆕 PHASE B: Parâmetro opcional para auditoria
+  }) async {
     try {
       if (kDebugMode) {
         print('➕ [UserTrackingDataRepository] Adicionando pontos:');
         print('   - userId: $userId');
         print('   - pontos: +$points');
+        if (reason != null) {
+          print('   - reason: $reason (🆕 PHASE B - auditável)');
+        }
+      }
+
+      // 🆕 PHASE B: Adicionar reason como query param se fornecido
+      final queryParams = <String, dynamic>{'points': points};
+      if (reason != null) {
+        queryParams['reason'] = reason;
       }
 
       final response = await _dio.post(
         _buildAddPointsEndpoint(userId),
-        queryParameters: {'points': points},
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
@@ -344,6 +357,9 @@ class UserTrackingDataRepository
           print('   - Novo score: ${updated.totalScore}');
           print('   - Nível: ${updated.engagementLevel}');
           print('   - Streak: ${updated.consecutiveDaysStreak} dias');
+          if (reason != null) {
+            print('   - Reason registrado em points_history');
+          }
         }
 
         return updated;
