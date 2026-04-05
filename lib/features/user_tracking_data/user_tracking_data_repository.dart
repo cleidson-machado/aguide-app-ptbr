@@ -169,18 +169,50 @@ class UserTrackingDataRepository
       if (kDebugMode) {
         print('🔄 [UserTrackingDataRepository] Atualizando ranking:');
         print('   - ID: $id');
-        print('   - totalActiveDays: ${tracking.totalActiveDays}');
-        print('   - streak: ${tracking.consecutiveDaysStreak}');
+        print('   - Endpoint: ${_buildRankingByIdEndpoint(id)}');
+        print('   - totalScore ANTES do PUT: ${tracking.totalScore}');
+        print('   - profileCompletionPercentage: ${tracking.profileCompletionPercentage}');
+        print('   - hasPhones: ${tracking.hasPhones}');
+        print('   - totalPhones: ${tracking.totalPhones}');
+      }
+
+      // ✅ FIX: Usar forUpdate=true para OMITIR totalScore do PUT
+      // Permite backend calcular automaticamente com base em milestones
+      final jsonData = tracking.toJson(forUpdate: true);
+
+      // 🐛 DEBUG: Verificar JSON antes do PUT
+      if (kDebugMode) {
+        print('🔍 [DEBUG] Verificando JSON antes do PUT:');
+        print('   - totalScore no JSON: ${jsonData.containsKey('totalScore') ? jsonData['totalScore'] : "❌ OMITIDO (correto para PUT)"}');
+        if (jsonData.containsKey('profileCompletionPercentage')) {
+          print('   - profileCompletionPercentage: ${jsonData['profileCompletionPercentage']}');
+        } else {
+          print('   - profileCompletionPercentage: AUSENTE');
+        }
+        print('   - hasPhones: ${jsonData.containsKey('hasPhones') ? jsonData['hasPhones'] : "AUSENTE"}');
       }
 
       final response = await _dio.put(
         _buildRankingByIdEndpoint(id),
-        data: tracking.toJson(),
+        data: jsonData,
       );
 
       if (response.statusCode == 200) {
         if (kDebugMode) {
+          final result = UserTrackingDataModel.fromJson(response.data);
+          print('✅ [UserTrackingDataRepository] PUT sucesso!');
+          print('   - totalScore DEPOIS do PUT (retornado pelo backend): ${result.totalScore}');
+        }
+        if (kDebugMode) {
           print('✅ [UserTrackingDataRepository] Ranking atualizado!');
+          print('   📥 Response do backend:');
+          if (response.data is Map) {
+            final responseData = response.data as Map<String, dynamic>;
+            print('      - profileCompletionPercentage: ${responseData['profileCompletionPercentage']}');
+            print('      - hasPhones: ${responseData['hasPhones']}');
+            print('      - totalPhones: ${responseData['totalPhones']}');
+            print('      - totalScore: ${responseData['totalScore']}');
+          }
         }
 
         return UserTrackingDataModel.fromJson(
@@ -193,6 +225,7 @@ class UserTrackingDataRepository
         print('❌ [UserTrackingDataRepository] Erro ao atualizar ranking:');
         print('   - Status Code: ${e.response?.statusCode}');
         print('   - Mensagem: ${e.message}');
+        print('   - Response data: ${e.response?.data}');
       }
       return null;
     } catch (e) {
@@ -322,17 +355,30 @@ class UserTrackingDataRepository
   // ═══════════════════════════════════════════════════════════════════════════
 
   @override
-  Future<UserTrackingDataModel?> addPoints(String userId, int points) async {
+  Future<UserTrackingDataModel?> addPoints(
+    String userId,
+    int points, {
+    String? reason, // 🆕 PHASE B: Parâmetro opcional para auditoria
+  }) async {
     try {
       if (kDebugMode) {
         print('➕ [UserTrackingDataRepository] Adicionando pontos:');
         print('   - userId: $userId');
         print('   - pontos: +$points');
+        if (reason != null) {
+          print('   - reason: $reason (🆕 PHASE B - auditável)');
+        }
+      }
+
+      // 🆕 PHASE B: Adicionar reason como query param se fornecido
+      final queryParams = <String, dynamic>{'points': points};
+      if (reason != null) {
+        queryParams['reason'] = reason;
       }
 
       final response = await _dio.post(
         _buildAddPointsEndpoint(userId),
-        queryParameters: {'points': points},
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200) {
@@ -344,6 +390,9 @@ class UserTrackingDataRepository
           print('   - Novo score: ${updated.totalScore}');
           print('   - Nível: ${updated.engagementLevel}');
           print('   - Streak: ${updated.consecutiveDaysStreak} dias');
+          if (reason != null) {
+            print('   - Reason registrado em points_history');
+          }
         }
 
         return updated;

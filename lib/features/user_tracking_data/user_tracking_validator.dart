@@ -278,6 +278,139 @@ class UserTrackingValidator {
       );
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: VALIDAÇÕES DE TELEMETRIA ENRIQUECIDA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Valida totalContentViews (deve ser >= 0)
+  /// 
+  /// Throws: [ValidationException] se valor negativo
+  static void validateContentViews(int? totalContentViews) {
+    if (totalContentViews == null) return; // Campo opcional
+    
+    if (totalContentViews < 0) {
+      throw ValidationException(
+        'totalContentViews não pode ser negativo (recebido: $totalContentViews)',
+      );
+    }
+  }
+
+  /// Valida uniqueContentViews (deve ser >= 0 e <= totalContentViews)
+  /// 
+  /// Regra de negócio: uniqueContentViews nunca pode exceder totalContentViews
+  /// 
+  /// Throws: [ValidationException] se inválido
+  static void validateUniqueContentViews({
+    int? uniqueContentViews,
+    int? totalContentViews,
+  }) {
+    if (uniqueContentViews == null) return; // Campo opcional
+    
+    if (uniqueContentViews < 0) {
+      throw ValidationException(
+        'uniqueContentViews não pode ser negativo (recebido: $uniqueContentViews)',
+      );
+    }
+
+    // Se totalContentViews for fornecido, uniqueContentViews não pode excedê-lo
+    if (totalContentViews != null && uniqueContentViews > totalContentViews) {
+      throw ValidationException(
+        'uniqueContentViews ($uniqueContentViews) não pode exceder '
+        'totalContentViews ($totalContentViews)',
+      );
+    }
+  }
+
+  /// Valida avgDailyUsageMinutes (deve estar entre 0 e 1440 - 24 horas)
+  /// 
+  /// Throws: [ValidationException] se fora do intervalo [0, 1440]
+  static void validateDailyUsageMinutes(int? avgDailyUsageMinutes) {
+    if (avgDailyUsageMinutes == null) return; // Campo opcional
+
+    const maxMinutesPerDay = 1440; // 24 horas
+
+    if (avgDailyUsageMinutes < 0) {
+      throw ValidationException(
+        'avgDailyUsageMinutes não pode ser negativo '
+        '(recebido: $avgDailyUsageMinutes)',
+      );
+    }
+
+    if (avgDailyUsageMinutes > maxMinutesPerDay) {
+      throw ValidationException(
+        'avgDailyUsageMinutes não pode exceder $maxMinutesPerDay minutos/dia '
+        '(recebido: $avgDailyUsageMinutes)',
+      );
+    }
+  }
+
+  /// Valida favoriteCategory (máximo 100 caracteres)
+  /// 
+  /// Throws: [ValidationException] se muito longo ou vazio
+  static void validateFavoriteCategory(String? favoriteCategory) {
+    if (favoriteCategory == null) return; // Campo opcional
+
+    const maxLength = 100;
+
+    if (favoriteCategory.isEmpty) {
+      throw ValidationException(
+        'favoriteCategory não pode ser string vazia',
+      );
+    }
+
+    if (favoriteCategory.length > maxLength) {
+      throw ValidationException(
+        'favoriteCategory excede limite de $maxLength caracteres '
+        '(recebido: ${favoriteCategory.length} chars)',
+      );
+    }
+  }
+
+  /// Valida profileCompletionPercentage (deve estar entre 0 e 100)
+  /// 
+  /// Throws: [ValidationException] se fora do intervalo [0, 100]
+  static void validateProfileCompletionPercentage(
+    int? profileCompletionPercentage,
+  ) {
+    if (profileCompletionPercentage == null) return; // Campo opcional
+
+    if (profileCompletionPercentage < 0 || profileCompletionPercentage > 100) {
+      throw ValidationException(
+        'profileCompletionPercentage deve estar entre 0 e 100 '
+        '(recebido: $profileCompletionPercentage)',
+      );
+    }
+  }
+
+  /// Validação completa de todos os campos de telemetria Phase B
+  /// 
+  /// Exemplo de uso no Service:
+  /// ```dart
+  /// UserTrackingValidator.validateTelemetryFields(
+  ///   totalContentViews: model.totalContentViews,
+  ///   uniqueContentViews: model.uniqueContentViews,
+  ///   avgDailyUsageMinutes: model.avgDailyUsageMinutes,
+  ///   favoriteCategory: model.favoriteCategory,
+  ///   profileCompletionPercentage: model.profileCompletionPercentage,
+  /// );
+  /// ```
+  static void validateTelemetryFields({
+    int? totalContentViews,
+    int? uniqueContentViews,
+    int? avgDailyUsageMinutes,
+    String? favoriteCategory,
+    int? profileCompletionPercentage,
+  }) {
+    validateContentViews(totalContentViews);
+    validateUniqueContentViews(
+      uniqueContentViews: uniqueContentViews,
+      totalContentViews: totalContentViews,
+    );
+    validateDailyUsageMinutes(avgDailyUsageMinutes);
+    validateFavoriteCategory(favoriteCategory);
+    validateProfileCompletionPercentage(profileCompletionPercentage);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

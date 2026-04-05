@@ -4,6 +4,33 @@ import 'package:portugal_guide/features/user_tracking_data/points_history_model.
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository_interface.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_validator.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
+import 'package:portugal_guide/features/user_tracking_data/enums/points_reason_enum.dart';
+import 'package:portugal_guide/features/user_tracking_data/enums/favorite_content_type_enum.dart';
+import 'package:portugal_guide/features/user/user_phone_repository_interface.dart';
+import 'package:portugal_guide/features/user/user_phone_model.dart';
+
+/// Helper class para armazenar dados analisados de telefones
+class PhoneData {
+  final bool hasPhones;
+  final int totalPhones;
+  final bool hasWhatsapp;
+  final bool hasTelegram;
+  final bool hasRecentPhones;
+
+  const PhoneData({
+    required this.hasPhones,
+    required this.totalPhones,
+    required this.hasWhatsapp,
+    required this.hasTelegram,
+    required this.hasRecentPhones,
+  });
+
+  @override
+  String toString() {
+    return 'PhoneData(hasPhones: $hasPhones, total: $totalPhones, '
+        'whatsapp: $hasWhatsapp, telegram: $hasTelegram, recent: $hasRecentPhones)';
+  }
+}
 
 /// Service responsável pela lógica de negócio de rastreamento de usuários
 /// 
@@ -14,15 +41,18 @@ import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_re
 /// - Calcular streaks de dias consecutivos
 /// - Adicionar pontos com base em eventos
 /// - Detectar bônus (streak de 7 dias, 30 dias, etc.)
+/// - Sincronizar telefones e atualizar perfil completion
 /// 
 /// ⚠️ Arquitetura Híbrida:
 /// - Flutter rastreia eventos de login e envia para backend
 /// - Backend calcula automaticamente engagementLevel, scoreUpdatedAt
 /// - Flutter calcula streak localmente (timezone-aware)
+/// - Flutter busca telefones ativamente e calcula profile completion
 class UserTrackingDataService {
   final UserTrackingDataRepositoryInterface _repository;
+  final UserPhoneRepositoryInterface _phoneRepository;
 
-  UserTrackingDataService(this._repository);
+  UserTrackingDataService(this._repository, this._phoneRepository);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎯 MÉTODO PRINCIPAL: Rastrear Login
@@ -34,6 +64,7 @@ class UserTrackingDataService {
   /// 1. Buscar ranking existente (GET /user/{userId})
   /// 2. Se não existe (404) → Criar ranking inicial (POST)
   /// 3. Se existe → Verificar se é novo dia → Atualizar (PUT) + Adicionar pontos
+  /// 4. Sincronizar telefones e atualizar profile completion
   /// 
   /// Quando usar: Logo após login bem-sucedido (AuthCredentialsLoginViewModel)
   /// 
@@ -53,21 +84,31 @@ class UserTrackingDataService {
       // 1. Buscar ranking existente
       final existing = await _repository.getUserTrackingByUserId(userId);
 
+      UserTrackingDataModel? result;
+
       if (existing == null) {
         // Primeiro login - criar ranking inicial
         if (kDebugMode) {
           print('✨ [UserTrackingDataService] Primeiro login - criando ranking');
         }
 
-        return await _createInitialRanking(userId);
+        result = await _createInitialRanking(userId);
       } else {
         // Login recorrente - atualizar timestamps e contadores
         if (kDebugMode) {
           print('🔄 [UserTrackingDataService] Login recorrente - atualizando');
         }
 
-        return await _updateExistingRanking(existing);
+        result = await _updateExistingRanking(existing);
       }
+
+      // 2. Sincronizar telefones e atualizar profile completion
+      // ⚠️ CRÍTICO: Sempre chamar após login para garantir totalScore atualizado
+      if (result != null) {
+        await _syncPhonesAndUpdateProfile(userId);
+      }
+
+      return result;
     } catch (e) {
       // ⚠️ NÃO propagar erro - não bloquear login do usuário
       if (kDebugMode) {
@@ -448,4 +489,698 @@ class UserTrackingDataService {
 
     return false;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: MÉTODOS DE TELEMETRIA ENRIQUECIDA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🆕 PHASE B: Rastreia visualização de conteúdo
+  /// 
+  /// Fluxo:
+  /// 1. Incrementa totalContentViews
+  /// 2. Adiciona contentId ao set de únicos (uniqueContentViews)
+  /// 3. Atualiza lastContentViewAt
+  /// 4. Atualiza favoriteCategory se categoria fornecida
+  /// 5. Backend detecta milestones (10/50/100 views) automaticamente
+  /// 
+  /// **Quando usar:**
+  /// - Usuário clica em conteúdo na MainContentTopicScreen
+  /// - Ao abrir detalhes de um conteúdo
+  /// 
+  /// **Exemplo:**
+  /// ```dart
+  /// await service.trackContentView(
+  ///   userId: currentUserId,
+  ///   contentId: 'uuid-123',
+  ///   category: 'Tecnologia',
+  ///   contentType: FavoriteContentType.video,
+  /// );
+  /// ```
+  /// 
+  /// **Parâmetros:**
+  /// - [userId]: ID do usuário logado
+  /// - [contentId]: ID do conteúdo visualizado (para contagem de únicos)
+  /// - [category]: Categoria do conteúdo (opcional, para favorito)
+  /// - [contentType]: Tipo do conteúdo (opcional, para favorito)
+  /// 
+  /// **Pontos automáticos (backend):**
+  /// - +1 ponto por view (backend sempre adiciona)
+  /// - +2 pontos ao atingir 10 views (milestone automático)
+  /// - +5 pontos ao atingir 50 views (milestone automático)
+  /// - +10 pontos ao atingir 100 views (milestone automático)
+  /// 
+  /// ⚠️ NÃO bloqueia navegação - erros são logados mas não propagados
+  Future<UserTrackingDataModel?> trackContentView({
+    required String userId,
+    required String contentId,
+    String? category,
+    FavoriteContentType? contentType,
+  }) async {
+    try {
+      // Validações client-side
+      UserTrackingValidator.validateUserId(userId);
+      if (category != null) {
+        UserTrackingValidator.validateFavoriteCategory(category);
+      }
+
+      if (kDebugMode) {
+        print('📺 [UserTrackingDataService] Rastreando content view');
+        print('   - contentId: $contentId');
+        print('   - category: ${category ?? "N/A"}');
+        print('   - type: ${contentType?.name ?? "N/A"}');
+      }
+
+      // Buscar ranking atual
+      final existing = await _repository.getUserTrackingByUserId(userId);
+      if (existing == null) {
+        if (kDebugMode) {
+          print('⚠️  [UserTrackingDataService] Ranking não encontrado, pulando tracking');
+        }
+        return null;
+      }
+
+      // Incrementar totalContentViews
+      final newTotalViews = (existing.totalContentViews ?? 0) + 1;
+      
+      // Incrementar uniqueContentViews se for novo conteúdo
+      // ⚠️ Implementação simplificada: backend deve validar uniqueness
+      // Em produção, usar Set<String> para rastrear IDs localmente
+      final newUniqueViews = (existing.uniqueContentViews ?? 0) + 1;
+
+      // Validações antes de atualizar
+      UserTrackingValidator.validateContentViews(newTotalViews);
+      UserTrackingValidator.validateUniqueContentViews(
+        uniqueContentViews: newUniqueViews,
+        totalContentViews: newTotalViews,
+      );
+
+      final now = DateTime.now().toUtc();
+      UserTrackingValidator.validateTimestamp(now, 'lastContentViewAt');
+
+      // Atualizar modelo com novos campos
+      final updated = existing.copyWith(
+        totalContentViews: newTotalViews,
+        uniqueContentViews: newUniqueViews,
+        lastContentViewAt: now,
+        lastActivityAt: now,
+        // Atualizar favoritos se fornecidos
+        favoriteCategory: category ?? existing.favoriteCategory,
+        favoriteContentType: contentType ?? existing.favoriteContentType,
+      );
+
+      // Enviar para backend (PUT)
+      final result = await _repository.updateUserTracking(existing.id!, updated);
+
+      if (result != null && kDebugMode) {
+        print('✅ [UserTrackingDataService] Content view rastreado!');
+        print('   - Total views: ${result.totalContentViews}');
+        print('   - Unique views: ${result.uniqueContentViews}');
+        print('   - Backend adicionará +1 ponto automaticamente');
+        
+        // Avisar sobre milestones próximos
+        final totalViews = result.totalContentViews ?? 0;
+        if (totalViews == 9) {
+          print('   🎯 Próximo milestone: 10 views (+2 pontos bônus!)');
+        } else if (totalViews == 49) {
+          print('   🎯 Próximo milestone: 50 views (+5 pontos bônus!)');
+        } else if (totalViews == 99) {
+          print('   🎯 Próximo milestone: 100 views (+10 pontos bônus!)');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear navegação do usuário
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao rastrear content view: $e');
+      }
+      return null;
+    }
+  }
+
+  /// 🆕 PHASE B: Atualiza percentual de conclusão do perfil e dados de telefone
+  /// 
+  /// Fluxo:
+  /// 1. Valida percentual (0-100)
+  /// 2. Atualiza profileCompletionPercentage e phone tracking fields
+  /// 3. Backend detecta milestone de 50% e 100% automaticamente
+  /// 
+  /// **Quando usar:**
+  /// - Durante wizard de perfil (a cada step concluído)
+  /// - Ao editar informações do perfil
+  /// - Ao adicionar/remover telefones
+  /// 
+  /// **Exemplo:**
+  /// ```dart
+  /// await service.trackProfileCompletion(
+  ///   userId: currentUserId,
+  ///   percentage: 50,
+  ///   hasPhones: true,
+  ///   totalPhones: 2,
+  ///   hasWhatsapp: true,
+  ///   hasTelegram: false,
+  /// );
+  /// ```
+  /// 
+  /// **Pontos automáticos (backend):**
+  /// - +3 pontos ao atingir 50% (milestone automático)
+  /// - +10 pontos ao atingir 100% (milestone automático)
+  /// 
+  /// ⚠️ NÃO bloqueia fluxo do wizard - erros são logados mas não propagados
+  Future<UserTrackingDataModel?> trackProfileCompletion({
+    required String userId,
+    required int percentage,
+    bool? hasPhones,
+    int? totalPhones,
+    bool? hasWhatsapp,
+    bool? hasTelegram,
+  }) async {
+    try {
+      // Validações client-side
+      UserTrackingValidator.validateUserId(userId);
+      UserTrackingValidator.validateProfileCompletionPercentage(percentage);
+
+      if (kDebugMode) {
+        print('📝 [UserTrackingDataService] Atualizando profile completion');
+        print('   - Percentual: $percentage%');
+        print('   - hasPhones: $hasPhones');
+        print('   - totalPhones: $totalPhones');
+        print('   - hasWhatsapp: $hasWhatsapp');
+        print('   - hasTelegram: $hasTelegram');
+      }
+
+      // Buscar ranking atual
+      final existing = await _repository.getUserTrackingByUserId(userId);
+      if (existing == null) {
+        if (kDebugMode) {
+          print('⚠️  [UserTrackingDataService] Ranking não encontrado, pulando tracking');
+        }
+        return null;
+      }
+
+      // Atualizar modelo
+      final now = DateTime.now().toUtc();
+      final updated = existing.copyWith(
+        profileCompletionPercentage: percentage,
+        hasPhones: hasPhones,
+        totalPhones: totalPhones,
+        hasWhatsapp: hasWhatsapp,
+        hasTelegram: hasTelegram,
+        lastActivityAt: now,
+      );
+
+      // 🐛 DEBUG: Logar payload antes de enviar
+      if (kDebugMode) {
+        print('');
+        print('🔍 [DEBUG] Payload a ser enviado ao backend:');
+        print('   - ID do ranking: ${existing.id}');
+        print('   - JSON completo:');
+        final jsonPayload = updated.toJson();
+        jsonPayload.forEach((key, value) {
+          print('      "$key": $value');
+        });
+        print('');
+      }
+
+      // Enviar para backend (PUT)
+      final result = await _repository.updateUserTracking(existing.id!, updated);
+
+      if (result != null && kDebugMode) {
+        print('✅ [UserTrackingDataService] Profile completion atualizado!');
+        print('   - Percentual ENVIADO: $percentage%');
+        print('   - Percentual RETORNADO pelo backend: ${result.profileCompletionPercentage}%');
+        print('   - hasPhones ENVIADO: $hasPhones → RETORNADO: ${result.hasPhones}');
+        print('   - totalPhones ENVIADO: $totalPhones → RETORNADO: ${result.totalPhones}');
+        
+        // Avisar sobre milestones
+        if (percentage == 50) {
+          print('   🎉 Milestone atingido: 50% (+3 pontos bônus!)');
+        } else if (percentage == 100) {
+          print('   🏆 Milestone atingido: 100% (+10 pontos bônus!)');
+        }
+      } else if (result == null && kDebugMode) {
+        print('❌ [UserTrackingDataService] Backend retornou NULL - atualização FALHOU!');
+      }
+
+      return result;
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear wizard do usuário
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao atualizar profile completion: $e');
+      }
+      return null;
+    }
+  }
+
+  /// 🆕 PHASE B: Atualiza média de minutos de uso diário
+  /// 
+  /// Fluxo:
+  /// 1. Valida minutos (0-1440)
+  /// 2. Calcula média ponderada com valor anterior
+  /// 3. Atualiza avgDailyUsageMinutes
+  /// 
+  /// **Quando usar:**
+  /// - Ao fechar app (em AppLifecycleState.paused/detached)
+  /// - A cada 5 minutos de uso contínuo (debounce)
+  /// 
+  /// **Exemplo:**
+  /// ```dart
+  /// await service.updateSessionDuration(
+  ///   userId: currentUserId,
+  ///   sessionMinutes: 15,
+  /// );
+  /// ```
+  /// 
+  /// **Cálculo de média ponderada:**
+  /// ```
+  /// newAvg = (oldAvg * 0.8) + (sessionMinutes * 0.2)
+  /// ```
+  /// Peso maior no histórico (80%), menor na sessão atual (20%)
+  /// 
+  /// ⚠️ NÃO bloqueia fechamento do app - erros são logados mas não propagados
+  Future<UserTrackingDataModel?> updateSessionDuration({
+    required String userId,
+    required int sessionMinutes,
+  }) async {
+    try {
+      // Validações client-side
+      UserTrackingValidator.validateUserId(userId);
+      UserTrackingValidator.validateDailyUsageMinutes(sessionMinutes);
+
+      if (kDebugMode) {
+        print('⏱️  [UserTrackingDataService] Atualizando session duration');
+        print('   - Sessão (min): $sessionMinutes');
+      }
+
+      // Buscar ranking atual
+      final existing = await _repository.getUserTrackingByUserId(userId);
+      if (existing == null) {
+        if (kDebugMode) {
+          print('⚠️  [UserTrackingDataService] Ranking não encontrado, pulando tracking');
+        }
+        return null;
+      }
+
+      // Calcular média ponderada
+      final oldAvg = existing.avgDailyUsageMinutes ?? 0;
+      final newAvg = ((oldAvg * 0.8) + (sessionMinutes * 0.2)).round();
+
+      // Validar resultado
+      UserTrackingValidator.validateDailyUsageMinutes(newAvg);
+
+      if (kDebugMode) {
+        print('   - Média antiga: $oldAvg min');
+        print('   - Média nova: $newAvg min');
+      }
+
+      // Atualizar modelo
+      final now = DateTime.now().toUtc();
+      final updated = existing.copyWith(
+        avgDailyUsageMinutes: newAvg,
+        lastActivityAt: now,
+      );
+
+      // Enviar para backend (PUT)
+      final result = await _repository.updateUserTracking(existing.id!, updated);
+
+      if (result != null && kDebugMode) {
+        print('✅ [UserTrackingDataService] Session duration atualizado!');
+        print('   - Média diária: ${result.avgDailyUsageMinutes} min');
+      }
+
+      return result;
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear fechamento do app
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao atualizar session duration: $e');
+      }
+      return null;
+    }
+  }
+
+  /// 🆕 PHASE B: Adiciona pontos com razão específica (auditability)
+  /// 
+  /// Fluxo:
+  /// 1. Valida pontos (1-1000)
+  /// 2. Converte PointsReason para snake_case (wizardEntry → "wizard_entry")
+  /// 3. Envia para backend com reason parameter
+  /// 4. Backend registra em points_history com reason para auditoria
+  /// 
+  /// **Quando usar:**
+  /// - Wizard steps: PointsReason.wizardStep1 (+2 pontos)
+  /// - Primeiro conteúdo criado: PointsReason.wizardEntry (+2 pontos)
+  /// - Primeira mensagem enviada: PointsReason.firstMessageSent (+1 ponto)
+  /// - Primeira conversa iniciada: PointsReason.firstConversation (+2 pontos)
+  /// 
+  /// **Exemplo:**
+  /// ```dart
+  /// await service.addPointsWithReason(
+  ///   userId: currentUserId,
+  ///   points: 2,
+  ///   reason: PointsReason.wizardEntry,
+  /// );
+  /// ```
+  /// 
+  /// **Diferenças com addCustomPoints:**
+  /// - addCustomPoints: String livre, sem enum (legado)
+  /// - addPointsWithReason: Enum validado, auditável, snake_case automático
+  /// 
+  /// **Backend:**
+  /// - Aceita query param `reason` opcional
+  /// - Armazena em points_history.reason (type: varchar(50))
+  /// - Validação: valores conhecidos ou null
+  /// 
+  /// ⚠️ NÃO bloqueia ação do usuário - erros são logados mas não propagados
+  Future<UserTrackingDataModel?> addPointsWithReason({
+    required String userId,
+    required int points,
+    required PointsReason reason,
+  }) async {
+    try {
+      // Validações client-side
+      UserTrackingValidator.validateUserId(userId);
+      UserTrackingValidator.validatePointsToAdd(points);
+
+      // Converter enum para snake_case
+      final reasonString = reason.toJson();
+
+      if (kDebugMode) {
+        print('✨ [UserTrackingDataService] Adicionando pontos com reason');
+        print('   - Pontos: +$points');
+        print('   - Reason (enum): ${reason.name}');
+        print('   - Reason (snake_case): $reasonString');
+      }
+
+      // Downcast seguro para implementação concreta
+      final repository = _repository as UserTrackingDataRepository;
+      
+      // Chamar método com reason parameter
+      final result = await repository.addPoints(userId, points, reason: reasonString);
+
+      if (result != null && kDebugMode) {
+        print('✅ [UserTrackingDataService] Pontos adicionados com sucesso!');
+        print('   - Score total: ${result.totalScore}');
+        print('   - Reason registrado em points_history para auditoria');
+      }
+
+      return result;
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear ação do usuário
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao adicionar pontos: $e');
+      }
+      return null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: PROFILE COMPLETION TRACKING (Helper Method)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🆕 PHASE B: Calcula profile completion percentage e rastreia automaticamente
+  /// 
+  /// **Cálculo de Porcentagem:**
+  /// - Campos obrigatórios (3): name, surname, email
+  /// - Campos opcionais (3): phone, youtubeUserId, youtubeChannelId
+  /// - Total: 6 campos (100% = todos preenchidos)
+  /// 
+  /// **Pesos:**
+  /// - Obrigatórios: 50% (se todos 3 preenchidos = 50%)
+  /// - Opcionais: 50% dividido igualmente (16.67% cada)
+  ///   - phone: +16.67%
+  ///   - youtubeUserId: +16.67%
+  ///   - youtubeChannelId: +16.67%
+  /// 
+  /// **Milestones (detectados automaticamente pelo backend):**
+  /// - 50%: +3 pontos (PointsReason.profileCompletion50)
+  /// - 100%: +10 pontos (PointsReason.profileCompletion100)
+  /// 
+  /// **Quando usar:**
+  /// - Após `updateUser()` em qualquer tela de edição de perfil
+  /// - Após `updateUserDetails()` em profile settings
+  /// - Após adicionar telefone ou YouTube IDs
+  /// 
+  /// **Exemplo de uso:**
+  /// ```dart
+  /// final service = injector<UserTrackingDataService>();
+  /// final userDetails = injector<UserDetailsViewModel>().userDetails;
+  /// 
+  /// await service.calculateAndTrackProfileCompletion(
+  ///   userId: currentUserId,
+  ///   userDetails: userDetails,
+  /// );
+  /// ```
+  /// 
+  /// ⚠️ NÃO bloqueia ação do usuário - erros são logados mas não propagados
+  Future<void> calculateAndTrackProfileCompletion({
+    required String userId,
+    required dynamic userDetails, // UserDetailsModel
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('');
+        print('╔════════════════════════════════════════════════════════════════════╗');
+        print('║  📊 CALCULANDO PROFILE COMPLETION PERCENTAGE                       ║');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+      }
+
+      // Campos obrigatórios (peso: 50%)
+      final hasName = userDetails.name != null && userDetails.name.toString().trim().isNotEmpty;
+      final hasSurname = userDetails.surname != null && userDetails.surname.toString().trim().isNotEmpty;
+      final hasEmail = userDetails.email != null && userDetails.email.toString().trim().isNotEmpty;
+
+      // Campos opcionais (peso: 50% / 3 = 16.67% cada)
+      final hasPhone = userDetails.phones != null && (userDetails.phones as List).isNotEmpty;
+      final hasYoutubeUserId = userDetails.youtubeUserId != null && 
+                                userDetails.youtubeUserId.toString().trim().isNotEmpty;
+      final hasYoutubeChannelId = userDetails.youtubeChannelId != null && 
+                                   userDetails.youtubeChannelId.toString().trim().isNotEmpty;
+
+      // 🆕 Extrair dados de telefone para tracking
+      final phones = userDetails.phones as List<dynamic>? ?? [];
+      final hasPhonesData = phones.isNotEmpty;
+      final totalPhonesData = phones.length;
+
+      // Verificar WhatsApp/Telegram
+      bool hasWhatsappData = false;
+      bool hasTelegramData = false;
+
+      for (var phone in phones) {
+        if (phone.hasWhatsApp == true) hasWhatsappData = true;
+        if (phone.hasTelegram == true) hasTelegramData = true;
+      }
+
+      // Cálculo de porcentagem
+      double percentage = 0.0;
+
+      // Obrigatórios: 50% total (se todos 3 = 50%)
+      final requiredFieldsCount = (hasName ? 1 : 0) + (hasSurname ? 1 : 0) + (hasEmail ? 1 : 0);
+      percentage += (requiredFieldsCount / 3.0) * 50.0;
+
+      // Opcionais: 50% total (16.67% cada)
+      if (hasPhone) percentage += 16.67;
+      if (hasYoutubeUserId) percentage += 16.67;
+      if (hasYoutubeChannelId) percentage += 16.67;
+
+      // Arredondar para inteiro
+      final completionPercentage = percentage.round();
+
+      if (kDebugMode) {
+        print('   🎯 Campos Obrigatórios (50%):');
+        print('      - name: ${hasName ? "✅" : "❌"}');
+        print('      - surname: ${hasSurname ? "✅" : "❌"}');
+        print('      - email: ${hasEmail ? "✅" : "❌"}');
+        print('      - Subtotal: ${((requiredFieldsCount / 3.0) * 50.0).toStringAsFixed(1)}%');
+        print('');
+        print('   🎯 Campos Opcionais (50%):');
+        print('      - phone: ${hasPhone ? "✅ +16.67%" : "❌"}');
+        print('      - youtubeUserId: ${hasYoutubeUserId ? "✅ +16.67%" : "❌"}');
+        print('      - youtubeChannelId: ${hasYoutubeChannelId ? "✅ +16.67%" : "❌"}');
+        print('');
+        print('   📊 COMPLETION TOTAL: $completionPercentage%');
+        print('');
+        print('   📞 Phone Tracking Data:');
+        print('      - hasPhones: $hasPhonesData');
+        print('      - totalPhones: $totalPhonesData');
+        print('      - hasWhatsapp: $hasWhatsappData');
+        print('      - hasTelegram: $hasTelegramData');
+        print('───────────────────────────────────────────────────────────────────');
+      }
+
+      // Chamar trackProfileCompletion com dados de telefone
+      await trackProfileCompletion(
+        userId: userId,
+        percentage: completionPercentage,  // Valor real calculado
+        hasPhones: hasPhonesData,
+        totalPhones: totalPhonesData,
+        hasWhatsapp: hasWhatsappData,
+        hasTelegram: hasTelegramData,
+      );
+
+      if (kDebugMode) {
+        print('✅ [UserTrackingDataService] Profile completion rastreado!');
+        print('   - Percentual: $completionPercentage%');
+        print('   - hasPhones: $hasPhonesData');
+        print('   - totalPhones: $totalPhonesData');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao calcular profile completion: $e');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: Sincronização de Telefones e Atualização de Profile Completion
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🎯 ORCHESTRATOR: Sincroniza telefones e atualiza profile completion
+  /// 
+  /// Fluxo completo:
+  /// 1. GET /api/v1/users/{userId}/phones - Buscar telefones ativamente
+  /// 2. Analisa dados (_analyzePhoneData): hasPhones, totalPhones, hasWhatsapp, hasTelegram
+  /// 3. Calcula profile completion (_calculateProfileCompletionFromPhones): 0-100%
+  /// 4. PUT /api/v1/user-rankings/{id} - Atualiza ranking (SEM totalScore)
+  /// 5. Backend detecta milestones (50% = +3 pts, 100% = +10 pts) e atualiza totalScore
+  /// 
+  /// Referência: .local_knowledge/add-user-tracking-phase-b/PROMPT_FRONTEND_PHONE_INTEGRATION_RANKING.md
+  /// 
+  /// ⚠️ CRÍTICO: Backend CALCULA totalScore, frontend NÃO envia!
+  /// 
+  /// Quando chamar: Após login bem-sucedido (trackLoginEvent)
+  Future<void> _syncPhonesAndUpdateProfile(String userId) async {
+    try {
+      if (kDebugMode) {
+        print('');
+        print('╔════════════════════════════════════════════════════════════════════╗');
+        print('║ 📞 SYNC PHONES & PROFILE COMPLETION                                ║');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('📞 [UserTrackingDataService] Iniciando sync de telefones');
+        print('   - userId: $userId');
+      }
+
+      // 1. GET /api/v1/users/{userId}/phones
+      final phones = await _phoneRepository.getUserPhones(userId);
+
+      if (kDebugMode) {
+        print('📞 [UserTrackingDataService] Telefones recebidos: ${phones.length}');
+        for (var phone in phones) {
+          print('   - ${phone.formattedNumber} (${phone.type})');
+          print('     WhatsApp: ${phone.hasWhatsApp}, Telegram: ${phone.hasTelegram}');
+        }
+      }
+
+      // 2. Analisar dados de telefones
+      final phoneData = _analyzePhoneData(phones);
+
+      if (kDebugMode) {
+        print('📊 [UserTrackingDataService] Análise de telefones:');
+        print('   $phoneData');
+      }
+
+      // 3. Calcular profile completion percentage
+      final completionPercentage = _calculateProfileCompletionFromPhones(phoneData);
+
+      if (kDebugMode) {
+        print('📈 [UserTrackingDataService] Profile completion calculado: $completionPercentage%');
+      }
+
+      // 4. Atualizar ranking com dados de telefones
+      await trackProfileCompletion(
+        userId: userId,
+        percentage: completionPercentage,
+        hasPhones: phoneData.hasPhones,
+        totalPhones: phoneData.totalPhones,
+        hasWhatsapp: phoneData.hasWhatsapp,
+        hasTelegram: phoneData.hasTelegram,
+      );
+
+      if (kDebugMode) {
+        print('✅ [UserTrackingDataService] Sync de telefones concluído!');
+        print('   - Phones: ${phoneData.totalPhones}');
+        print('   - Profile: $completionPercentage%');
+        print('   - Backend calculará milestones e atualizará totalScore');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('');
+      }
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear login do usuário
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao sincronizar telefones: $e');
+        print('   → Continue normalmente. Sync será tentado depois.');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('');
+      }
+    }
+  }
+
+  /// Analisa lista de telefones e extrai metadados
+  /// 
+  /// Filtra apenas telefones ativos e verifica presença de apps de mensagem
+  /// 
+  /// Retorna PhoneData com flags e contadores
+  PhoneData _analyzePhoneData(List<UserPhoneModel> phones) {
+    // Filtrar telefones recentes (criados nos últimos 90 dias)
+    final now = DateTime.now().toUtc();
+    final recentThreshold = now.subtract(const Duration(days: 90));
+    
+    final recentPhones = phones.where((phone) => 
+      phone.createdAt.isAfter(recentThreshold)
+    ).toList();
+
+    final hasPhones = phones.isNotEmpty;
+    final totalPhones = phones.length;
+    
+    // Verificar se algum telefone tem WhatsApp ou Telegram
+    final hasWhatsapp = phones.any((phone) => phone.hasWhatsApp);
+    final hasTelegram = phones.any((phone) => phone.hasTelegram);
+    final hasRecentPhones = recentPhones.isNotEmpty;
+
+    return PhoneData(
+      hasPhones: hasPhones,
+      totalPhones: totalPhones,
+      hasWhatsapp: hasWhatsapp,
+      hasTelegram: hasTelegram,
+      hasRecentPhones: hasRecentPhones,
+    );
+  }
+
+  /// Calcula percentual de profile completion baseado em telefones
+  /// 
+  /// Regras de cálculo (conforme backend):
+  /// - Base: 20% (cadastro mínimo)
+  /// - Telefones cadastrados: +20%
+  /// - WhatsApp verificado: +15%
+  /// - Telegram verificado: +10%
+  /// - Total máximo via telefones: 65%
+  /// 
+  /// Nota: Outros campos do perfil (foto, bio, etc.) somam os 35% restantes
+  /// mas são calculados em outras partes do sistema
+  /// 
+  /// Retorna percentual de 0 a 100
+  int _calculateProfileCompletionFromPhones(PhoneData data) {
+    int percentage = 20; // Base (cadastro mínimo)
+
+    if (data.hasPhones) {
+      percentage += 20; // +20% por ter telefones
+    }
+
+    if (data.hasWhatsapp) {
+      percentage += 15; // +15% por WhatsApp
+    }
+
+    if (data.hasTelegram) {
+      percentage += 10; // +10% por Telegram
+    }
+
+    // Garantir limites
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+
+    return percentage;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
 }

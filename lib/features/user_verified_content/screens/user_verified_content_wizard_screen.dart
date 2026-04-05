@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_view_model.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
+import 'package:portugal_guide/features/user_tracking_data/enums/points_reason_enum.dart';
 
 /// Tela do wizard de verificação de conteúdo com 3 etapas
 /// Ocupa tela inteira, fora do padrão de navegação por Tabs
@@ -18,6 +22,8 @@ class _UserVerifiedContentWizardScreenState
     extends State<UserVerifiedContentWizardScreen> {
   final UserVerifiedContentViewModel viewModel =
       injector<UserVerifiedContentViewModel>();
+  final UserTrackingDataService _trackingService = injector<UserTrackingDataService>(); // 🆕 PHASE B
+  final AuthTokenManager _tokenManager = injector<AuthTokenManager>(); // 🆕 PHASE B
 
   // Controllers para os campos de texto
   final TextEditingController _titleController = TextEditingController();
@@ -25,6 +31,93 @@ class _UserVerifiedContentWizardScreenState
   final TextEditingController _proofValueController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  
+  bool _hasTrackedEntry = false; // 🆕 PHASE B: Flag para evitar tracking duplicado
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // 🆕 PHASE B: Rastrear entrada no wizard (wizardEntry +2 pontos)
+    _trackWizardEntry();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: WIZARD TRACKING METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Rastreia entrada no wizard (uma vez apenas)
+  /// Pontos: +2 (PointsReason.wizardEntry)
+  Future<void> _trackWizardEntry() async {
+    if (_hasTrackedEntry) return; // Evitar tracking duplicado
+
+    final userId = _tokenManager.getUserId();
+    if (userId == null || userId.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('⚠️  [WizardTracking] UserId não disponível para tracking de entrada');
+      }
+      return;
+    }
+
+    try {
+      await _trackingService.addPointsWithReason(
+        userId: userId,
+        points: 2,
+        reason: PointsReason.wizardEntry,
+      );
+
+      _hasTrackedEntry = true;
+
+      if (kDebugMode) {
+        debugPrint('✅ [WizardTracking] Entrada no wizard rastreada (+2 pontos)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [WizardTracking] Erro ao rastrear entrada: $e');
+      }
+    }
+  }
+
+  /// Rastreia conclusão de um step do wizard
+  /// Pontos: +2 por step (wizardStep1/2/3)
+  Future<void> _trackStepCompletion(int stepNumber) async {
+    final userId = _tokenManager.getUserId();
+    if (userId == null || userId.isEmpty) return;
+
+    // Mapear step number para PointsReason
+    PointsReason? reason;
+    switch (stepNumber) {
+      case 1:
+        reason = PointsReason.wizardStep1;
+        break;
+      case 2:
+        reason = PointsReason.wizardStep2;
+        break;
+      case 3:
+        reason = PointsReason.wizardStep3;
+        break;
+      default:
+        return; // Step inválido
+    }
+
+    try {
+      await _trackingService.addPointsWithReason(
+        userId: userId,
+        points: 2,
+        reason: reason,
+      );
+
+      if (kDebugMode) {
+        debugPrint('✅ [WizardTracking] Step $stepNumber completado (+2 pontos)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [WizardTracking] Erro ao rastrear step $stepNumber: $e');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
 
   @override
   void dispose() {
@@ -73,7 +166,13 @@ class _UserVerifiedContentWizardScreenState
     if (viewModel.isLastStep) {
       _handleSubmit();
     } else {
+      // 🆕 PHASE B: Captura step atual ANTES de avançar
+      final completedStep = viewModel.currentStep + 1; // Step que acabou de ser completado (1-based)
+      
       viewModel.nextStep();
+      
+      // 🆕 PHASE B: Rastreia conclusão do step após avançar (non-blocking)
+      _trackStepCompletion(completedStep);
     }
   }
 
@@ -84,6 +183,9 @@ class _UserVerifiedContentWizardScreenState
     if (!mounted) return;
 
     if (success) {
+      // 🆕 PHASE B: Rastreia conclusão do step 3 (último step) após submit bem sucedido
+      _trackStepCompletion(3);
+      
       await showCupertinoDialog(
         context: context,
         builder:
