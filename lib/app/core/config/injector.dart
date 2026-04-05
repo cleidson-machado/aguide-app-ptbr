@@ -13,6 +13,8 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_repository
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
+import 'package:portugal_guide/features/user/user_phone_repository.dart';
+import 'package:portugal_guide/features/user/user_phone_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
 import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
@@ -77,6 +79,9 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<UserRepositoryInterface>(
     () => UserRepository(),
   );
+  injector.registerLazySingleton<UserPhoneRepositoryInterface>(
+    () => UserPhoneRepository(),
+  );
   injector.registerFactory<UserViewModel>(
     () => UserViewModel(repository: injector<UserRepositoryInterface>()),
   );
@@ -137,6 +142,7 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<UserTrackingDataService>(
     () => UserTrackingDataService(
       injector<UserTrackingDataRepositoryInterface>(),
+      injector<UserPhoneRepositoryInterface>(),
     ),
   );
   injector.registerFactory<UserTrackingDataViewModel>(

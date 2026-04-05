@@ -6,6 +6,31 @@ import 'package:portugal_guide/features/user_tracking_data/user_tracking_validat
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
 import 'package:portugal_guide/features/user_tracking_data/enums/points_reason_enum.dart';
 import 'package:portugal_guide/features/user_tracking_data/enums/favorite_content_type_enum.dart';
+import 'package:portugal_guide/features/user/user_phone_repository_interface.dart';
+import 'package:portugal_guide/features/user/user_phone_model.dart';
+
+/// Helper class para armazenar dados analisados de telefones
+class PhoneData {
+  final bool hasPhones;
+  final int totalPhones;
+  final bool hasWhatsapp;
+  final bool hasTelegram;
+  final bool hasRecentPhones;
+
+  const PhoneData({
+    required this.hasPhones,
+    required this.totalPhones,
+    required this.hasWhatsapp,
+    required this.hasTelegram,
+    required this.hasRecentPhones,
+  });
+
+  @override
+  String toString() {
+    return 'PhoneData(hasPhones: $hasPhones, total: $totalPhones, '
+        'whatsapp: $hasWhatsapp, telegram: $hasTelegram, recent: $hasRecentPhones)';
+  }
+}
 
 /// Service responsável pela lógica de negócio de rastreamento de usuários
 /// 
@@ -16,15 +41,18 @@ import 'package:portugal_guide/features/user_tracking_data/enums/favorite_conten
 /// - Calcular streaks de dias consecutivos
 /// - Adicionar pontos com base em eventos
 /// - Detectar bônus (streak de 7 dias, 30 dias, etc.)
+/// - Sincronizar telefones e atualizar perfil completion
 /// 
 /// ⚠️ Arquitetura Híbrida:
 /// - Flutter rastreia eventos de login e envia para backend
 /// - Backend calcula automaticamente engagementLevel, scoreUpdatedAt
 /// - Flutter calcula streak localmente (timezone-aware)
+/// - Flutter busca telefones ativamente e calcula profile completion
 class UserTrackingDataService {
   final UserTrackingDataRepositoryInterface _repository;
+  final UserPhoneRepositoryInterface _phoneRepository;
 
-  UserTrackingDataService(this._repository);
+  UserTrackingDataService(this._repository, this._phoneRepository);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🎯 MÉTODO PRINCIPAL: Rastrear Login
@@ -36,6 +64,7 @@ class UserTrackingDataService {
   /// 1. Buscar ranking existente (GET /user/{userId})
   /// 2. Se não existe (404) → Criar ranking inicial (POST)
   /// 3. Se existe → Verificar se é novo dia → Atualizar (PUT) + Adicionar pontos
+  /// 4. Sincronizar telefones e atualizar profile completion
   /// 
   /// Quando usar: Logo após login bem-sucedido (AuthCredentialsLoginViewModel)
   /// 
@@ -55,21 +84,31 @@ class UserTrackingDataService {
       // 1. Buscar ranking existente
       final existing = await _repository.getUserTrackingByUserId(userId);
 
+      UserTrackingDataModel? result;
+
       if (existing == null) {
         // Primeiro login - criar ranking inicial
         if (kDebugMode) {
           print('✨ [UserTrackingDataService] Primeiro login - criando ranking');
         }
 
-        return await _createInitialRanking(userId);
+        result = await _createInitialRanking(userId);
       } else {
         // Login recorrente - atualizar timestamps e contadores
         if (kDebugMode) {
           print('🔄 [UserTrackingDataService] Login recorrente - atualizando');
         }
 
-        return await _updateExistingRanking(existing);
+        result = await _updateExistingRanking(existing);
       }
+
+      // 2. Sincronizar telefones e atualizar profile completion
+      // ⚠️ CRÍTICO: Sempre chamar após login para garantir totalScore atualizado
+      if (result != null) {
+        await _syncPhonesAndUpdateProfile(userId);
+      }
+
+      return result;
     } catch (e) {
       // ⚠️ NÃO propagar erro - não bloquear login do usuário
       if (kDebugMode) {
@@ -991,6 +1030,156 @@ class UserTrackingDataService {
         print('❌ [UserTrackingDataService] Erro ao calcular profile completion: $e');
       }
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: Sincronização de Telefones e Atualização de Profile Completion
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// 🎯 ORCHESTRATOR: Sincroniza telefones e atualiza profile completion
+  /// 
+  /// Fluxo completo:
+  /// 1. GET /api/v1/users/{userId}/phones - Buscar telefones ativamente
+  /// 2. Analisa dados (_analyzePhoneData): hasPhones, totalPhones, hasWhatsapp, hasTelegram
+  /// 3. Calcula profile completion (_calculateProfileCompletionFromPhones): 0-100%
+  /// 4. PUT /api/v1/user-rankings/{id} - Atualiza ranking (SEM totalScore)
+  /// 5. Backend detecta milestones (50% = +3 pts, 100% = +10 pts) e atualiza totalScore
+  /// 
+  /// Referência: .local_knowledge/add-user-tracking-phase-b/PROMPT_FRONTEND_PHONE_INTEGRATION_RANKING.md
+  /// 
+  /// ⚠️ CRÍTICO: Backend CALCULA totalScore, frontend NÃO envia!
+  /// 
+  /// Quando chamar: Após login bem-sucedido (trackLoginEvent)
+  Future<void> _syncPhonesAndUpdateProfile(String userId) async {
+    try {
+      if (kDebugMode) {
+        print('');
+        print('╔════════════════════════════════════════════════════════════════════╗');
+        print('║ 📞 SYNC PHONES & PROFILE COMPLETION                                ║');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('📞 [UserTrackingDataService] Iniciando sync de telefones');
+        print('   - userId: $userId');
+      }
+
+      // 1. GET /api/v1/users/{userId}/phones
+      final phones = await _phoneRepository.getUserPhones(userId);
+
+      if (kDebugMode) {
+        print('📞 [UserTrackingDataService] Telefones recebidos: ${phones.length}');
+        for (var phone in phones) {
+          print('   - ${phone.formattedNumber} (${phone.type})');
+          print('     WhatsApp: ${phone.hasWhatsApp}, Telegram: ${phone.hasTelegram}');
+        }
+      }
+
+      // 2. Analisar dados de telefones
+      final phoneData = _analyzePhoneData(phones);
+
+      if (kDebugMode) {
+        print('📊 [UserTrackingDataService] Análise de telefones:');
+        print('   $phoneData');
+      }
+
+      // 3. Calcular profile completion percentage
+      final completionPercentage = _calculateProfileCompletionFromPhones(phoneData);
+
+      if (kDebugMode) {
+        print('📈 [UserTrackingDataService] Profile completion calculado: $completionPercentage%');
+      }
+
+      // 4. Atualizar ranking com dados de telefones
+      await trackProfileCompletion(
+        userId: userId,
+        percentage: completionPercentage,
+        hasPhones: phoneData.hasPhones,
+        totalPhones: phoneData.totalPhones,
+        hasWhatsapp: phoneData.hasWhatsapp,
+        hasTelegram: phoneData.hasTelegram,
+      );
+
+      if (kDebugMode) {
+        print('✅ [UserTrackingDataService] Sync de telefones concluído!');
+        print('   - Phones: ${phoneData.totalPhones}');
+        print('   - Profile: $completionPercentage%');
+        print('   - Backend calculará milestones e atualizará totalScore');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('');
+      }
+    } catch (e) {
+      // ⚠️ NÃO propagar erro - não bloquear login do usuário
+      if (kDebugMode) {
+        print('❌ [UserTrackingDataService] Erro ao sincronizar telefones: $e');
+        print('   → Continue normalmente. Sync será tentado depois.');
+        print('╚════════════════════════════════════════════════════════════════════╝');
+        print('');
+      }
+    }
+  }
+
+  /// Analisa lista de telefones e extrai metadados
+  /// 
+  /// Filtra apenas telefones ativos e verifica presença de apps de mensagem
+  /// 
+  /// Retorna PhoneData com flags e contadores
+  PhoneData _analyzePhoneData(List<UserPhoneModel> phones) {
+    // Filtrar telefones recentes (criados nos últimos 90 dias)
+    final now = DateTime.now().toUtc();
+    final recentThreshold = now.subtract(const Duration(days: 90));
+    
+    final recentPhones = phones.where((phone) => 
+      phone.createdAt.isAfter(recentThreshold)
+    ).toList();
+
+    final hasPhones = phones.isNotEmpty;
+    final totalPhones = phones.length;
+    
+    // Verificar se algum telefone tem WhatsApp ou Telegram
+    final hasWhatsapp = phones.any((phone) => phone.hasWhatsApp);
+    final hasTelegram = phones.any((phone) => phone.hasTelegram);
+    final hasRecentPhones = recentPhones.isNotEmpty;
+
+    return PhoneData(
+      hasPhones: hasPhones,
+      totalPhones: totalPhones,
+      hasWhatsapp: hasWhatsapp,
+      hasTelegram: hasTelegram,
+      hasRecentPhones: hasRecentPhones,
+    );
+  }
+
+  /// Calcula percentual de profile completion baseado em telefones
+  /// 
+  /// Regras de cálculo (conforme backend):
+  /// - Base: 20% (cadastro mínimo)
+  /// - Telefones cadastrados: +20%
+  /// - WhatsApp verificado: +15%
+  /// - Telegram verificado: +10%
+  /// - Total máximo via telefones: 65%
+  /// 
+  /// Nota: Outros campos do perfil (foto, bio, etc.) somam os 35% restantes
+  /// mas são calculados em outras partes do sistema
+  /// 
+  /// Retorna percentual de 0 a 100
+  int _calculateProfileCompletionFromPhones(PhoneData data) {
+    int percentage = 20; // Base (cadastro mínimo)
+
+    if (data.hasPhones) {
+      percentage += 20; // +20% por ter telefones
+    }
+
+    if (data.hasWhatsapp) {
+      percentage += 15; // +15% por WhatsApp
+    }
+
+    if (data.hasTelegram) {
+      percentage += 10; // +10% por Telegram
+    }
+
+    // Garantir limites
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+
+    return percentage;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
