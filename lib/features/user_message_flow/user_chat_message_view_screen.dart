@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:portugal_guide/features/user_message_flow/models/chat_message_model.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_chat_message_model.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
-import 'package:portugal_guide/features/user_message_flow/widgets/message_bubble_widget.dart';
+import 'package:portugal_guide/features/user_message_flow/widgets/user_message_bubble_widget.dart';
 
 /// Chat detail screen showing 1-on-1 conversation with message bubbles
 /// Displays messages in WhatsApp-style layout with blue sent messages (right)
@@ -24,7 +24,7 @@ class UserChatMessageViewScreen extends StatefulWidget {
 class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
   late ScrollController _scrollController;
   late TextEditingController _messageController;
-  List<ChatMessageModel> _messages = [];
+  List<UserChatMessageModel> _messages = [];
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
   /// Loads mocked messages for this conversation
   void _loadMessages() {
     setState(() {
-      _messages = ChatMessageModel.getMockedMessages(contactId: widget.contact.id);
+      _messages = UserChatMessageModel.getMockedMessages(contactId: widget.contact.id);
     });
 
     if (kDebugMode) {
@@ -74,7 +74,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
     if (text.isEmpty) return;
 
     setState(() {
-      _messages.add(ChatMessageModel(
+      _messages.add(UserChatMessageModel(
         id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
         text: text,
         timestamp: _formatCurrentTime(),
@@ -179,7 +179,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final message = _messages[index];
-                        return MessageBubbleWidget(
+                        return UserMessageBubbleWidget(
                           message: message,
                           contactName: widget.contact.contactName,
                           showAvatar: !message.isSentByMe,

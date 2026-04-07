@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
-import 'package:portugal_guide/features/user_message_flow/models/chat_message_model.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_chat_message_model.dart';
 
 /// Custom message bubble widget for chat conversations
 /// Displays messages with different styles for sent vs received messages
 /// - Sent messages: Blue background, white text, right-aligned, no avatar
 /// - Received messages: Gray background, black text, left-aligned, with avatar
-class MessageBubbleWidget extends StatelessWidget {
-  final ChatMessageModel message;
+class UserMessageBubbleWidget extends StatelessWidget {
+  final UserChatMessageModel message;
   final String? contactName;
   final bool showAvatar;
 
-  const MessageBubbleWidget({
+  const UserMessageBubbleWidget({
     super.key,
     required this.message,
     this.contactName,

@@ -3,7 +3,7 @@ import 'package:portugal_guide/app/core/base/base_model.dart';
 
 /// Model representing a single chat message in a conversation
 /// Follows MVVM/DDD pattern with full serialization support
-class ChatMessageModel implements BaseModel {
+class UserChatMessageModel implements BaseModel {
   @override
   final String id;
 
@@ -12,7 +12,7 @@ class ChatMessageModel implements BaseModel {
   final bool isSentByMe;
   final String? avatarUrl;
 
-  const ChatMessageModel({
+  const UserChatMessageModel({
     required this.id,
     required this.text,
     required this.timestamp,
@@ -20,14 +20,14 @@ class ChatMessageModel implements BaseModel {
     this.avatarUrl,
   });
 
-  ChatMessageModel copyWith({
+  UserChatMessageModel copyWith({
     String? id,
     String? text,
     String? timestamp,
     bool? isSentByMe,
     String? avatarUrl,
   }) {
-    return ChatMessageModel(
+    return UserChatMessageModel(
       id: id ?? this.id,
       text: text ?? this.text,
       timestamp: timestamp ?? this.timestamp,
@@ -47,8 +47,8 @@ class ChatMessageModel implements BaseModel {
     };
   }
 
-  factory ChatMessageModel.fromMap(Map<String, dynamic> map) {
-    return ChatMessageModel(
+  factory UserChatMessageModel.fromMap(Map<String, dynamic> map) {
+    return UserChatMessageModel(
       id: map['id'] as String,
       text: map['text'] as String,
       timestamp: map['timestamp'] as String,
@@ -59,40 +59,40 @@ class ChatMessageModel implements BaseModel {
 
   String toJson() => json.encode(toMap());
 
-  factory ChatMessageModel.fromJson(String source) =>
-      ChatMessageModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory UserChatMessageModel.fromJson(String source) =>
+      UserChatMessageModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   /// Factory method for mocked messages (development/testing)
   /// Returns a conversation matching the wireframe design
-  static List<ChatMessageModel> getMockedMessages({String? contactId}) {
+  static List<UserChatMessageModel> getMockedMessages({String? contactId}) {
     return [
-      const ChatMessageModel(
+      const UserChatMessageModel(
         id: 'msg_1',
         text: 'Hello, we are trying to design UI/UX for app',
         timestamp: '08:22 am',
         isSentByMe: false,
         avatarUrl: null,
       ),
-      const ChatMessageModel(
+      const UserChatMessageModel(
         id: 'msg_2',
         text: 'Oh, Hello Angela Young',
         timestamp: '09:24 am',
         isSentByMe: true,
       ),
-      const ChatMessageModel(
+      const UserChatMessageModel(
         id: 'msg_3',
         text: 'At first i need to know about your project details',
         timestamp: '09:24 am',
         isSentByMe: true,
       ),
-      const ChatMessageModel(
+      const UserChatMessageModel(
         id: 'msg_4',
         text: 'Yes sure, please wait',
         timestamp: '09:26 am',
         isSentByMe: false,
         avatarUrl: null,
       ),
-      const ChatMessageModel(
+      const UserChatMessageModel(
         id: 'msg_5',
         text: 'Can we talk about the project other platform',
         timestamp: '09:27 am',
@@ -103,11 +103,11 @@ class ChatMessageModel implements BaseModel {
 
   @override
   String toString() {
-    return 'ChatMessageModel(id: $id, text: $text, timestamp: $timestamp, isSentByMe: $isSentByMe, avatarUrl: $avatarUrl)';
+    return 'UserChatMessageModel(id: $id, text: $text, timestamp: $timestamp, isSentByMe: $isSentByMe, avatarUrl: $avatarUrl)';
   }
 
   @override
-  bool operator ==(covariant ChatMessageModel other) {
+  bool operator ==(covariant UserChatMessageModel other) {
     if (identical(this, other)) return true;
 
     return other.id == id &&
