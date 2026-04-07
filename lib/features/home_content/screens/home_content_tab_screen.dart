@@ -1,10 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
-import 'package:portugal_guide/features/user_relation_network/screens/user_relation_network_screen.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_bucket_screen.dart';
 
 //RE-APROVEITA OS CÓDIGOGOS E VOLTA O NOME HomeScreen SE NECESSÁRIO...
 
@@ -21,7 +20,9 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
     // const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
-    const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE
+    // const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE // EM PAUSA DESDE 7-04-2026 PARA TESTE SISTEMA DE MENSAGENS - REAPROVEITAR DEPOIS
+    // Esta tela NÃO deve ter NavigationBar com botão voltar (é uma TAB, não rota navegada) // ⚠️ TEMPORÁRIO: UsersMessageBucketScreen como TAB para testes
+    const UsersMessageBucketScreen(),
     const MainContentProfileScreen(), //### PERFIL / PROFILE
   ];
 
@@ -56,8 +57,9 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
       // Isso permite que AutomaticKeepAliveClientMixin funcione corretamente
       // Apenas alterna a visibilidade entre as tabs sem destruir os widgets
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      // 🎯 SOLUÇÃO: Esconde bottomNavigationBar quando MainStepperFormScreen está ativa
-      bottomNavigationBar: _selectedIndex == 1 ? null : SafeArea(
+      // ✅ Bottom navigation bar sempre visível (condição removida)
+      // Antes escondia na tab 1 para MainStepperFormScreen, mas agora é Messages
+      bottomNavigationBar: SafeArea(
         child: CupertinoTabBar(
           currentIndex: _selectedIndex,
           height: 65,
