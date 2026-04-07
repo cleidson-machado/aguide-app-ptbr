@@ -13,6 +13,9 @@ class UserMessageContactModel implements BaseModel {
   final String? avatarUrl;
   final bool isOnline;
   final int unreadCount;
+  final String type;
+  final bool isPinned;
+  final bool isArchived;
 
   const UserMessageContactModel({
     required this.id,
@@ -22,6 +25,9 @@ class UserMessageContactModel implements BaseModel {
     this.avatarUrl,
     this.isOnline = false,
     this.unreadCount = 0,
+    this.type = 'DIRECT',
+    this.isPinned = false,
+    this.isArchived = false,
   });
 
   UserMessageContactModel copyWith({
@@ -32,6 +38,9 @@ class UserMessageContactModel implements BaseModel {
     String? avatarUrl,
     bool? isOnline,
     int? unreadCount,
+    String? type,
+    bool? isPinned,
+    bool? isArchived,
   }) {
     return UserMessageContactModel(
       id: id ?? this.id,
@@ -41,6 +50,9 @@ class UserMessageContactModel implements BaseModel {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isOnline: isOnline ?? this.isOnline,
       unreadCount: unreadCount ?? this.unreadCount,
+      type: type ?? this.type,
+      isPinned: isPinned ?? this.isPinned,
+      isArchived: isArchived ?? this.isArchived,
     );
   }
 
@@ -54,6 +66,9 @@ class UserMessageContactModel implements BaseModel {
       'avatarUrl': avatarUrl,
       'isOnline': isOnline,
       'unreadCount': unreadCount,
+      'type': type,
+      'isPinned': isPinned,
+      'isArchived': isArchived,
     };
   }
 
@@ -66,17 +81,39 @@ class UserMessageContactModel implements BaseModel {
       avatarUrl: map['avatarUrl'],
       isOnline: map['isOnline'] ?? false,
       unreadCount: map['unreadCount'] ?? 0,
+      type: map['type'] ?? 'DIRECT',
+      isPinned: map['isPinned'] ?? false,
+      isArchived: map['isArchived'] ?? false,
+    );
+  }
+
+  factory UserMessageContactModel.fromConversationSummaryMap(
+    Map<String, dynamic> map,
+  ) {
+    return UserMessageContactModel(
+      id: map['id']?.toString() ?? '',
+      contactName: map['name']?.toString() ?? 'Unknown Contact',
+      lastMessage: map['lastMessagePreview']?.toString() ?? '',
+      timestamp: map['formattedTimestamp']?.toString() ?? '',
+      avatarUrl: map['iconUrl']?.toString(),
+      isOnline: false,
+      unreadCount: map['unreadCount'] as int? ?? 0,
+      type: map['type']?.toString() ?? 'DIRECT',
+      isPinned: map['isPinned'] as bool? ?? false,
+      isArchived: map['isArchived'] as bool? ?? false,
     );
   }
 
   String toJson() => json.encode(toMap());
 
   factory UserMessageContactModel.fromJson(String source) =>
-      UserMessageContactModel.fromMap(json.decode(source) as Map<String, dynamic>);
+      UserMessageContactModel.fromMap(
+        json.decode(source) as Map<String, dynamic>,
+      );
 
   @override
   String toString() {
-    return 'UserMessageContactModel(id: $id, contactName: $contactName, lastMessage: $lastMessage, timestamp: $timestamp, isOnline: $isOnline, unreadCount: $unreadCount)';
+    return 'UserMessageContactModel(id: $id, contactName: $contactName, lastMessage: $lastMessage, timestamp: $timestamp, isOnline: $isOnline, unreadCount: $unreadCount, type: $type, isPinned: $isPinned, isArchived: $isArchived)';
   }
 
   @override
@@ -89,7 +126,10 @@ class UserMessageContactModel implements BaseModel {
         other.timestamp == timestamp &&
         other.avatarUrl == avatarUrl &&
         other.isOnline == isOnline &&
-        other.unreadCount == unreadCount;
+        other.unreadCount == unreadCount &&
+        other.type == type &&
+        other.isPinned == isPinned &&
+        other.isArchived == isArchived;
   }
 
   @override
@@ -100,7 +140,10 @@ class UserMessageContactModel implements BaseModel {
         timestamp.hashCode ^
         avatarUrl.hashCode ^
         isOnline.hashCode ^
-        unreadCount.hashCode;
+        unreadCount.hashCode ^
+        type.hashCode ^
+        isPinned.hashCode ^
+        isArchived.hashCode;
   }
 
   /// Factory method to generate mocked contacts for testing/development

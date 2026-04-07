@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:portugal_guide/features/user_message_flow/models/user_chat_message_model.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/widgets/user_message_bubble_widget.dart';
 
 /// Chat detail screen showing 1-on-1 conversation with message bubbles
@@ -12,27 +13,28 @@ import 'package:portugal_guide/features/user_message_flow/widgets/user_message_b
 class UserChatMessageViewScreen extends StatefulWidget {
   final UserMessageContactModel contact;
 
-  const UserChatMessageViewScreen({
-    super.key,
-    required this.contact,
-  });
+  const UserChatMessageViewScreen({super.key, required this.contact});
 
   @override
-  State<UserChatMessageViewScreen> createState() => _UserChatMessageViewScreenState();
+  State<UserChatMessageViewScreen> createState() =>
+      _UserChatMessageViewScreenState();
 }
 
 class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
   late ScrollController _scrollController;
   late TextEditingController _messageController;
-  List<UserChatMessageModel> _messages = [];
+  late UserChatMessageViewModel _viewModel;
+  String? _composerValidationMessage;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _messageController = TextEditingController();
-    _loadMessages();
-    
+    _viewModel = injector<UserChatMessageViewModel>();
+    _viewModel.addListener(_onViewModelChanged);
+    _viewModel.loadInitialMessages(widget.contact.id);
+
     // Auto-scroll to bottom after frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
@@ -41,20 +43,29 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
 
   @override
   void dispose() {
+    _viewModel.removeListener(_onViewModelChanged);
+    _viewModel.dispose();
     _scrollController.dispose();
     _messageController.dispose();
     super.dispose();
   }
 
-  /// Loads mocked messages for this conversation
-  void _loadMessages() {
-    setState(() {
-      _messages = UserChatMessageModel.getMockedMessages(contactId: widget.contact.id);
-    });
+  void _onViewModelChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {});
 
     if (kDebugMode) {
-      debugPrint('📜 [UserChatMessageViewScreen] Carregadas ${_messages.length} mensagens para ${widget.contact.contactName}');
+      debugPrint(
+        '📜 [UserChatMessageViewScreen] messages=${_viewModel.messages.length} loading=${_viewModel.isLoading} sending=${_viewModel.isSending} error=${_viewModel.error} contact=${widget.contact.contactName}',
+      );
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
   }
 
   /// Scrolls to bottom of message list
@@ -69,21 +80,28 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
   }
 
   /// Handles send button tap - adds message to list (mocked)
-  void _handleSendMessage() {
+  Future<void> _handleSendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) {
+      setState(() {
+        _composerValidationMessage = 'Digite uma mensagem antes de enviar.';
+      });
+      return;
+    }
+    if (_viewModel.isSending) {
+      return;
+    }
 
     setState(() {
-      _messages.add(UserChatMessageModel(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        text: text,
-        timestamp: _formatCurrentTime(),
-        isSentByMe: true,
-      ));
+      _composerValidationMessage = null;
     });
 
+    await _viewModel.sendTextMessage(
+      conversationId: widget.contact.id,
+      content: text,
+    );
     _messageController.clear();
-    
+
     // Auto-scroll to show new message
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
 
@@ -100,53 +118,45 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
 
     showCupertinoModalPopup(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(widget.contact.contactName),
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              if (kDebugMode) {
-                debugPrint('🔇 Silenciar conversa');
-              }
-            },
-            child: const Text('Silenciar conversa'),
+      builder:
+          (context) => CupertinoActionSheet(
+            title: Text(widget.contact.contactName),
+            actions: [
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (kDebugMode) {
+                    debugPrint('🔇 Silenciar conversa');
+                  }
+                },
+                child: const Text('Silenciar conversa'),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (kDebugMode) {
+                    debugPrint('🗑️ Limpar conversa');
+                  }
+                },
+                child: const Text('Limpar conversa'),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (kDebugMode) {
+                    debugPrint('🚫 Bloquear usuário');
+                  }
+                },
+                isDestructiveAction: true,
+                child: const Text('Bloquear usuário'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
           ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              if (kDebugMode) {
-                debugPrint('🗑️ Limpar conversa');
-              }
-            },
-            child: const Text('Limpar conversa'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              if (kDebugMode) {
-                debugPrint('🚫 Bloquear usuário');
-              }
-            },
-            isDestructiveAction: true,
-            child: const Text('Bloquear usuário'),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-      ),
     );
-  }
-
-  /// Formats current time as "HH:mm am/pm"
-  String _formatCurrentTime() {
-    final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    final minute = now.minute.toString().padLeft(2, '0');
-    final period = now.hour >= 12 ? 'pm' : 'am';
-    return '$hour:$minute $period';
   }
 
   @override
@@ -160,10 +170,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _handleMenuTap,
-          child: const Icon(
-            CupertinoIcons.ellipsis,
-            size: 24,
-          ),
+          child: const Icon(CupertinoIcons.ellipsis, size: 24),
         ),
       ),
       child: SafeArea(
@@ -171,23 +178,28 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
           children: [
             // Messages list
             Expanded(
-              child: _messages.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[index];
-                        return UserMessageBubbleWidget(
-                          message: message,
-                          contactName: widget.contact.contactName,
-                          showAvatar: !message.isSentByMe,
-                        );
-                      },
-                    ),
+              child:
+                  _viewModel.isLoading && _viewModel.messages.isEmpty
+                      ? const Center(
+                        child: CupertinoActivityIndicator(radius: 16),
+                      )
+                      : _viewModel.messages.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _viewModel.messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _viewModel.messages[index];
+                          return UserMessageBubbleWidget(
+                            message: message,
+                            contactName: widget.contact.contactName,
+                            showAvatar: !message.isSentByMe,
+                          );
+                        },
+                      ),
             ),
-            
+
             // Message input field
             _buildMessageInputField(),
           ],
@@ -221,7 +233,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        
+
         // Name and status
         Column(
           mainAxisSize: MainAxisSize.min,
@@ -229,10 +241,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
           children: [
             Text(
               widget.contact.contactName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             Text(
               widget.contact.isOnline ? 'Online' : 'Offline',
@@ -254,42 +263,76 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
       decoration: const BoxDecoration(
         color: CupertinoColors.systemBackground,
         border: Border(
-          top: BorderSide(
-            color: CupertinoColors.separator,
-            width: 0.5,
-          ),
+          top: BorderSide(color: CupertinoColors.separator, width: 0.5),
         ),
       ),
       child: Row(
         children: [
           // Text input field
           Expanded(
-            child: CupertinoTextField(
-              controller: _messageController,
-              placeholder: 'Message...',
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _handleSendMessage(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_composerValidationMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, bottom: 6),
+                    child: Text(
+                      _composerValidationMessage!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: CupertinoColors.systemRed,
+                      ),
+                    ),
+                  )
+                else if (_viewModel.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, bottom: 6),
+                    child: Text(
+                      _viewModel.error!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: CupertinoColors.systemRed,
+                      ),
+                    ),
+                  ),
+                CupertinoTextField(
+                  controller: _messageController,
+                  placeholder: 'Message...',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _handleSendMessage(),
+                  onChanged: (_) {
+                    if (_composerValidationMessage != null) {
+                      setState(() {
+                        _composerValidationMessage = null;
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
-          
+
           const SizedBox(width: 8),
-          
+
           // Send button
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: _handleSendMessage,
-            child: const Icon(
+            onPressed: _viewModel.isSending ? null : _handleSendMessage,
+            child: Icon(
               CupertinoIcons.arrow_up_circle_fill,
-              color: CupertinoColors.systemBlue,
+              color:
+                  _viewModel.isSending
+                      ? CupertinoColors.systemGrey
+                      : CupertinoColors.systemBlue,
               size: 32,
             ),
           ),
@@ -312,10 +355,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
           const SizedBox(height: 16),
           const Text(
             'Sem mensagens ainda',
-            style: TextStyle(
-              fontSize: 18,
-              color: CupertinoColors.systemGrey,
-            ),
+            style: TextStyle(fontSize: 18, color: CupertinoColors.systemGrey),
           ),
           const SizedBox(height: 8),
           Text(
@@ -335,7 +375,9 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
     final words = name.trim().split(' ');
     if (words.isEmpty) return '?';
     if (words.length == 1) {
-      return words[0].substring(0, words[0].length > 2 ? 2 : words[0].length).toUpperCase();
+      return words[0]
+          .substring(0, words[0].length > 2 ? 2 : words[0].length)
+          .toUpperCase();
     }
     return '${words[0][0]}${words[1][0]}'.toUpperCase();
   }
@@ -352,7 +394,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
       CupertinoColors.systemRed,
       CupertinoColors.systemTeal,
     ];
-    
+
     final hash = name.hashCode.abs();
     return colors[hash % colors.length];
   }

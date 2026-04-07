@@ -23,10 +23,7 @@ class UserMessageContactListItemWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: const BoxDecoration(
           border: Border(
-            bottom: BorderSide(
-              color: CupertinoColors.separator,
-              width: 0.5,
-            ),
+            bottom: BorderSide(color: CupertinoColors.separator, width: 0.5),
           ),
         ),
         child: Row(
@@ -35,25 +32,39 @@ class UserMessageContactListItemWidget extends StatelessWidget {
             // Avatar with initials and online indicator
             _buildAvatar(),
             const SizedBox(width: 12),
-            
+
             // Contact name and message preview
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Contact name (bold)
-                  Text(
-                    contact.contactName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.label,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      if (contact.isPinned)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 4),
+                          child: Icon(
+                            CupertinoIcons.pin_fill,
+                            size: 14,
+                            color: CupertinoColors.systemGrey,
+                          ),
+                        ),
+                      Expanded(
+                        child: Text(
+                          contact.contactName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.label,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Last message preview
                   Text(
                     contact.lastMessage,
@@ -67,15 +78,40 @@ class UserMessageContactListItemWidget extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Timestamp
             const SizedBox(width: 8),
-            Text(
-              contact.timestamp,
-              style: const TextStyle(
-                fontSize: 12,
-                color: CupertinoColors.secondaryLabel,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  contact.timestamp,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.secondaryLabel,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (contact.unreadCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: CupertinoColors.systemBlue,
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                    child: Text(
+                      '${contact.unreadCount}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: CupertinoColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
@@ -109,7 +145,7 @@ class UserMessageContactListItemWidget extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Online status indicator (bottom-right)
           Positioned(
             bottom: 0,
@@ -119,9 +155,10 @@ class UserMessageContactListItemWidget extends StatelessWidget {
               height: 14,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: contact.isOnline
-                    ? CupertinoColors.systemGreen
-                    : CupertinoColors.systemGrey3,
+                color:
+                    contact.isOnline
+                        ? CupertinoColors.systemGreen
+                        : CupertinoColors.systemGrey3,
                 border: Border.all(
                   color: CupertinoColors.systemBackground,
                   width: 2,
@@ -148,7 +185,7 @@ class UserMessageContactListItemWidget extends StatelessWidget {
       const Color(0xFF5D4037), // Brown
       const Color(0xFF455A64), // Blue Grey
     ];
-    
+
     // Use contact ID to consistently assign color
     final index = contact.id.hashCode.abs() % colors.length;
     return colors[index];

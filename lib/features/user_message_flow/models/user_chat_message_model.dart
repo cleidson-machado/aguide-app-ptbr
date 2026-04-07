@@ -11,6 +11,10 @@ class UserChatMessageModel implements BaseModel {
   final String timestamp;
   final bool isSentByMe;
   final String? avatarUrl;
+  final String conversationId;
+  final String senderId;
+  final DateTime? sentAt;
+  final String messageType;
 
   const UserChatMessageModel({
     required this.id,
@@ -18,6 +22,10 @@ class UserChatMessageModel implements BaseModel {
     required this.timestamp,
     required this.isSentByMe,
     this.avatarUrl,
+    this.conversationId = '',
+    this.senderId = '',
+    this.sentAt,
+    this.messageType = 'TEXT',
   });
 
   UserChatMessageModel copyWith({
@@ -26,6 +34,10 @@ class UserChatMessageModel implements BaseModel {
     String? timestamp,
     bool? isSentByMe,
     String? avatarUrl,
+    String? conversationId,
+    String? senderId,
+    DateTime? sentAt,
+    String? messageType,
   }) {
     return UserChatMessageModel(
       id: id ?? this.id,
@@ -33,6 +45,10 @@ class UserChatMessageModel implements BaseModel {
       timestamp: timestamp ?? this.timestamp,
       isSentByMe: isSentByMe ?? this.isSentByMe,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      conversationId: conversationId ?? this.conversationId,
+      senderId: senderId ?? this.senderId,
+      sentAt: sentAt ?? this.sentAt,
+      messageType: messageType ?? this.messageType,
     );
   }
 
@@ -44,6 +60,10 @@ class UserChatMessageModel implements BaseModel {
       'timestamp': timestamp,
       'isSentByMe': isSentByMe,
       'avatarUrl': avatarUrl,
+      'conversationId': conversationId,
+      'senderId': senderId,
+      'sentAt': sentAt?.toIso8601String(),
+      'messageType': messageType,
     };
   }
 
@@ -54,7 +74,50 @@ class UserChatMessageModel implements BaseModel {
       timestamp: map['timestamp'] as String,
       isSentByMe: map['isSentByMe'] as bool,
       avatarUrl: map['avatarUrl'] != null ? map['avatarUrl'] as String : null,
+      conversationId: map['conversationId']?.toString() ?? '',
+      senderId: map['senderId']?.toString() ?? '',
+      sentAt:
+          map['sentAt'] != null
+              ? DateTime.tryParse(map['sentAt'].toString())
+              : null,
+      messageType: map['messageType']?.toString() ?? 'TEXT',
     );
+  }
+
+  factory UserChatMessageModel.fromApiMap(
+    Map<String, dynamic> map, {
+    required String? currentUserId,
+  }) {
+    final sender = map['sender'] as Map<String, dynamic>? ?? {};
+    final senderId = sender['id']?.toString() ?? '';
+    final sentAtRaw = map['sentAt']?.toString();
+    final sentAt = sentAtRaw != null ? DateTime.tryParse(sentAtRaw) : null;
+
+    return UserChatMessageModel(
+      id: map['id']?.toString() ?? '',
+      text: map['content']?.toString() ?? '',
+      timestamp: _formatTimestamp(sentAt),
+      isSentByMe: currentUserId != null && currentUserId == senderId,
+      avatarUrl: null,
+      conversationId: map['conversationId']?.toString() ?? '',
+      senderId: senderId,
+      sentAt: sentAt,
+      messageType: map['messageType']?.toString() ?? 'TEXT',
+    );
+  }
+
+  static String _formatTimestamp(DateTime? dateTime) {
+    if (dateTime == null) {
+      return '';
+    }
+
+    final hour =
+        dateTime.hour > 12
+            ? dateTime.hour - 12
+            : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'pm' : 'am';
+    return '$hour:$minute $period';
   }
 
   String toJson() => json.encode(toMap());
@@ -103,7 +166,7 @@ class UserChatMessageModel implements BaseModel {
 
   @override
   String toString() {
-    return 'UserChatMessageModel(id: $id, text: $text, timestamp: $timestamp, isSentByMe: $isSentByMe, avatarUrl: $avatarUrl)';
+    return 'UserChatMessageModel(id: $id, text: $text, timestamp: $timestamp, isSentByMe: $isSentByMe, avatarUrl: $avatarUrl, conversationId: $conversationId, senderId: $senderId, sentAt: $sentAt, messageType: $messageType)';
   }
 
   @override
@@ -114,7 +177,11 @@ class UserChatMessageModel implements BaseModel {
         other.text == text &&
         other.timestamp == timestamp &&
         other.isSentByMe == isSentByMe &&
-        other.avatarUrl == avatarUrl;
+        other.avatarUrl == avatarUrl &&
+        other.conversationId == conversationId &&
+        other.senderId == senderId &&
+        other.sentAt == sentAt &&
+        other.messageType == messageType;
   }
 
   @override
@@ -123,6 +190,10 @@ class UserChatMessageModel implements BaseModel {
         text.hashCode ^
         timestamp.hashCode ^
         isSentByMe.hashCode ^
-        avatarUrl.hashCode;
+        avatarUrl.hashCode ^
+        conversationId.hashCode ^
+        senderId.hashCode ^
+        sentAt.hashCode ^
+        messageType.hashCode;
   }
 }
