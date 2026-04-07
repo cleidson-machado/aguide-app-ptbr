@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 import 'package:portugal_guide/features/user_message_flow/widgets/user_message_contact_list_item_widget.dart';
+import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 
 /// Messages list screen (WhatsApp-style conversation list)
 /// Displays user contacts with message previews, timestamps, and online status
@@ -85,15 +86,19 @@ class _UsersMessageBucketScreenState
     );
   }
 
-  /// Handles contact tap (opens chat - future implementation)
+  /// Handles contact tap (opens chat detail screen)
   void _handleContactTap(UserMessageContactModel contact) {
     if (kDebugMode) {
       debugPrint(
           '💬 [UsersMessageBucketScreen] Contato selecionado: ${contact.contactName}');
     }
 
-    // TODO: Navigate to chat screen
-    // Modular.to.navigate('/user_message_flow/chat/${contact.id}');
+    // Navigate to chat detail screen
+    Navigator.of(context).push(
+      CupertinoPageRoute(
+        builder: (context) => UserChatMessageViewScreen(contact: contact),
+      ),
+    );
   }
 
   @override
