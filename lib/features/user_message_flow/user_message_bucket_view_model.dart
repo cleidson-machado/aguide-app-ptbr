@@ -81,18 +81,30 @@ class UserMessageBucketViewModel extends ChangeNotifier {
     UserMessageFlowException exception,
     String fallback,
   ) {
-    if (exception.message.trim().isNotEmpty) {
-      return exception.message;
-    }
-    if (exception.isBadRequest) {
-      return exception.message;
-    }
+    // Priorizar status codes específicos ANTES de checar mensagem genérica
     if (exception.isUnauthorized) {
       return 'Sessao expirada. Faca login novamente.';
     }
     if (exception.isForbidden) {
       return 'Voce nao tem permissao para acessar as conversas.';
     }
+    if (exception.isNotFound) {
+      return 'Recurso nao encontrado.';
+    }
+    if (exception.isServerError) {
+      return 'Erro no servidor. Tente novamente mais tarde.';
+    }
+    if (exception.isBadRequest && exception.message.trim().isNotEmpty) {
+      return exception.message; // 400 com mensagem específica do backend
+    }
+
+    // Só retorna mensagem genérica se não for status code específico
+    if (exception.message.trim().isNotEmpty &&
+        exception.message != fallback &&
+        exception.message != 'Failed to load conversations') {
+      return exception.message;
+    }
+
     return fallback;
   }
 }

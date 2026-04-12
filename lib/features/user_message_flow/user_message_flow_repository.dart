@@ -93,8 +93,19 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
       final rawList = _extractConversationList(response.data);
 
-      if (response.statusCode != 200 || rawList == null) {
-        throw const UserMessageFlowException('Failed to load conversations');
+      if (rawList == null) {
+        _log(
+          '⚠️ CRITICAL: Cannot extract conversation list from payload: ${response.data}',
+        );
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      if (rawList.isEmpty) {
+        _log('Conversations list is empty after extraction.');
+        return [];
       }
 
       final mapped =
@@ -112,12 +123,13 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
             return UserMessageContactModel.fromConversationSummaryMap(enriched);
           }).toList();
 
-      _log('Mapped conversations count=${mapped.length}');
+      _log('✅ Mapped conversations count=${mapped.length}');
       return mapped;
     } on DioException catch (e) {
       _log(
-        'Conversations request failed status=${e.response?.statusCode} message=${e.message}',
+        '❌ Conversations request failed status=${e.response?.statusCode} message=${e.message}',
       );
+      _log('❌ Response data: ${e.response?.data}');
       throw _mapDioException(e, fallback: 'Failed to load conversations');
     } on UserMessageFlowException {
       rethrow;
@@ -159,9 +171,12 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         'Response messages status=${response.statusCode}, dataType=${response.data.runtimeType}',
       );
 
-      if (response.statusCode != 200 ||
-          response.data is! Map<String, dynamic>) {
-        throw const UserMessageFlowException('Failed to load messages');
+      if (response.data is! Map<String, dynamic>) {
+        _log('⚠️ CRITICAL: Response data is not a Map: ${response.data}');
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
       }
 
       final data = response.data as Map<String, dynamic>;
@@ -221,12 +236,15 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         },
       );
 
-      if (response.statusCode != 201 ||
-          response.data is! Map<String, dynamic>) {
-        throw const UserMessageFlowException('Failed to send message');
+      if (response.data is! Map<String, dynamic>) {
+        _log('⚠️ CRITICAL: Send response data is not a Map: ${response.data}');
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
       }
 
-      _log('Message sent status=${response.statusCode}');
+      _log('✅ Message sent status=${response.statusCode}');
 
       final currentUserId = injector<AuthTokenManager>().getUserId();
 
