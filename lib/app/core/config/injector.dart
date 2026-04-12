@@ -18,6 +18,7 @@ import 'package:portugal_guide/features/user/user_phone_repository_interface.dar
 import 'package:portugal_guide/features/user/user_view_model.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
 import 'package:portugal_guide/features/user/user_list_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/message_user_list_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_bucket_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository.dart';
@@ -167,6 +168,14 @@ Future<void> setupDependencies() async {
   injector.registerFactory<UserChatMessageViewModel>(
     () => UserChatMessageViewModel(
       repository: injector<UserMessageFlowRepositoryInterface>(),
+    ),
+  );
+  
+  // MessageUserListViewModel - ViewModel específico para lista de usuários com role designation
+  // DDD Pattern: Isolado da feature core 'user', combina UserModel + UserDetailsModel
+  injector.registerFactory<MessageUserListViewModel>(
+    () => MessageUserListViewModel(
+      repository: injector<UserRepositoryInterface>(),
     ),
   );
 }

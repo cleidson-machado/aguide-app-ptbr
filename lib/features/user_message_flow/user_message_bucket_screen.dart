@@ -1,16 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
-import 'package:portugal_guide/features/user/user_model.dart';
-import 'package:portugal_guide/features/user/user_model_extensions.dart';
-import 'package:portugal_guide/features/user/user_list_view_model.dart';
-import 'package:portugal_guide/features/user/widgets/user_list_item_widget.dart';
+import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/user_message_flow/message_user_list_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/widgets/message_user_list_item_widget.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 
 /// Users list screen - displays all system users for messaging
-/// Refactored from conversation list to show available users
-/// Uses MVVM architecture with UserListViewModel
+/// 
+/// **Arquitetura DDD:** Usa MessageUserListViewModel e MessageUserListItemWidget
+/// específicos desta feature, mantendo independência da feature core 'user'.
+/// Combina UserModel + UserDetailsModel localmente para exibir role designation.
 ///
 /// ⚠️ IMPORTANTE: Esta tela está sendo usada como TAB
 /// Como é uma TAB, NÃO deve ter NavigationBar com botão voltar
@@ -25,7 +26,7 @@ class UsersMessageBucketScreen extends StatefulWidget {
 
 class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
   late ScrollController _scrollController;
-  late UserListViewModel _viewModel;
+  late MessageUserListViewModel _viewModel;
   late UserMessageFlowRepositoryInterface _messageRepository;
   bool _isCreatingConversation = false;
 
@@ -33,7 +34,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _viewModel = injector<UserListViewModel>();
+    _viewModel = injector<MessageUserListViewModel>();
     _messageRepository = injector<UserMessageFlowRepositoryInterface>();
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadUsers();
@@ -83,7 +84,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
               CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.pop(context);
-                  _viewModel.sortUsers(UserSortCriteria.alphabeticalAZ);
+                  _viewModel.sortUsers(MessageUserSortCriteria.alphabeticalAZ);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -91,7 +92,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
                     const Icon(CupertinoIcons.sort_down, size: 20),
                     const SizedBox(width: 8),
                     const Text('Ordenar A-Z'),
-                    if (_viewModel.currentSort == UserSortCriteria.alphabeticalAZ)
+                    if (_viewModel.currentSort == MessageUserSortCriteria.alphabeticalAZ)
                       const Padding(
                         padding: EdgeInsets.only(left: 8),
                         child: Icon(
@@ -106,7 +107,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
               CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.pop(context);
-                  _viewModel.sortUsers(UserSortCriteria.alphabeticalZA);
+                  _viewModel.sortUsers(MessageUserSortCriteria.alphabeticalZA);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +115,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
                     const Icon(CupertinoIcons.sort_up, size: 20),
                     const SizedBox(width: 8),
                     const Text('Ordenar Z-A'),
-                    if (_viewModel.currentSort == UserSortCriteria.alphabeticalZA)
+                    if (_viewModel.currentSort == MessageUserSortCriteria.alphabeticalZA)
                       const Padding(
                         padding: EdgeInsets.only(left: 8),
                         child: Icon(
@@ -136,7 +137,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
   }
 
   /// Handles user tap - creates/opens conversation with selected user
-  Future<void> _handleUserTap(UserModel user) async {
+  Future<void> _handleUserTap(MessageUserData user) async {
     if (_isCreatingConversation) return;
 
     if (kDebugMode) {
@@ -264,7 +265,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
   }
 
   /// Builds the scrollable users list
-  Widget _buildUsersList(List<UserModel> users) {
+  Widget _buildUsersList(List<MessageUserData> users) {
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
@@ -277,7 +278,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               final user = users[index];
-              return UserListItemWidget(
+              return MessageUserListItemWidget(
                 user: user,
                 onTap: () => _handleUserTap(user),
               );
