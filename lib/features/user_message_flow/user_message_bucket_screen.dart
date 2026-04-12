@@ -8,7 +8,7 @@ import 'package:portugal_guide/features/user_message_flow/user_chat_message_view
 
 /// Messages list screen (WhatsApp-style conversation list)
 /// Displays user contacts with message previews, timestamps, and online status
-/// Currently uses mocked data - will integrate with MVVM later
+/// Uses MVVM architecture with real API integration via UserMessageFlowRepository
 ///
 /// ⚠️ IMPORTANTE: Esta tela está sendo usada TEMPORARIAMENTE como TAB
 /// (substituindo RELAÇÕES em HomeContentTabScreen para testes iniciais)
@@ -54,7 +54,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
     }
   }
 
-  /// Handles pull-to-refresh (mocked delay)
+  /// Handles pull-to-refresh - fetches latest conversations from API
   Future<void> _handleRefresh() async {
     if (kDebugMode) {
       debugPrint('🔄 [UsersMessageBucketScreen] Pull-to-refresh acionado');

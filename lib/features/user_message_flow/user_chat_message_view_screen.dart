@@ -79,7 +79,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
     }
   }
 
-  /// Handles send button tap - adds message to list (mocked)
+  /// Handles send button tap - sends message via real API (POST /messages)
   Future<void> _handleSendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) {

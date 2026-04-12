@@ -125,45 +125,6 @@ class UserChatMessageModel implements BaseModel {
   factory UserChatMessageModel.fromJson(String source) =>
       UserChatMessageModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
-  /// Factory method for mocked messages (development/testing)
-  /// Returns a conversation matching the wireframe design
-  static List<UserChatMessageModel> getMockedMessages({String? contactId}) {
-    return [
-      const UserChatMessageModel(
-        id: 'msg_1',
-        text: 'Hello, we are trying to design UI/UX for app',
-        timestamp: '08:22 am',
-        isSentByMe: false,
-        avatarUrl: null,
-      ),
-      const UserChatMessageModel(
-        id: 'msg_2',
-        text: 'Oh, Hello Angela Young',
-        timestamp: '09:24 am',
-        isSentByMe: true,
-      ),
-      const UserChatMessageModel(
-        id: 'msg_3',
-        text: 'At first i need to know about your project details',
-        timestamp: '09:24 am',
-        isSentByMe: true,
-      ),
-      const UserChatMessageModel(
-        id: 'msg_4',
-        text: 'Yes sure, please wait',
-        timestamp: '09:26 am',
-        isSentByMe: false,
-        avatarUrl: null,
-      ),
-      const UserChatMessageModel(
-        id: 'msg_5',
-        text: 'Can we talk about the project other platform',
-        timestamp: '09:27 am',
-        isSentByMe: true,
-      ),
-    ];
-  }
-
   @override
   String toString() {
     return 'UserChatMessageModel(id: $id, text: $text, timestamp: $timestamp, isSentByMe: $isSentByMe, avatarUrl: $avatarUrl, conversationId: $conversationId, senderId: $senderId, sentAt: $sentAt, messageType: $messageType)';
