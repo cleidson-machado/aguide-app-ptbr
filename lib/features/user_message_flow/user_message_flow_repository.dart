@@ -71,6 +71,9 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
   String _messagesEndpoint() => 'messages';
 
+  /// Helper: Constructs endpoint for creating direct conversations (DRY principle)
+  String _directConversationsEndpoint() => 'conversations/direct';
+
   @override
   Future<List<UserMessageContactModel>> getConversations({
     bool includeArchived = false,
@@ -261,6 +264,112 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
       rethrow;
     } catch (e) {
       _log('Unexpected send message error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<UserMessageContactModel> createDirectConversation({
+    required String otherUserId,
+  }) async {
+    try {
+      _log('POST ${_directConversationsEndpoint()} otherUserId=$otherUserId');
+      final response = await _dio.post(
+        _directConversationsEndpoint(),
+        data: {'otherUserId': otherUserId},
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        _log(
+          '⚠️ CRITICAL: Create conversation response is not a Map: ${response.data}',
+        );
+        throw const UserMessageFlowException(
+          'Formato de resposta inválido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      _log(
+        '✅ Direct conversation created/retrieved status=${response.statusCode}',
+      );
+
+      final conversationData = response.data as Map<String, dynamic>;
+
+      // Extract conversation name for DIRECT conversations
+      // For DIRECT type, backend returns name=null, so we need to get other participant's name
+      String contactName = 'Unknown Contact';
+      if (conversationData['type'] == 'DIRECT' &&
+          conversationData['participants'] is List) {
+        final participants = conversationData['participants'] as List<dynamic>;
+        final currentUserId = injector<AuthTokenManager>().getUserId();
+
+        // Find the OTHER participant (not the current user)
+        final otherParticipant = participants.firstWhere(
+          (p) =>
+              p is Map<String, dynamic> &&
+              p['userId']?.toString() != currentUserId,
+          orElse: () => null,
+        );
+
+        if (otherParticipant != null && otherParticipant is Map<String, dynamic>) {
+          contactName =
+              otherParticipant['userFullName']?.toString() ??
+              otherParticipant['userName']?.toString() ??
+              'Unknown Contact';
+        }
+      } else if (conversationData['name'] != null) {
+        // For GROUP conversations, use the group name
+        contactName = conversationData['name'].toString();
+      }
+
+      // Build UserMessageContactModel from conversation response
+      return UserMessageContactModel(
+        id: conversationData['id']?.toString() ?? '',
+        contactName: contactName,
+        lastMessage: '', // New conversation has no messages yet
+        timestamp: formatConversationTimestamp(
+          conversationData['createdAt'] != null
+              ? DateTime.tryParse(conversationData['createdAt'].toString())
+              : null,
+        ),
+        avatarUrl: conversationData['iconUrl']?.toString(),
+        isOnline: false,
+        unreadCount: 0,
+        type: conversationData['type']?.toString() ?? 'DIRECT',
+        isPinned: false,
+        isArchived: false,
+      );
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      _log(
+        'Create direct conversation failed status=$statusCode message=${e.message}',
+      );
+
+      // Handle specific error cases from API documentation
+      if (statusCode == 400) {
+        final backendMessage = _extractBackendMessage(e.response?.data);
+        // "Trying to create conversation with yourself"
+        throw UserMessageFlowException(
+          backendMessage ?? 'Não é possível criar conversa consigo mesmo',
+          statusCode: 400,
+        );
+      }
+
+      if (statusCode == 404) {
+        throw const UserMessageFlowException(
+          'Usuário não encontrado',
+          statusCode: 404,
+        );
+      }
+
+      throw _mapDioException(
+        e,
+        fallback: 'Erro ao criar conversa. Tente novamente.',
+      );
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected create conversation error: $e');
       throw UserMessageFlowException(e.toString());
     }
   }

@@ -17,4 +17,11 @@ abstract class UserMessageFlowRepositoryInterface {
     required String conversationId,
     required String content,
   });
+
+  /// Create or retrieve a direct conversation with another user
+  /// Endpoint: POST /conversations/direct
+  /// Returns conversation (creates new if doesn't exist, or returns existing)
+  Future<UserMessageContactModel> createDirectConversation({
+    required String otherUserId,
+  });
 }

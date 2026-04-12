@@ -17,6 +17,7 @@ import 'package:portugal_guide/features/user/user_phone_repository.dart';
 import 'package:portugal_guide/features/user/user_phone_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
+import 'package:portugal_guide/features/user/user_list_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_bucket_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository.dart';
@@ -97,6 +98,9 @@ Future<void> setupDependencies() async {
   );
   injector.registerFactory<ProfileWelcomeViewModel>(
     () => ProfileWelcomeViewModel(injector<UserRepositoryInterface>()),
+  );
+  injector.registerFactory<UserListViewModel>(
+    () => UserListViewModel(repository: injector<UserRepositoryInterface>()),
   );
 
   //### For Main Content Topic ###
