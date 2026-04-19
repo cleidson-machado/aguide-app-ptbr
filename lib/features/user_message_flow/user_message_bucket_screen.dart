@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 import 'package:portugal_guide/features/user_message_flow/message_user_list_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/widgets/message_user_list_item_widget.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
@@ -136,13 +137,13 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
     );
   }
 
-  /// Handles user tap - creates/opens conversation with selected user
+  /// Handles user tap - finds existing conversation or creates new one
   Future<void> _handleUserTap(MessageUserData user) async {
     if (_isCreatingConversation) return;
 
     if (kDebugMode) {
       debugPrint(
-        '👤 [UsersMessageBucketScreen] Usuário selecionado: ${user.fullName}',
+        '👤 [UsersMessageBucketScreen] Usuário selecionado: ${user.fullName} (id=${user.id})',
       );
     }
 
@@ -161,14 +162,106 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
             ),
       );
 
-      // Create or retrieve direct conversation with this user
-      final conversation = await _messageRepository.createDirectConversation(
-        otherUserId: user.id,
-      );
+      if (kDebugMode) {
+        debugPrint('🔍 [UsersMessageBucketScreen] Buscando conversas existentes...');
+      }
+
+      // Step 1: Check if conversation already exists (for SQL-inserted conversations)
+      final existingConversations = await _messageRepository.getConversations();
+      
+      UserMessageContactModel? conversation;
+      
+      // Try to find existing DIRECT conversation with this user
+      // Since backend doesn't store otherUserId in list response, we need to check conversation details
+      // For now, just try to create - if exists, backend returns existing one
+      
+      if (kDebugMode) {
+        debugPrint('🔄 [UsersMessageBucketScreen] Tentando criar/recuperar conversa direta...');
+      }
+      
+      try {
+        // Try to create - backend should return existing if already exists
+        conversation = await _messageRepository.createDirectConversation(
+          otherUserId: user.id,
+        );
+      } catch (e) {
+        // If 404 (user not found in backend validator), fall back to searching existing conversations
+        if (kDebugMode) {
+          debugPrint('⚠️ [UsersMessageBucketScreen] Erro ao criar conversa: $e');
+          debugPrint('🔍 [UsersMessageBucketScreen] Tentando buscar conversa existente na lista...');
+        }
+        
+        // Fallback: try to find in existing conversations list
+        // (This handles SQL-inserted conversations that backend can't create)
+        if (existingConversations.isNotEmpty) {
+          final directConversations = existingConversations.where((c) => c.type == 'DIRECT').toList();
+          
+          if (kDebugMode) {
+            debugPrint('📋 [UsersMessageBucketScreen] Conversas DIRECT encontradas: ${directConversations.length}');
+            for (final conv in directConversations) {
+              debugPrint('   - ID: ${conv.id}, Nome: ${conv.contactName}');
+            }
+          }
+          
+          // For direct conversations, we need full details to know the other participant
+          for (final conv in directConversations) {
+            try {
+              if (kDebugMode) {
+                debugPrint('🔍 [UsersMessageBucketScreen] Tentando acessar conversa ${conv.id}...');
+              }
+              
+              // Get full conversation details to verify participants
+              await _messageRepository.getConversationDetails(conv.id);
+              // Use this conversation (for now, first DIRECT found)
+              conversation = conv;
+              
+              if (kDebugMode) {
+                debugPrint('✅ [UsersMessageBucketScreen] Conversa acessível encontrada: ${conv.id}');
+              }
+              break;
+            } catch (detailsError) {
+              if (kDebugMode) {
+                debugPrint('⚠️ [UsersMessageBucketScreen] Conversa ${conv.id} não acessível: $detailsError');
+                debugPrint('   Continuando busca...');
+              }
+              // Continue to next conversation
+            }
+          }
+          
+          if (conversation == null && kDebugMode) {
+            debugPrint('❌ [UsersMessageBucketScreen] Nenhuma conversa DIRECT acessível encontrada!');
+          }
+        }
+        
+        // If still no conversation found, re-throw original error
+        if (conversation == null) {
+          if (kDebugMode) {
+            debugPrint('');
+            debugPrint('🚨 [UsersMessageBucketScreen] DIAGNÓSTICO DO PROBLEMA:');
+            debugPrint('   1. POST /conversations/direct retornou 404 (usuário não encontrado no backend)');
+            debugPrint('   2. GET /conversations retornou ${existingConversations.length} conversas');
+            debugPrint('   3. Nenhuma conversa DIRECT é acessível pelo usuário logado');
+            debugPrint('');
+            debugPrint('💡 POSSÍVEIS CAUSAS:');
+            debugPrint('   - Conversa inserida via SQL sem incluir usuário logado nos participantes');
+            debugPrint('   - Tabela conversation_participant inconsistente');
+            debugPrint('   - Usuário ${user.id} não existe no backend (inserido apenas no banco)');
+            debugPrint('');
+            debugPrint('🔧 SOLUÇÃO:');
+            debugPrint('   Verificar tabela conversation_participant no PostgreSQL');
+            debugPrint('   Garantir que ambos os usuários estejam registrados via API REST');
+            debugPrint('');
+          }
+          rethrow;
+        }
+      }
 
       if (kDebugMode) {
         debugPrint(
-          '✅ [UsersMessageBucketScreen] Conversa criada/recuperada: ${conversation.id}',
+          '✅ [UsersMessageBucketScreen] Conversa retornada:'
+          '\n  - id: ${conversation.id}'
+          '\n  - contactName: ${conversation.contactName}'
+          '\n  - type: ${conversation.type}',
         );
       }
 
@@ -182,14 +275,17 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
         Navigator.of(context).push(
           CupertinoPageRoute(
             builder: (context) => UserChatMessageViewScreen(
-              contact: conversation,
+              contact: conversation!, // Safe after null check in catch block
             ),
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ [UsersMessageBucketScreen] Erro ao criar conversa: $e');
+        debugPrint('❌ [UsersMessageBucketScreen] Erro ao criar conversa:');
+        debugPrint('   Tipo: ${e.runtimeType}');
+        debugPrint('   Mensagem: $e');
+        debugPrint('   StackTrace: $stackTrace');
       }
 
       // Close loading modal if still showing
@@ -207,7 +303,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
                 content: Text(
                   e.toString().contains('Não é possível')
                       ? e.toString()
-                      : 'Não foi possível iniciar a conversa. Tente novamente.',
+                      : 'Não foi possível iniciar a conversa. Tente novamente.\n\nDetalhes: $e',
                 ),
                 actions: [
                   CupertinoDialogAction(

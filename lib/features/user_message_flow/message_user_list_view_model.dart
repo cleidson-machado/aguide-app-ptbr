@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
 import 'package:portugal_guide/util/error_messages.dart';
@@ -84,9 +86,12 @@ class MessageUserListViewModel extends ChangeNotifier {
         }
       }
 
-      _users = enrichedUsers;
+      // Filtrar o próprio usuário da lista (não pode enviar mensagem para si mesmo)
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      _users = enrichedUsers.where((user) => user.id != currentUserId).toList();
+      
       _applyCurrentSort();
-      _log('loadUsers success count=${_users.length} with role designation');
+      _log('loadUsers success count=${_users.length} with role designation (currentUserId=$currentUserId filtered out)');
     } catch (e) {
       _users = [];
       _error = _mapExceptionToMessage(e);

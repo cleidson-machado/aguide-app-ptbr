@@ -3,9 +3,16 @@ import 'package:portugal_guide/features/user_message_flow/models/user_chat_messa
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 
 abstract class UserMessageFlowRepositoryInterface {
+  /// Get all conversations for the current user (inbox list)
+  /// Endpoint: GET /conversations
   Future<List<UserMessageContactModel>> getConversations({
     bool includeArchived,
   });
+
+  /// Get detailed information about a specific conversation
+  /// Endpoint: GET /conversations/{conversationId}
+  /// Returns full conversation details including participants
+  Future<UserMessageContactModel> getConversationDetails(String conversationId);
 
   Future<UserChatMessagePageModel> getMessagesByConversation({
     required String conversationId,

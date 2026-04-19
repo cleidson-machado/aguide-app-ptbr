@@ -65,6 +65,10 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
   String _conversationsEndpoint() => 'conversations';
 
+  String _conversationDetailsEndpoint(String conversationId) {
+    return 'conversations/$conversationId';
+  }
+
   String _messagesByConversationEndpoint(String conversationId) {
     return 'messages/conversation/$conversationId';
   }
@@ -269,6 +273,82 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
   }
 
   @override
+  Future<UserMessageContactModel> getConversationDetails(
+    String conversationId,
+  ) async {
+    try {
+      _log('GET ${_conversationDetailsEndpoint(conversationId)}');
+      final response = await _dio.get(
+        _conversationDetailsEndpoint(conversationId),
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        throw const UserMessageFlowException(
+          'Formato de resposta inválido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      final conversationData = response.data as Map<String, dynamic>;
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+
+      // Extract contact name from participants
+      String contactName = 'Unknown Contact';
+      if (conversationData['type'] == 'DIRECT' &&
+          conversationData['participants'] is List) {
+        final participants = conversationData['participants'] as List<dynamic>;
+        final otherParticipant = participants.firstWhere(
+          (p) =>
+              p is Map<String, dynamic> &&
+              p['userId']?.toString() != currentUserId,
+          orElse: () => null,
+        );
+
+        if (otherParticipant != null &&
+            otherParticipant is Map<String, dynamic>) {
+          contactName = otherParticipant['userFullName']?.toString() ??
+              otherParticipant['userName']?.toString() ??
+              'Unknown Contact';
+        }
+      } else if (conversationData['name'] != null) {
+        contactName = conversationData['name'].toString();
+      }
+
+      return UserMessageContactModel(
+        id: conversationData['id']?.toString() ?? '',
+        contactName: contactName,
+        lastMessage: conversationData['lastMessagePreview']?.toString() ?? '',
+        timestamp: formatConversationTimestamp(
+          conversationData['lastMessageAt'] != null
+              ? DateTime.tryParse(
+                  conversationData['lastMessageAt'].toString(),
+                )
+              : null,
+        ),
+        avatarUrl: conversationData['iconUrl']?.toString(),
+        isOnline: false,
+        unreadCount: conversationData['unreadCount'] as int? ?? 0,
+        type: conversationData['type']?.toString() ?? 'DIRECT',
+        isPinned: conversationData['isPinned'] as bool? ?? false,
+        isArchived: conversationData['isArchived'] as bool? ?? false,
+      );
+    } on DioException catch (e) {
+      _log(
+        'Get conversation details failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(
+        e,
+        fallback: 'Erro ao carregar detalhes da conversa',
+      );
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected get conversation details error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
   Future<UserMessageContactModel> createDirectConversation({
     required String otherUserId,
   }) async {
@@ -356,8 +436,12 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
       }
 
       if (statusCode == 404) {
-        throw const UserMessageFlowException(
-          'Usuário não encontrado',
+        // Backend pode retornar 404 se:
+        // 1. Outro usuário não existe
+        // 2. Tentou criar conversa consigo mesmo (bug backend - deveria ser 400)
+        final backendMessage = _extractBackendMessage(e.response?.data);
+        throw UserMessageFlowException(
+          backendMessage ?? 'Usuário não encontrado ou não é possível iniciar conversa',
           statusCode: 404,
         );
       }
