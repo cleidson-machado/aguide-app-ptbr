@@ -113,7 +113,15 @@ class UserChatMessageViewModel extends ChangeNotifier {
         content: normalized,
       );
 
+      // ✅ FIX: Adiciona nova mensagem e reordena para garantir cronologia
       _messages = [..._messages, sentMessage];
+      _messages.sort((a, b) {
+        if (a.sentAt == null && b.sentAt == null) return 0;
+        if (a.sentAt == null) return 1;
+        if (b.sentAt == null) return -1;
+        return a.sentAt!.compareTo(b.sentAt!); // Crescente
+      });
+
       _error = null;
       _log('sendTextMessage success totalMessages=${_messages.length}');
     } on UserMessageFlowException catch (e) {

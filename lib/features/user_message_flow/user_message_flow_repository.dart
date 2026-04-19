@@ -204,6 +204,17 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
               )
               .toList();
 
+      // ✅ FIX: Ordenar mensagens por sentAt (ascendente - mais antigas primeiro)
+      // Garante timeline cronológica mesmo se dados SQL tiverem timestamps fora de ordem
+      messages.sort((a, b) {
+        if (a.sentAt == null && b.sentAt == null) return 0;
+        if (a.sentAt == null) return 1; // null vai pro final
+        if (b.sentAt == null) return -1;
+        return a.sentAt!.compareTo(b.sentAt!); // Crescente (antigas → recentes)
+      });
+
+      _log('✅ Messages sorted by sentAt (${messages.length} messages)');
+
       return UserChatMessagePageModel(
         messages: messages,
         totalItems:
