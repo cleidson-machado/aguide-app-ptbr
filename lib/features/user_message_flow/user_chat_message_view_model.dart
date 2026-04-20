@@ -139,6 +139,38 @@ class UserChatMessageViewModel extends ChangeNotifier {
     }
   }
 
+  /// Mark all unread messages in the conversation as read
+  /// Called automatically when user opens a conversation
+  /// This is a non-critical operation - failures are logged but not shown to user
+  Future<void> markAllAsRead() async {
+    try {
+      // Filter messages that are not sent by me and not yet read
+      final unreadMessages = _messages.where(
+        (msg) => !msg.isSentByMe && !msg.isRead,
+      ).toList();
+
+      if (unreadMessages.isEmpty) {
+        _log('markAllAsRead: no unread messages to mark');
+        return;
+      }
+
+      _log('markAllAsRead: marking ${unreadMessages.length} messages as read');
+
+      // Mark each unread message as read
+      for (final message in unreadMessages) {
+        await _repository.markMessageAsRead(message.id);
+        // Update local state (optimistic update)
+        message.copyWith(isRead: true);
+      }
+
+      _log('markAllAsRead: successfully marked ${unreadMessages.length} messages');
+      notifyListeners();
+    } catch (e) {
+      // Don't show error to user - read receipts are non-critical
+      _log('markAllAsRead: failed (non-critical): $e');
+    }
+  }
+
   String _mapExceptionToMessage(
     UserMessageFlowException exception,
     String fallback,

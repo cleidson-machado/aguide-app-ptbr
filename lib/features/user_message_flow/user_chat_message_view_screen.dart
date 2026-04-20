@@ -35,6 +35,10 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadInitialMessages(widget.contact.id);
 
+    // Auto-mark messages as read when conversation is opened
+    // This will update unreadCount on backend and clear badges
+    _viewModel.markAllAsRead();
+
     // Auto-scroll to bottom after frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();

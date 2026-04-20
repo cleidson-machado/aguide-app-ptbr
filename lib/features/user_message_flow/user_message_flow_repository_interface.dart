@@ -25,6 +25,11 @@ abstract class UserMessageFlowRepositoryInterface {
     required String content,
   });
 
+  /// Mark a specific message as read
+  /// Endpoint: PUT /messages/{messageId}/read
+  /// Updates lastReadAt timestamp for the conversation participant
+  Future<void> markMessageAsRead(String messageId);
+
   /// Create or retrieve a direct conversation with another user
   /// Endpoint: POST /conversations/direct
   /// Returns conversation (creates new if doesn't exist, or returns existing)

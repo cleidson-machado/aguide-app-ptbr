@@ -75,6 +75,9 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
   String _messagesEndpoint() => 'messages';
 
+  /// Helper: Constructs endpoint for marking message as read (DRY principle)
+  String _markMessageAsReadEndpoint(String messageId) => 'messages/$messageId/read';
+
   /// Helper: Constructs endpoint for creating direct conversations (DRY principle)
   String _directConversationsEndpoint() => 'conversations/direct';
 
@@ -280,6 +283,38 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
     } catch (e) {
       _log('Unexpected send message error: $e');
       throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> markMessageAsRead(String messageId) async {
+    try {
+      _log('PUT ${_markMessageAsReadEndpoint(messageId)}');
+      final response = await _dio.put(
+        _markMessageAsReadEndpoint(messageId),
+      );
+
+      if (response.statusCode == 204) {
+        _log('✅ Message marked as read messageId=$messageId');
+      } else {
+        _log(
+          '⚠️ Unexpected status code when marking as read: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      _log(
+        'Mark as read failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      // Don't throw - marking as read is non-critical
+      // User can still use the app even if read receipts fail
+      if (kDebugMode) {
+        debugPrint(
+          '⚠️ Failed to mark message as read (non-critical): ${e.message}',
+        );
+      }
+    } catch (e) {
+      _log('Unexpected mark as read error (non-critical): $e');
+      // Don't throw - non-critical operation
     }
   }
 

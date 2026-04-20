@@ -15,6 +15,7 @@ class UserChatMessageModel implements BaseModel {
   final String senderId;
   final DateTime? sentAt;
   final String messageType;
+  final bool isRead;
 
   const UserChatMessageModel({
     required this.id,
@@ -26,6 +27,7 @@ class UserChatMessageModel implements BaseModel {
     this.senderId = '',
     this.sentAt,
     this.messageType = 'TEXT',
+    this.isRead = false,
   });
 
   UserChatMessageModel copyWith({
@@ -38,6 +40,7 @@ class UserChatMessageModel implements BaseModel {
     String? senderId,
     DateTime? sentAt,
     String? messageType,
+    bool? isRead,
   }) {
     return UserChatMessageModel(
       id: id ?? this.id,
@@ -49,6 +52,7 @@ class UserChatMessageModel implements BaseModel {
       senderId: senderId ?? this.senderId,
       sentAt: sentAt ?? this.sentAt,
       messageType: messageType ?? this.messageType,
+      isRead: isRead ?? this.isRead,
     );
   }
 
@@ -64,6 +68,7 @@ class UserChatMessageModel implements BaseModel {
       'senderId': senderId,
       'sentAt': sentAt?.toIso8601String(),
       'messageType': messageType,
+      'isRead': isRead,
     };
   }
 
@@ -81,6 +86,7 @@ class UserChatMessageModel implements BaseModel {
               ? DateTime.tryParse(map['sentAt'].toString())
               : null,
       messageType: map['messageType']?.toString() ?? 'TEXT',
+      isRead: map['isRead'] as bool? ?? false,
     );
   }
 
@@ -103,6 +109,7 @@ class UserChatMessageModel implements BaseModel {
       senderId: senderId,
       sentAt: sentAt,
       messageType: map['messageType']?.toString() ?? 'TEXT',
+      isRead: map['isRead'] as bool? ?? false,
     );
   }
 
