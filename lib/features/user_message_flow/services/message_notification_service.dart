@@ -127,13 +127,17 @@ class MessageNotificationService with WidgetsBindingObserver {
         // First poll establishes the baseline - never emits events
         if (wasFirstSnapshot) continue;
 
-        final unreadIncreased = (previous?.unreadCount ?? 0) < conv.unreadCount;
-        final hasNewerMessage = previous?.lastMessageAt == null
-            ? (conv.lastMessageAt != null && conv.unreadCount > 0)
-            : (conv.lastMessageAt != null &&
-                conv.lastMessageAt!.isAfter(previous!.lastMessageAt!));
+        // 🔑 Critério para notificar: APENAS quando unreadCount aumenta.
+        // Isso garante que o REMETENTE não receba snackbar das próprias msgs:
+        // - Quando A envia → B, a conversa de A tem lastMessageAt atualizado,
+        //   mas unreadCount permanece 0 (mensagens enviadas não contam como "não-lidas").
+        // - Já a conversa de B tem unreadCount incrementado → snackbar exibido.
+        // Mudanças de lastMessageAt sem aumento de unreadCount são ignoradas
+        // (cobre o caso de auto-eco do envio para o próprio remetente).
+        final previousUnread = previous?.unreadCount ?? 0;
+        final unreadIncreased = previousUnread < conv.unreadCount;
 
-        if (unreadIncreased || hasNewerMessage) {
+        if (unreadIncreased) {
           final ts = conv.lastMessageAt ?? DateTime.now();
           if (latestEvent == null || ts.isAfter(latestTimestamp)) {
             latestTimestamp = ts;
