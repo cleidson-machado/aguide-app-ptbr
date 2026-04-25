@@ -337,28 +337,13 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
       final conversationData = response.data as Map<String, dynamic>;
       final currentUserId = injector<AuthTokenManager>().getUserId();
+      _log('🔑 currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}');
 
-      // Extract contact name from participants
-      String contactName = 'Unknown Contact';
-      if (conversationData['type'] == 'DIRECT' &&
-          conversationData['participants'] is List) {
-        final participants = conversationData['participants'] as List<dynamic>;
-        final otherParticipant = participants.firstWhere(
-          (p) =>
-              p is Map<String, dynamic> &&
-              p['userId']?.toString() != currentUserId,
-          orElse: () => null,
-        );
-
-        if (otherParticipant != null &&
-            otherParticipant is Map<String, dynamic>) {
-          contactName = otherParticipant['userFullName']?.toString() ??
-              otherParticipant['userName']?.toString() ??
-              'Unknown Contact';
-        }
-      } else if (conversationData['name'] != null) {
-        contactName = conversationData['name'].toString();
-      }
+      // Extract contact name — order: displayName (backend fix) → participants[] → name → fallback
+      String contactName = _resolveContactName(
+        conversationData: conversationData,
+        currentUserId: currentUserId,
+      );
 
       return UserMessageContactModel(
         id: conversationData['id']?.toString() ?? '',
@@ -420,33 +405,14 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
       );
 
       final conversationData = response.data as Map<String, dynamic>;
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      _log('🔑 createDirect currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}');
 
-      // Extract conversation name for DIRECT conversations
-      // For DIRECT type, backend returns name=null, so we need to get other participant's name
-      String contactName = 'Unknown Contact';
-      if (conversationData['type'] == 'DIRECT' &&
-          conversationData['participants'] is List) {
-        final participants = conversationData['participants'] as List<dynamic>;
-        final currentUserId = injector<AuthTokenManager>().getUserId();
-
-        // Find the OTHER participant (not the current user)
-        final otherParticipant = participants.firstWhere(
-          (p) =>
-              p is Map<String, dynamic> &&
-              p['userId']?.toString() != currentUserId,
-          orElse: () => null,
-        );
-
-        if (otherParticipant != null && otherParticipant is Map<String, dynamic>) {
-          contactName =
-              otherParticipant['userFullName']?.toString() ??
-              otherParticipant['userName']?.toString() ??
-              'Unknown Contact';
-        }
-      } else if (conversationData['name'] != null) {
-        // For GROUP conversations, use the group name
-        contactName = conversationData['name'].toString();
-      }
+      // Extract contact name — order: displayName (backend fix) → participants[] → name → fallback
+      final String contactName = _resolveContactName(
+        conversationData: conversationData,
+        currentUserId: currentUserId,
+      );
 
       // Build UserMessageContactModel from conversation response
       return UserMessageContactModel(
@@ -502,6 +468,62 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
       _log('Unexpected create conversation error: $e');
       throw UserMessageFlowException(e.toString());
     }
+  }
+
+  /// Resolve o nome de exibição de uma conversa (DRY — usado por
+  /// `getConversationDetails` e `createDirectConversation`).
+  ///
+  /// Ordem de prioridade (alinhada com backend fix 2026-04-25):
+  /// 1. `displayName` (backend calcula nome do "outro participante" para DIRECT)
+  /// 2. Inspeção do array `participants[]` (DIRECT, busca o "outro" via `userId`)
+  /// 3. `name` (preenchido em GROUP/CHANNEL)
+  /// 4. Fallback `'Unknown Contact'` (nunca deveria ocorrer com backend correto)
+  String _resolveContactName({
+    required Map<String, dynamic> conversationData,
+    required String? currentUserId,
+  }) {
+    // 1) displayName tem prioridade absoluta (campo novo, calculado pelo backend)
+    final displayName = conversationData['displayName']?.toString();
+    if (displayName != null && displayName.trim().isNotEmpty) {
+      return displayName;
+    }
+
+    final type = conversationData['type']?.toString();
+
+    // 2) Para DIRECT, varrer participants[] em busca do "outro" usuário
+    if (type == 'DIRECT' && conversationData['participants'] is List) {
+      final participants = conversationData['participants'] as List<dynamic>;
+      _log('🔎 Scanning ${participants.length} participants (currentUserId=$currentUserId)');
+
+      final otherParticipant = participants.firstWhere(
+        (p) {
+          if (p is! Map<String, dynamic>) return false;
+          final pid = p['userId']?.toString();
+          return pid != null && pid.isNotEmpty && pid != currentUserId;
+        },
+        orElse: () => null,
+      );
+
+      if (otherParticipant is Map<String, dynamic>) {
+        final fullName = otherParticipant['userFullName']?.toString();
+        if (fullName != null && fullName.trim().isNotEmpty) return fullName;
+        final userName = otherParticipant['userName']?.toString();
+        if (userName != null && userName.trim().isNotEmpty) return userName;
+        _log('⚠️ Other participant found but userFullName/userName are empty: $otherParticipant');
+      } else {
+        _log('⚠️ No "other" participant found. currentUserId=$currentUserId, participants=$participants');
+      }
+    }
+
+    // 3) GROUP/CHANNEL → usar `name`
+    final name = conversationData['name']?.toString();
+    if (name != null && name.trim().isNotEmpty) {
+      return name;
+    }
+
+    // 4) Fallback (sintoma do bug — backend não está retornando dados esperados)
+    _log('⚠️ Falling back to "Unknown Contact". Payload keys=${conversationData.keys.toList()}');
+    return 'Unknown Contact';
   }
 
   List<dynamic>? _extractConversationList(dynamic payload) {

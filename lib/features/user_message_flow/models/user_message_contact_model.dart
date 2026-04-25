@@ -93,9 +93,19 @@ class UserMessageContactModel implements BaseModel {
     Map<String, dynamic> map,
   ) {
     final rawLastMessageAt = map['lastMessageAt'];
+    // ⚠️ ORDEM DE PRIORIDADE OBRIGATÓRIA (backend fix 2026-04-25):
+    // 1º) `displayName` → backend calcula o nome do "outro participante" para DIRECT
+    // 2º) `name`        → preenchido apenas em GROUP/CHANNEL (sempre null em DIRECT)
+    // 3º) fallback hardcoded
+    // Sem ler `displayName` primeiro, conversas DIRECT exibem "Unknown Contact".
+    final resolvedName = (map['displayName']?.toString().trim().isNotEmpty ?? false)
+        ? map['displayName'].toString()
+        : (map['name']?.toString().trim().isNotEmpty ?? false)
+            ? map['name'].toString()
+            : 'Unknown Contact';
     return UserMessageContactModel(
       id: map['id']?.toString() ?? '',
-      contactName: map['name']?.toString() ?? 'Unknown Contact',
+      contactName: resolvedName,
       lastMessage: map['lastMessagePreview']?.toString() ?? '',
       timestamp: map['formattedTimestamp']?.toString() ?? '',
       lastMessageAt: rawLastMessageAt != null
