@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
+import 'package:portugal_guide/features/user_message_flow/models/block_status_model.dart';
+import 'package:portugal_guide/features/user_message_flow/models/clear_conversation_model.dart';
+import 'package:portugal_guide/features/user_message_flow/models/mute_status_model.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_chat_message_model.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_chat_message_page_model.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
@@ -76,10 +79,23 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
   String _messagesEndpoint() => 'messages';
 
   /// Helper: Constructs endpoint for marking message as read (DRY principle)
-  String _markMessageAsReadEndpoint(String messageId) => 'messages/$messageId/read';
+  String _markMessageAsReadEndpoint(String messageId) =>
+      'messages/$messageId/read';
 
   /// Helper: Constructs endpoint for creating direct conversations (DRY principle)
   String _directConversationsEndpoint() => 'conversations/direct';
+
+  String _muteConversationEndpoint(String conversationId) {
+    return 'conversations/$conversationId/mute';
+  }
+
+  String _clearConversationEndpoint(String conversationId) {
+    return 'conversations/$conversationId/clear';
+  }
+
+  String _blockUserEndpoint(String userId) => 'users/$userId/block';
+
+  String _blockedUsersEndpoint() => 'users/blocks';
 
   @override
   Future<List<UserMessageContactModel>> getConversations({
@@ -290,9 +306,7 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
   Future<void> markMessageAsRead(String messageId) async {
     try {
       _log('PUT ${_markMessageAsReadEndpoint(messageId)}');
-      final response = await _dio.put(
-        _markMessageAsReadEndpoint(messageId),
-      );
+      final response = await _dio.put(_markMessageAsReadEndpoint(messageId));
 
       if (response.statusCode == 204) {
         _log('✅ Message marked as read messageId=$messageId');
@@ -337,7 +351,9 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
       final conversationData = response.data as Map<String, dynamic>;
       final currentUserId = injector<AuthTokenManager>().getUserId();
-      _log('🔑 currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}');
+      _log(
+        '🔑 currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}',
+      );
 
       // Extract contact name — order: displayName (backend fix) → participants[] → name → fallback
       String contactName = _resolveContactName(
@@ -351,9 +367,7 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         lastMessage: conversationData['lastMessagePreview']?.toString() ?? '',
         timestamp: formatConversationTimestamp(
           conversationData['lastMessageAt'] != null
-              ? DateTime.tryParse(
-                  conversationData['lastMessageAt'].toString(),
-                )
+              ? DateTime.tryParse(conversationData['lastMessageAt'].toString())
               : null,
         ),
         avatarUrl: conversationData['iconUrl']?.toString(),
@@ -362,6 +376,11 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         type: conversationData['type']?.toString() ?? 'DIRECT',
         isPinned: conversationData['isPinned'] as bool? ?? false,
         isArchived: conversationData['isArchived'] as bool? ?? false,
+        isMuted: conversationData['isMuted'] as bool? ?? false,
+        mutedAt:
+            conversationData['mutedAt'] != null
+                ? DateTime.tryParse(conversationData['mutedAt'].toString())
+                : null,
       );
     } on DioException catch (e) {
       _log(
@@ -406,7 +425,9 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
 
       final conversationData = response.data as Map<String, dynamic>;
       final currentUserId = injector<AuthTokenManager>().getUserId();
-      _log('🔑 createDirect currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}');
+      _log(
+        '🔑 createDirect currentUserId=$currentUserId type=${conversationData['type']} hasDisplayName=${conversationData['displayName'] != null} participantsCount=${(conversationData['participants'] as List?)?.length ?? 0}',
+      );
 
       // Extract contact name — order: displayName (backend fix) → participants[] → name → fallback
       final String contactName = _resolveContactName(
@@ -430,6 +451,11 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         type: conversationData['type']?.toString() ?? 'DIRECT',
         isPinned: false,
         isArchived: false,
+        isMuted: conversationData['isMuted'] as bool? ?? false,
+        mutedAt:
+            conversationData['mutedAt'] != null
+                ? DateTime.tryParse(conversationData['mutedAt'].toString())
+                : null,
       );
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
@@ -453,7 +479,8 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
         // 2. Tentou criar conversa consigo mesmo (bug backend - deveria ser 400)
         final backendMessage = _extractBackendMessage(e.response?.data);
         throw UserMessageFlowException(
-          backendMessage ?? 'Usuário não encontrado ou não é possível iniciar conversa',
+          backendMessage ??
+              'Usuário não encontrado ou não é possível iniciar conversa',
           statusCode: 404,
         );
       }
@@ -467,6 +494,191 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
     } catch (e) {
       _log('Unexpected create conversation error: $e');
       throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<MuteStatusModel> toggleMuteConversation(String conversationId) async {
+    try {
+      _log('PUT ${_muteConversationEndpoint(conversationId)}');
+      final response = await _dio.put(
+        _muteConversationEndpoint(conversationId),
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      return MuteStatusModel.fromMap(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _log(
+        'Toggle mute failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(e, fallback: 'Erro ao silenciar conversa');
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected toggle mute error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<ClearConversationModel> clearConversation(
+    String conversationId,
+  ) async {
+    try {
+      _log('PUT ${_clearConversationEndpoint(conversationId)}');
+      final response = await _dio.put(
+        _clearConversationEndpoint(conversationId),
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      return ClearConversationModel.fromMap(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      _log(
+        'Clear conversation failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(e, fallback: 'Erro ao limpar conversa');
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected clear conversation error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<BlockStatusModel> blockUser(String userId) async {
+    try {
+      _log('PUT ${_blockUserEndpoint(userId)}');
+      final response = await _dio.put(_blockUserEndpoint(userId));
+
+      if (response.data is! Map<String, dynamic>) {
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      return BlockStatusModel.fromMap(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _log(
+        'Block user failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(e, fallback: 'Erro ao bloquear usuario');
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected block user error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> unblockUser(String userId) async {
+    try {
+      _log('DELETE ${_blockUserEndpoint(userId)}');
+      await _dio.delete(_blockUserEndpoint(userId));
+    } on DioException catch (e) {
+      _log(
+        'Unblock user failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(e, fallback: 'Erro ao desbloquear usuario');
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected unblock user error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<List<BlockStatusModel>> getBlockedUsers() async {
+    try {
+      _log('GET ${_blockedUsersEndpoint()}');
+      final response = await _dio.get(_blockedUsersEndpoint());
+
+      if (response.statusCode == 204 || response.data == null) {
+        return [];
+      }
+
+      if (response.data is! List<dynamic>) {
+        throw const UserMessageFlowException(
+          'Formato de resposta invalido do servidor',
+          statusCode: 500,
+        );
+      }
+
+      return (response.data as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(BlockStatusModel.fromMap)
+          .toList();
+    } on DioException catch (e) {
+      _log(
+        'Get blocked users failed status=${e.response?.statusCode} message=${e.message}',
+      );
+      throw _mapDioException(e, fallback: 'Erro ao listar usuarios bloqueados');
+    } on UserMessageFlowException {
+      rethrow;
+    } catch (e) {
+      _log('Unexpected get blocked users error: $e');
+      throw UserMessageFlowException(e.toString());
+    }
+  }
+
+  @override
+  Future<String?> getDirectConversationOtherUserId(
+    String conversationId,
+  ) async {
+    try {
+      _log(
+        'GET ${_conversationDetailsEndpoint(conversationId)} (resolve otherUserId)',
+      );
+      final response = await _dio.get(
+        _conversationDetailsEndpoint(conversationId),
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        return null;
+      }
+
+      final conversationData = response.data as Map<String, dynamic>;
+      if (conversationData['type']?.toString() != 'DIRECT') {
+        return null;
+      }
+
+      final participants = conversationData['participants'];
+      if (participants is! List<dynamic>) {
+        return null;
+      }
+
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      final otherParticipant = participants.firstWhere((p) {
+        if (p is! Map<String, dynamic>) return false;
+        final pid = p['userId']?.toString();
+        return pid != null && pid.isNotEmpty && pid != currentUserId;
+      }, orElse: () => null);
+
+      if (otherParticipant is Map<String, dynamic>) {
+        return otherParticipant['userId']?.toString();
+      }
+
+      return null;
+    } catch (e) {
+      _log('Resolve otherUserId failed (non-critical): $e');
+      return null;
     }
   }
 
@@ -493,25 +705,28 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
     // 2) Para DIRECT, varrer participants[] em busca do "outro" usuário
     if (type == 'DIRECT' && conversationData['participants'] is List) {
       final participants = conversationData['participants'] as List<dynamic>;
-      _log('🔎 Scanning ${participants.length} participants (currentUserId=$currentUserId)');
-
-      final otherParticipant = participants.firstWhere(
-        (p) {
-          if (p is! Map<String, dynamic>) return false;
-          final pid = p['userId']?.toString();
-          return pid != null && pid.isNotEmpty && pid != currentUserId;
-        },
-        orElse: () => null,
+      _log(
+        '🔎 Scanning ${participants.length} participants (currentUserId=$currentUserId)',
       );
+
+      final otherParticipant = participants.firstWhere((p) {
+        if (p is! Map<String, dynamic>) return false;
+        final pid = p['userId']?.toString();
+        return pid != null && pid.isNotEmpty && pid != currentUserId;
+      }, orElse: () => null);
 
       if (otherParticipant is Map<String, dynamic>) {
         final fullName = otherParticipant['userFullName']?.toString();
         if (fullName != null && fullName.trim().isNotEmpty) return fullName;
         final userName = otherParticipant['userName']?.toString();
         if (userName != null && userName.trim().isNotEmpty) return userName;
-        _log('⚠️ Other participant found but userFullName/userName are empty: $otherParticipant');
+        _log(
+          '⚠️ Other participant found but userFullName/userName are empty: $otherParticipant',
+        );
       } else {
-        _log('⚠️ No "other" participant found. currentUserId=$currentUserId, participants=$participants');
+        _log(
+          '⚠️ No "other" participant found. currentUserId=$currentUserId, participants=$participants',
+        );
       }
     }
 
@@ -522,7 +737,9 @@ class UserMessageFlowRepository implements UserMessageFlowRepositoryInterface {
     }
 
     // 4) Fallback (sintoma do bug — backend não está retornando dados esperados)
-    _log('⚠️ Falling back to "Unknown Contact". Payload keys=${conversationData.keys.toList()}');
+    _log(
+      '⚠️ Falling back to "Unknown Contact". Payload keys=${conversationData.keys.toList()}',
+    );
     return 'Unknown Contact';
   }
 
