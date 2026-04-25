@@ -326,21 +326,73 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        transitionBetweenRoutes: false,
-        backgroundColor: CupertinoColors.systemGroupedBackground,
-        border: null,
-        middle: const Text(
-          'Mensagens',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-        ),
-        trailing: GestureDetector(
-          onTap: _handleFilterTap,
-          child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
+      backgroundColor: CupertinoColors.white,
+      navigationBar: _buildNavigationBar(context),
+      child: SafeArea(child: _buildBody()),
+    );
+  }
+
+  /// Builds custom iOS-style navigation bar with left-aligned title
+  /// Follows clean, minimalist design with back button + title side-by-side
+  CupertinoNavigationBar _buildNavigationBar(BuildContext context) {
+    // Check if can actually navigate back (important for TAB screens)
+    final canPop = Navigator.of(context).canPop();
+
+    return CupertinoNavigationBar(
+      transitionBetweenRoutes: false,
+      backgroundColor: CupertinoColors.white,
+      border: const Border(
+        bottom: BorderSide(
+          color: CupertinoColors.separator,
+          width: 0.5,
         ),
       ),
-      child: SafeArea(child: _buildBody()),
+      // Left-aligned back button + title (iOS style)
+      leading: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Back button - only show if can navigate back
+          if (canPop)
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 44,
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    CupertinoIcons.back,
+                    size: 28,
+                    color: CupertinoColors.black,
+                  ),
+                  SizedBox(width: 6),
+                ],
+              ),
+            ),
+          // Title - bold, left-aligned with back button
+          const Text(
+            'Mensagens',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700, // Bold for strong hierarchy
+              color: CupertinoColors.black,
+              fontFamily: '.SF Pro Display', // iOS system font
+              letterSpacing: -0.5, // Tighter tracking (iOS style)
+            ),
+          ),
+        ],
+      ),
+      // Filter/sort button on the right
+      trailing: GestureDetector(
+        onTap: _handleFilterTap,
+        child: const Icon(
+          CupertinoIcons.slider_horizontal_3,
+          size: 24,
+          color: CupertinoColors.black,
+        ),
+      ),
+      // Prevents title from being centered (we control layout in leading)
+      middle: null,
     );
   }
 
