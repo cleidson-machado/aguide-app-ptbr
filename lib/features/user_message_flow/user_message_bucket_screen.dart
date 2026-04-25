@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
@@ -25,11 +26,17 @@ class UsersMessageBucketScreen extends StatefulWidget {
       _UsersMessageBucketScreenState();
 }
 
-class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
+class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
+    with WidgetsBindingObserver {
+  /// Polling interval for silent conversation metadata refresh.
+  /// 15s = balanced for inbox-like view (less critical than active chat).
+  static const Duration _pollingInterval = Duration(seconds: 15);
+
   late ScrollController _scrollController;
   late MessageUserListViewModel _viewModel;
   late UserMessageFlowRepositoryInterface _messageRepository;
   bool _isCreatingConversation = false;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -39,14 +46,54 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
     _messageRepository = injector<UserMessageFlowRepositoryInterface>();
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadUsers();
+
+    // Lifecycle observer to pause polling when app is backgrounded
+    WidgetsBinding.instance.addObserver(this);
+
+    // Start silent polling for conversation metadata (timestamps, badges)
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _stopPolling();
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Pause polling when app goes to background, resume when foregrounded.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (kDebugMode) {
+        debugPrint('▶️ [UsersMessageBucketScreen] App resumed → restart polling');
+      }
+      _startPolling();
+      // Immediate refresh on resume
+      _viewModel.silentRefreshConversations();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (kDebugMode) {
+        debugPrint('⏸️ [UsersMessageBucketScreen] App paused → stop polling');
+      }
+      _stopPolling();
+    }
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) {
+      if (!mounted) return;
+      _viewModel.silentRefreshConversations();
+    });
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
   }
 
   void _onViewModelChanged() {
@@ -295,13 +342,19 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
 
       // Navigate to chat screen
       if (mounted) {
-        Navigator.of(context).push(
+        await Navigator.of(context).push(
           CupertinoPageRoute(
             builder: (context) => UserChatMessageViewScreen(
               contact: conversation!, // Safe after null check in catch block
             ),
           ),
         );
+
+        // When user returns from chat, refresh conversation metadata
+        // (badges may have been cleared, lastMessage may have changed)
+        if (mounted) {
+          _viewModel.silentRefreshConversations();
+        }
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {

@@ -258,6 +258,52 @@ class MessageUserListViewModel extends ChangeNotifier {
     }
   }
 
+  /// Silent polling refresh - re-fetches ONLY conversation metadata
+  /// (lastMessageAt, unreadCount, lastMessagePreview) without reloading
+  /// the user list itself. Designed for auto-refresh timers.
+  ///
+  /// Behavior:
+  /// - Does NOT set _isLoading (no UI flash)
+  /// - Does NOT touch _error (preserves existing error state)
+  /// - Only notifies listeners if conversation metadata actually changed
+  /// - Errors are silently logged (non-critical)
+  Future<void> silentRefreshConversations() async {
+    if (_users.isEmpty) {
+      _log('silentRefreshConversations skipped: empty user list');
+      return;
+    }
+
+    try {
+      _log('silentRefreshConversations start (${_users.length} users)');
+
+      // Snapshot current metadata to detect changes
+      final beforeSnapshot = {
+        for (final u in _users)
+          u.id: '${u.lastMessageAt?.millisecondsSinceEpoch}|${u.unreadCount}|${u.lastMessagePreview}'
+      };
+
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      await _enrichWithConversationMetadata(currentUserId);
+
+      // Detect if anything changed
+      final hasChanges = _users.any((u) {
+        final newKey = '${u.lastMessageAt?.millisecondsSinceEpoch}|${u.unreadCount}|${u.lastMessagePreview}';
+        return beforeSnapshot[u.id] != newKey;
+      });
+
+      if (hasChanges) {
+        _applyCurrentSort();
+        _log('silentRefreshConversations: changes detected → notifying');
+        notifyListeners();
+      } else {
+        _log('silentRefreshConversations: no changes');
+      }
+    } catch (e) {
+      // Silent failure - polling errors must NOT bother the user
+      _log('silentRefreshConversations: error (silent): $e');
+    }
+  }
+
   /// Map exceptions to user-friendly error messages
   String _mapExceptionToMessage(dynamic exception) {
     final errorString = exception.toString().toLowerCase();

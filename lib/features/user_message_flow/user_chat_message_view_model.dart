@@ -17,6 +17,7 @@ class UserChatMessageViewModel extends ChangeNotifier {
   bool _hasNextPage = false;
   int _currentPage = 0;
   String? _error;
+  bool _hasNewMessagesFromPolling = false;
 
   List<UserChatMessageModel> get messages => _messages;
   bool get isLoading => _isLoading;
@@ -24,6 +25,15 @@ class UserChatMessageViewModel extends ChangeNotifier {
   bool get hasNextPage => _hasNextPage;
   int get currentPage => _currentPage;
   String? get error => _error;
+
+  /// True when the last silent poll fetched new messages from other participants.
+  /// Used by the screen to decide whether to auto-scroll to bottom.
+  /// Consumed once - reset to false after read.
+  bool consumeHasNewMessagesFromPolling() {
+    final value = _hasNewMessagesFromPolling;
+    _hasNewMessagesFromPolling = false;
+    return value;
+  }
 
   void _log(String message) {
     if (kDebugMode) {
@@ -90,6 +100,61 @@ class UserChatMessageViewModel extends ChangeNotifier {
       _log('refreshMessages generic error fallback=$_error');
     } finally {
       notifyListeners();
+    }
+  }
+
+  /// Silent polling refresh - fetches latest messages without showing loading
+  /// spinner or surfacing errors to the user. Designed for auto-refresh timers.
+  ///
+  /// Behavior:
+  /// - Does NOT set _isLoading=true (no UI flash)
+  /// - Skips if currently loading or sending (avoid race conditions)
+  /// - Only notifies listeners if message list actually changed
+  /// - Sets _hasNewMessagesFromPolling=true if new messages from others arrived
+  /// - Errors are silently logged (non-critical)
+  Future<void> silentRefreshMessages(String conversationId) async {
+    if (_isLoading || _isSending) {
+      _log('silentRefresh skipped (busy: loading=$_isLoading sending=$_isSending)');
+      return;
+    }
+
+    try {
+      final page = await _repository.getMessagesByConversation(
+        conversationId: conversationId,
+        page: 0,
+      );
+
+      // Diff: detect if there are new messages or message count changed
+      final previousCount = _messages.length;
+      final previousLastId = _messages.isNotEmpty ? _messages.last.id : null;
+      final newLastId = page.messages.isNotEmpty ? page.messages.last.id : null;
+
+      final hasChanges =
+          page.messages.length != previousCount || previousLastId != newLastId;
+
+      if (!hasChanges) {
+        _log('silentRefresh: no changes (count=$previousCount)');
+        return;
+      }
+
+      // Detect if any new message is from someone else (not me)
+      final newMessages = page.messages.where(
+        (m) => !_messages.any((existing) => existing.id == m.id),
+      );
+      final hasIncomingFromOthers = newMessages.any((m) => !m.isSentByMe);
+
+      _messages = page.messages;
+      _currentPage = page.currentPage;
+      _hasNextPage = page.hasNextPage;
+      _hasNewMessagesFromPolling = hasIncomingFromOthers;
+
+      _log(
+        'silentRefresh: applied changes count=${_messages.length} (was $previousCount) hasIncoming=$hasIncomingFromOthers',
+      );
+      notifyListeners();
+    } catch (e) {
+      // Silent failure - polling errors must NOT bother the user
+      _log('silentRefresh: error (silent): $e');
     }
   }
 

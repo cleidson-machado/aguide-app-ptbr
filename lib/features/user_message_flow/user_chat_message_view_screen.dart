@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_model.dart';
@@ -20,11 +21,17 @@ class UserChatMessageViewScreen extends StatefulWidget {
       _UserChatMessageViewScreenState();
 }
 
-class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
+class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
+    with WidgetsBindingObserver {
+  /// Polling interval for silent message refresh (REST-based pseudo-realtime).
+  /// 5s = good UX trade-off between freshness and server load / battery.
+  static const Duration _pollingInterval = Duration(seconds: 5);
+
   late ScrollController _scrollController;
   late TextEditingController _messageController;
   late UserChatMessageViewModel _viewModel;
   String? _composerValidationMessage;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -39,6 +46,12 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
     // This will update unreadCount on backend and clear badges
     _viewModel.markAllAsRead();
 
+    // Lifecycle observer to pause polling when app is backgrounded
+    WidgetsBinding.instance.addObserver(this);
+
+    // Start silent polling timer for pseudo-realtime updates
+    _startPolling();
+
     // Auto-scroll to bottom after frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
@@ -47,11 +60,46 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
 
   @override
   void dispose() {
+    _stopPolling();
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     _scrollController.dispose();
     _messageController.dispose();
     super.dispose();
+  }
+
+  /// Pause polling when app goes to background, resume when foregrounded.
+  /// Saves battery and network when user is not looking at the screen.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (kDebugMode) {
+        debugPrint('▶️ [UserChatMessageViewScreen] App resumed → restart polling');
+      }
+      _startPolling();
+      // Immediate refresh on resume so user sees latest messages right away
+      _viewModel.silentRefreshMessages(widget.contact.id);
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (kDebugMode) {
+        debugPrint('⏸️ [UserChatMessageViewScreen] App paused → stop polling');
+      }
+      _stopPolling();
+    }
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) {
+      if (!mounted) return;
+      _viewModel.silentRefreshMessages(widget.contact.id);
+    });
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
   }
 
   void _onViewModelChanged() {
@@ -67,9 +115,29 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen> {
       );
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+    // Only auto-scroll when:
+    // - Initial load completed (isLoading just became false)
+    // - User just sent a message
+    // - Polling brought new messages from OTHERS (consume flag)
+    // This prevents scroll-jacking when user is reading older messages.
+    final hasIncomingFromOthers = _viewModel.consumeHasNewMessagesFromPolling();
+    final shouldAutoScroll = !_viewModel.isLoading &&
+        (hasIncomingFromOthers || _isUserAtBottom());
+
+    if (shouldAutoScroll) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+    }
+  }
+
+  /// Returns true if user is currently scrolled near the bottom (within 100px).
+  /// Used to decide whether to auto-scroll on new content (don't yank scroll
+  /// when user is reading older messages).
+  bool _isUserAtBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    return (position.maxScrollExtent - position.pixels) < 100;
   }
 
   /// Scrolls to bottom of message list
