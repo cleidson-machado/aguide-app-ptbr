@@ -176,6 +176,7 @@ Future<void> setupDependencies() async {
   injector.registerFactory<MessageUserListViewModel>(
     () => MessageUserListViewModel(
       repository: injector<UserRepositoryInterface>(),
+      messageRepository: injector<UserMessageFlowRepositoryInterface>(),
     ),
   );
 }

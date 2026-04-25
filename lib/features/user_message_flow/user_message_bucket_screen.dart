@@ -85,6 +85,29 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen> {
               CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.pop(context);
+                  _viewModel.sortUsers(MessageUserSortCriteria.recentMessagesFirst);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(CupertinoIcons.clock, size: 20),
+                    const SizedBox(width: 8),
+                    const Text('Mais recentes primeiro'),
+                    if (_viewModel.currentSort == MessageUserSortCriteria.recentMessagesFirst)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Icon(
+                          CupertinoIcons.check_mark,
+                          size: 18,
+                          color: CupertinoColors.activeBlue,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () {
+                  Navigator.pop(context);
                   _viewModel.sortUsers(MessageUserSortCriteria.alphabeticalAZ);
                 },
                 child: Row(

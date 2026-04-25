@@ -54,29 +54,95 @@ class MessageUserListItemWidget extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  
+
                   // Role designation (PRODUTOR / CONSUMIDOR)
                   Text(
                     user.roleLabel,
                     style: const TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w700, // Bold
-                      color: CupertinoColors.systemRed, // Vermelho
+                      fontWeight: FontWeight.w700,
+                      color: CupertinoColors.systemRed,
                     ),
                   ),
+
+                  // Last message preview (only if conversation exists)
+                  if (user.lastMessagePreview != null &&
+                      user.lastMessagePreview!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      user.lastMessagePreview!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: CupertinoColors.secondaryLabel,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            // Chevron right indicator
-            const Icon(
-              CupertinoIcons.chevron_right,
-              size: 18,
-              color: CupertinoColors.systemGrey3,
-            ),
+            // Right column: timestamp + unread badge / chevron
+            const SizedBox(width: 8),
+            _buildTrailing(),
           ],
         ),
       ),
+    );
+  }
+
+  /// Builds trailing widget: timestamp of last message + unread badge,
+  /// or chevron if user never had a conversation.
+  Widget _buildTrailing() {
+    final formattedTimestamp = user.formattedLastMessageAt;
+
+    if (formattedTimestamp == null) {
+      // Nunca conversou: apenas chevron (mantém comportamento legado)
+      return const Icon(
+        CupertinoIcons.chevron_right,
+        size: 18,
+        color: CupertinoColors.systemGrey3,
+      );
+    }
+
+    final hasUnread = user.unreadCount > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          formattedTimestamp,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+            color: hasUnread
+                ? CupertinoColors.activeBlue
+                : CupertinoColors.secondaryLabel,
+          ),
+        ),
+        if (hasUnread) ...[
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: const BoxDecoration(
+              color: CupertinoColors.activeBlue,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            constraints: const BoxConstraints(minWidth: 20),
+            child: Text(
+              user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: CupertinoColors.white,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

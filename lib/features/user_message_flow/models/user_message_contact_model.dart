@@ -10,6 +10,7 @@ class UserMessageContactModel implements BaseModel {
   final String contactName;
   final String lastMessage;
   final String timestamp;
+  final DateTime? lastMessageAt;
   final String? avatarUrl;
   final bool isOnline;
   final int unreadCount;
@@ -22,6 +23,7 @@ class UserMessageContactModel implements BaseModel {
     required this.contactName,
     required this.lastMessage,
     required this.timestamp,
+    this.lastMessageAt,
     this.avatarUrl,
     this.isOnline = false,
     this.unreadCount = 0,
@@ -90,11 +92,15 @@ class UserMessageContactModel implements BaseModel {
   factory UserMessageContactModel.fromConversationSummaryMap(
     Map<String, dynamic> map,
   ) {
+    final rawLastMessageAt = map['lastMessageAt'];
     return UserMessageContactModel(
       id: map['id']?.toString() ?? '',
       contactName: map['name']?.toString() ?? 'Unknown Contact',
       lastMessage: map['lastMessagePreview']?.toString() ?? '',
       timestamp: map['formattedTimestamp']?.toString() ?? '',
+      lastMessageAt: rawLastMessageAt != null
+          ? DateTime.tryParse(rawLastMessageAt.toString())
+          : null,
       avatarUrl: map['iconUrl']?.toString(),
       isOnline: false,
       unreadCount: map['unreadCount'] as int? ?? 0,

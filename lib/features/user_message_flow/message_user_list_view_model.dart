@@ -3,30 +3,32 @@ import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/util/error_messages.dart';
 
 /// Sorting criteria for message user list
 enum MessageUserSortCriteria {
   alphabeticalAZ,
   alphabeticalZA,
+  recentMessagesFirst,
 }
 
 /// ViewModel específico para lista de usuários na feature user_message_flow
 /// 
 /// **Princípio DDD:** Este ViewModel é isolado da feature 'user' core.
 /// Combina dados de UserModel (GET /users) + UserDetailsModel (GET /users/{id}/details)
-/// para fornecer role designation sem modificar feature core.
-/// 
-/// Estratégia de carregamento:
-/// 1. Carrega todos os usuários com getAll() → List<UserModel>
-/// 2. Para cada usuário, carrega detalhes com getUserDetails(id) → UserDetailsModel
-/// 3. Combina em List<MessageUserData> usando factory pattern
+/// + ConversationSummary (GET /conversations) para fornecer role designation
+/// e timestamp da última mensagem sem modificar feature core.
 class MessageUserListViewModel extends ChangeNotifier {
   MessageUserListViewModel({
     required UserRepositoryInterface repository,
-  }) : _repository = repository;
+    required UserMessageFlowRepositoryInterface messageRepository,
+  })  : _repository = repository,
+        _messageRepository = messageRepository;
 
   final UserRepositoryInterface _repository;
+  final UserMessageFlowRepositoryInterface _messageRepository;
 
   List<MessageUserData> _users = [];
   bool _isLoading = false;
@@ -89,7 +91,10 @@ class MessageUserListViewModel extends ChangeNotifier {
       // Filtrar o próprio usuário da lista (não pode enviar mensagem para si mesmo)
       final currentUserId = injector<AuthTokenManager>().getUserId();
       _users = enrichedUsers.where((user) => user.id != currentUserId).toList();
-      
+
+      // Step 3: Enriquecer com metadata de conversas existentes (lastMessageAt, unreadCount)
+      await _enrichWithConversationMetadata(currentUserId);
+
       _applyCurrentSort();
       _log('loadUsers success count=${_users.length} with role designation (currentUserId=$currentUserId filtered out)');
     } catch (e) {
@@ -132,6 +137,12 @@ class MessageUserListViewModel extends ChangeNotifier {
       }
 
       _users = enrichedUsers;
+
+      // Re-aplicar enrichment de conversas no refresh
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      _users = _users.where((user) => user.id != currentUserId).toList();
+      await _enrichWithConversationMetadata(currentUserId);
+
       _applyCurrentSort();
       _error = null;
       _log('refreshUsers success count=${_users.length}');
@@ -168,6 +179,82 @@ class MessageUserListViewModel extends ChangeNotifier {
           return nameB.compareTo(nameA);
         });
         break;
+      case MessageUserSortCriteria.recentMessagesFirst:
+        _users.sort((a, b) {
+          // Users with messages first (DESC by lastMessageAt), then users without messages alphabetically
+          final aTs = a.lastMessageAt;
+          final bTs = b.lastMessageAt;
+          if (aTs == null && bTs == null) {
+            return a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+          }
+          if (aTs == null) return 1;
+          if (bTs == null) return -1;
+          return bTs.compareTo(aTs);
+        });
+        break;
+    }
+  }
+
+  /// Enriquece a lista de usuários com metadata de conversas DIRECT existentes
+  ///
+  /// Estratégia (com endpoints atuais):
+  /// 1. GET /conversations → lista de conversas (sem otherUserId em DIRECT)
+  /// 2. Para cada conversa DIRECT, GET /conversations/{id} → participants[]
+  /// 3. Mapeia conv.lastMessageAt/unreadCount → MessageUserData via otherUserId
+  ///
+  /// Não-crítico: falhas são logadas mas não bloqueiam a tela.
+  Future<void> _enrichWithConversationMetadata(String? currentUserId) async {
+    try {
+      _log('Loading conversations metadata for ${_users.length} users');
+      final conversations = await _messageRepository.getConversations();
+      final directConversations =
+          conversations.where((c) => c.type == 'DIRECT').toList();
+      _log('Found ${directConversations.length} DIRECT conversations');
+
+      // Mapeia otherUserId → conversation summary
+      final Map<String, UserMessageContactModel> userIdToConversation = {};
+
+      for (final conv in directConversations) {
+        try {
+          // Precisamos buscar detalhes para descobrir otherUserId (não vem na lista)
+          final details = await _messageRepository.getConversationDetails(conv.id);
+          // getConversationDetails já preenche contactName com nome do outro participante,
+          // mas não expõe otherUserId. Vamos buscar diretamente via raw match na lista de users.
+          // Como contactName vem do outro participante, usamos para matchar.
+          final match = _users.firstWhere(
+            (u) => u.fullName.toLowerCase() == details.contactName.toLowerCase(),
+            orElse: () => const MessageUserData(
+              id: '',
+              name: '',
+              surname: '',
+              email: '',
+              fullName: '',
+            ),
+          );
+          if (match.id.isNotEmpty) {
+            userIdToConversation[match.id] = conv;
+          }
+        } catch (e) {
+          _log('⚠️  Failed to load conversation details for ${conv.id}: $e');
+        }
+      }
+
+      // Aplica metadata aos usuários
+      _users = _users.map((user) {
+        final conv = userIdToConversation[user.id];
+        if (conv == null) return user;
+        return user.copyWith(
+          conversationId: conv.id,
+          lastMessageAt: conv.lastMessageAt,
+          lastMessagePreview: conv.lastMessage,
+          unreadCount: conv.unreadCount,
+        );
+      }).toList();
+
+      _log('✅ Enriched ${userIdToConversation.length} users with conversation metadata');
+    } catch (e) {
+      // Não-crítico: lista de usuários ainda é exibida sem timestamps
+      _log('⚠️  Failed to enrich with conversation metadata (non-critical): $e');
     }
   }
 
