@@ -23,6 +23,7 @@ import 'package:portugal_guide/features/user_message_flow/user_chat_message_view
 import 'package:portugal_guide/features/user_message_flow/user_message_bucket_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/services/message_notification_service.dart';
 import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository_interface.dart';
@@ -177,6 +178,16 @@ Future<void> setupDependencies() async {
     () => MessageUserListViewModel(
       repository: injector<UserRepositoryInterface>(),
       messageRepository: injector<UserMessageFlowRepositoryInterface>(),
+    ),
+  );
+
+  // MessageNotificationService - singleton background poller que detecta
+  // novas mensagens recebidas e emite eventos para exibição de top snackbar
+  // app-wide (independente de qual screen está ativa).
+  injector.registerLazySingleton<MessageNotificationService>(
+    () => MessageNotificationService(
+      repository: injector<UserMessageFlowRepositoryInterface>(),
+      tokenManager: injector<AuthTokenManager>(),
     ),
   );
 }

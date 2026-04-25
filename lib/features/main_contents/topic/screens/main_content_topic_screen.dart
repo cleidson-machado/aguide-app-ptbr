@@ -17,6 +17,8 @@ import 'package:portugal_guide/features/user_engagement/user_engagement_model.da
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_net_address_repository.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagament_metadata_repository.dart';
+import 'package:portugal_guide/features/user_message_flow/services/message_notification_service.dart';
+import 'package:portugal_guide/features/user_message_flow/widgets/new_message_top_snackbar.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
 import 'package:portugal_guide/features/user_tracking_data/enums/favorite_content_type_enum.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -37,6 +39,8 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       injector<MainContentTopicViewModel>();
   final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
   final UserTrackingDataService _trackingService = injector<UserTrackingDataService>(); // 🆕 PHASE B
+  final MessageNotificationService _messageNotificationService =
+      injector<MessageNotificationService>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
@@ -64,6 +68,11 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     // 🆕 PHASE B: Iniciar tracking de sessão
     WidgetsBinding.instance.addObserver(this);
     _startSessionTracking();
+
+    // 🔔 Inicia o serviço global de notificações de novas mensagens e
+    // registra listener para exibir top snackbar quando o user receber msg.
+    _messageNotificationService.start();
+    _messageNotificationService.events.addListener(_onNewMessageEvent);
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -196,8 +205,21 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     // 🆕 PHASE B: Limpar session tracking
     WidgetsBinding.instance.removeObserver(this);
     _stopSessionTracking();
+
+    // 🔔 Remove listener de notificações de novas mensagens
+    // Não chamamos stop() no service pois ele é singleton app-wide
+    _messageNotificationService.events.removeListener(_onNewMessageEvent);
     
     super.dispose();
+  }
+
+  /// 🔔 Listener de eventos de novas mensagens vindos do
+  /// MessageNotificationService global. Exibe top snackbar e consome o evento.
+  void _onNewMessageEvent() {
+    final event = _messageNotificationService.events.value;
+    if (event == null || !mounted) return;
+    showNewMessageTopSnackBar(context, event);
+    _messageNotificationService.consume();
   }
 
   /// Listener para detectar quando o usuário chegou próximo do final da lista

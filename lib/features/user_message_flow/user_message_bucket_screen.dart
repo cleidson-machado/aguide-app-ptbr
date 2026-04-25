@@ -6,6 +6,8 @@ import 'package:portugal_guide/features/user_message_flow/models/message_user_da
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 import 'package:portugal_guide/features/user_message_flow/message_user_list_view_model.dart';
 import 'package:portugal_guide/features/user_message_flow/widgets/message_user_list_item_widget.dart';
+import 'package:portugal_guide/features/user_message_flow/widgets/new_message_top_snackbar.dart';
+import 'package:portugal_guide/features/user_message_flow/services/message_notification_service.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 
@@ -35,6 +37,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
   late ScrollController _scrollController;
   late MessageUserListViewModel _viewModel;
   late UserMessageFlowRepositoryInterface _messageRepository;
+  late MessageNotificationService _notificationService;
   bool _isCreatingConversation = false;
   Timer? _pollingTimer;
 
@@ -44,6 +47,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
     _scrollController = ScrollController();
     _viewModel = injector<MessageUserListViewModel>();
     _messageRepository = injector<UserMessageFlowRepositoryInterface>();
+    _notificationService = injector<MessageNotificationService>();
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadUsers();
 
@@ -52,10 +56,15 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
 
     // Start silent polling for conversation metadata (timestamps, badges)
     _startPolling();
+
+    // Start app-wide notification polling and listen for new-message events
+    _notificationService.start();
+    _notificationService.events.addListener(_onNewMessageEvent);
   }
 
   @override
   void dispose() {
+    _notificationService.events.removeListener(_onNewMessageEvent);
     _stopPolling();
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
@@ -94,6 +103,17 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
   void _stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+  }
+
+  /// Listener for app-wide new-message events from MessageNotificationService.
+  /// Displays a top snackbar and consumes the event to prevent re-display.
+  void _onNewMessageEvent() {
+    final event = _notificationService.events.value;
+    if (event == null || !mounted) return;
+    showNewMessageTopSnackBar(context, event);
+    // Trigger immediate metadata refresh so badges/timestamps update without waiting
+    _viewModel.silentRefreshConversations();
+    _notificationService.consume();
   }
 
   void _onViewModelChanged() {

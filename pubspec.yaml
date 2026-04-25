@@ -44,7 +44,8 @@ dependencies:
   shared_preferences: ^2.5.3        ############################ Para armazenamento local de dados simples (chave-valor), como tokens de autenticação e preferências do usuário.
   google_sign_in: ^6.2.1            ############################ Para autenticação com Google OAuth 2.0 e acesso a APIs Google (YouTube, etc.)
   url_launcher: ^6.3.1              ############################ Para abrir URLs externas (WhatsApp, Telegram, navegador, etc.)
-  
+  top_snackbar_flutter: ^3.3.0      ############################ Snackbars no topo (estilo notificação push) para alertas in-app de novas mensagens.
+
   # TELEMETRIA & ANALYTICS
   get_ip_address: ^0.0.7            ############################ Para coletar endereço IP público do usuário (tracking e auditoria de sessão).
   device_info_plus: ^10.1.2         ############################ Informações do dispositivo (modelo, OS, versão) para debug e analytics.
