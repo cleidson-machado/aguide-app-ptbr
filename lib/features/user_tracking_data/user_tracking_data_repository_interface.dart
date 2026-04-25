@@ -100,30 +100,39 @@ abstract class UserTrackingDataRepositoryInterface {
   /// 
   /// Endpoint: POST /api/v1/user-rankings/user/{userId}/add-points?points={valor}
   /// 
+  /// **🆕 PHASE B: Aceita query param `reason` opcional para auditoria**
+  /// Endpoint completo: POST /api/v1/user-rankings/user/{userId}/add-points?points={valor}&reason={snake_case}
+  /// 
   /// Quando usar:
-  /// - Login diário: +1 ponto
-  /// - Primeira atividade do dia: +1 ponto
+  /// - Login diário: +1 ponto (reason: "daily_login")
+  /// - Primeira atividade do dia: +1 ponto (reason: "first_activity")
   /// - Completar streak de 7 dias: +5 pontos (bônus)
-  /// - Completar streak de 30 dias: +20 pontos (bônus)
+  /// - Wizard entry: +2 pontos (reason: "wizard_entry")
+  /// - Profile 50%: +3 pontos (reason: "profile_50_percent")
+  /// - Profile 100%: +10 pontos (reason: "profile_100_percent")
   /// 
   /// ⚠️ Backend atualiza automaticamente:
   /// - totalScore (incrementa)
   /// - scoreUpdatedAt (timestamp atual)
   /// - engagementLevel (recalcula baseado em novo score)
+  /// - points_history (registra reason para auditoria se fornecido)
   /// 
   /// Exemplo de uso:
   /// ```dart
-  /// // Registrar login
+  /// // Registrar login (sem reason - legado)
   /// final updated = await addPoints(userId, 1);
   /// print('Novo score: ${updated.totalScore}');
   /// print('Nível: ${updated.engagementLevel}');
+  /// 
+  /// // 🆕 PHASE B: Adicionar pontos COM reason (auditável)
+  /// await addPoints(userId, 2, reason: 'wizard_entry');
   /// 
   /// // Bônus de streak
   /// if (streak == 7) {
   ///   await addPoints(userId, 5);
   /// }
   /// ```
-  Future<UserTrackingDataModel?> addPoints(String userId, int points);
+  Future<UserTrackingDataModel?> addPoints(String userId, int points, {String? reason});
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🏆 RANKING E LEADERBOARDS

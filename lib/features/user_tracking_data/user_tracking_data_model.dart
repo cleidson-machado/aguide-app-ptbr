@@ -1,11 +1,13 @@
-/// Model para rastreamento de comportamento do usuário (User Behavior Tracking MVP)
+import 'package:portugal_guide/features/user_tracking_data/enums/favorite_content_type_enum.dart';
+
+/// Model para rastreamento de comportamento do usuário (User Behavior Tracking)
 /// Usado para sistema de ranking/gamificação baseado em pontuação de engajamento
 /// 
 /// Documentação da API: .local_knowledge/FLUTTER_USER_TRACKING_MVP_GUIDE.md
 /// Endpoints: /api/v1/user-rankings
 /// 
-/// ⚠️ IMPORTANTE: Este é o MVP - apenas campos básicos de rastreamento
-/// Campos futuros (não implementados): totalContentViews, favoriteCategory, etc.
+/// ✅ PHASE B: Campos de telemetria enriquecida implementados
+/// Backend documentação: .local_knowledge/add-user-tracking-phase-b/RESPONSE_FRONTEND_PHASE_B_IMPLEMENTATION.md
 class UserTrackingDataModel {
   /// ID do registro de ranking (UUID gerado pelo backend)
   /// Opcional na criação (POST), obrigatório em atualizações (PUT)
@@ -51,6 +53,59 @@ class UserTrackingDataModel {
   /// Data/hora da última atualização do registro (retornado pela API)
   final DateTime? updatedAt;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: Campos de Telemetria Enriquecida
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Total de visualizações de conteúdo (acumulativo)
+  /// Incrementado a cada vez que usuário visualiza um conteúdo
+  /// Backend detecta milestones automaticamente (10/50/100 views)
+  final int? totalContentViews;
+
+  /// Total de conteúdos únicos visualizados
+  /// Conta apenas IDs distintos de conteúdos
+  final int? uniqueContentViews;
+
+  /// Média de minutos de uso diário do app
+  /// Calculado como média ponderada das sessões
+  /// Range: 0-1440 (24 horas)
+  final int? avgDailyUsageMinutes;
+
+  /// Categoria de conteúdo favorita do usuário
+  /// Determinada após 20+ visualizações em uma categoria
+  /// Exemplo: "Tecnologia", "Educação", "Entretenimento"
+  final String? favoriteCategory;
+
+  /// Tipo de conteúdo preferido do usuário
+  /// Valores: video, article, course, tutorial, guide
+  /// Validado pelo backend como enum
+  final FavoriteContentType? favoriteContentType;
+
+  /// Percentual de conclusão do perfil do usuário (0-100)
+  /// Atualizado progressivamente durante wizard de perfil
+  /// Backend valida range 0-100
+  final int? profileCompletionPercentage;
+
+  /// Data/hora da última visualização de conteúdo (ISO 8601 UTC)
+  /// Atualizado a cada tracking de content view
+  final DateTime? lastContentViewAt;
+
+  /// Indica se o usuário tem telefones cadastrados
+  /// Atualizado durante tracking de profile completion
+  final bool? hasPhones;
+
+  /// Total de telefones cadastrados pelo usuário
+  /// Range: >= 0
+  final int? totalPhones;
+
+  /// Indica se pelo menos 1 telefone tem WhatsApp habilitado
+  /// Derivado do campo hasWhatsApp de UserPhoneModel
+  final bool? hasWhatsapp;
+
+  /// Indica se pelo menos 1 telefone tem Telegram habilitado
+  /// Derivado do campo hasTelegram de UserPhoneModel
+  final bool? hasTelegram;
+
   const UserTrackingDataModel({
     this.id,
     required this.userId,
@@ -63,6 +118,19 @@ class UserTrackingDataModel {
     this.scoreUpdatedAt,
     this.createdAt,
     this.updatedAt,
+    // 🆕 PHASE B: Parâmetros opcionais de telemetria
+    this.totalContentViews,
+    this.uniqueContentViews,
+    this.avgDailyUsageMinutes,
+    this.favoriteCategory,
+    this.favoriteContentType,
+    this.profileCompletionPercentage,
+    this.lastContentViewAt,
+    // 🆕 PHASE B: Phone tracking telemetry
+    this.hasPhones,
+    this.totalPhones,
+    this.hasWhatsapp,
+    this.hasTelegram,
   });
 
   /// Converte JSON da API para Model
@@ -102,6 +170,23 @@ class UserTrackingDataModel {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : null,
+      // 🆕 PHASE B: Parsing de campos de telemetria
+      totalContentViews: json['totalContentViews'] as int?,
+      uniqueContentViews: json['uniqueContentViews'] as int?,
+      avgDailyUsageMinutes: json['avgDailyUsageMinutes'] as int?,
+      favoriteCategory: json['favoriteCategory'] as String?,
+      favoriteContentType: FavoriteContentType.fromString(
+        json['favoriteContentType'] as String?,
+      ),
+      profileCompletionPercentage: json['profileCompletionPercentage'] as int?,
+      lastContentViewAt: json['lastContentViewAt'] != null
+          ? DateTime.parse(json['lastContentViewAt'] as String)
+          : null,
+      // 🆕 PHASE B: Phone tracking fields
+      hasPhones: json['hasPhones'] as bool?,
+      totalPhones: json['totalPhones'] as int?,
+      hasWhatsapp: json['hasWhatsapp'] as bool?,
+      hasTelegram: json['hasTelegram'] as bool?,
     );
   }
 
@@ -112,11 +197,20 @@ class UserTrackingDataModel {
   /// - PUT /api/v1/user-rankings/{id} (atualizar timestamps/contadores)
   /// 
   /// Campos opcionais são incluídos apenas se não-null
-  Map<String, dynamic> toJson() {
+  /// 
+  /// **IMPORTANTE**: Quando [forUpdate] é true, totalScore é OMITIDO do JSON.
+  /// Isso permite que o backend calcule automaticamente o totalScore com base
+  /// em milestones (ex: profileCompletionPercentage 50% = +3 pts, 100% = +10 pts).
+  /// 
+  /// Se totalScore for incluído no PUT, o backend irá usar o valor enviado
+  /// em vez de calcular automaticamente, causando perda de pontos de milestones.
+  Map<String, dynamic> toJson({bool forUpdate = false}) {
     return {
       if (id != null) 'id': id,
       'userId': userId,
-      'totalScore': totalScore,
+      // ⚠️ CRITICAL: totalScore deve ser omitido em updates (PUT)
+      // para permitir cálculo automático de milestones no backend
+      if (!forUpdate) 'totalScore': totalScore,
       'lastLoginAt': lastLoginAt.toIso8601String(),
       'lastActivityAt': lastActivityAt.toIso8601String(),
       'totalActiveDays': totalActiveDays,
@@ -126,6 +220,21 @@ class UserTrackingDataModel {
         'scoreUpdatedAt': scoreUpdatedAt!.toIso8601String(),
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      // 🆕 PHASE B: Serialização de campos de telemetria (apenas se não-null)
+      if (totalContentViews != null) 'totalContentViews': totalContentViews,
+      if (uniqueContentViews != null) 'uniqueContentViews': uniqueContentViews,
+      if (avgDailyUsageMinutes != null) 'avgDailyUsageMinutes': avgDailyUsageMinutes,
+      if (favoriteCategory != null) 'favoriteCategory': favoriteCategory,
+      if (favoriteContentType != null) 'favoriteContentType': favoriteContentType!.toJson(),
+      if (profileCompletionPercentage != null)
+        'profileCompletionPercentage': profileCompletionPercentage,
+      if (lastContentViewAt != null)
+        'lastContentViewAt': lastContentViewAt!.toIso8601String(),
+      // 🆕 PHASE B: Phone tracking serialization
+      if (hasPhones != null) 'hasPhones': hasPhones,
+      if (totalPhones != null) 'totalPhones': totalPhones,
+      if (hasWhatsapp != null) 'hasWhatsapp': hasWhatsapp,
+      if (hasTelegram != null) 'hasTelegram': hasTelegram,
     };
   }
 
@@ -146,6 +255,19 @@ class UserTrackingDataModel {
     DateTime? scoreUpdatedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    // 🆕 PHASE B: Parâmetros opcionais de telemetria
+    int? totalContentViews,
+    int? uniqueContentViews,
+    int? avgDailyUsageMinutes,
+    String? favoriteCategory,
+    FavoriteContentType? favoriteContentType,
+    int? profileCompletionPercentage,
+    DateTime? lastContentViewAt,
+    // 🆕 PHASE B: Phone tracking telemetry
+    bool? hasPhones,
+    int? totalPhones,
+    bool? hasWhatsapp,
+    bool? hasTelegram,
   }) {
     return UserTrackingDataModel(
       id: id ?? this.id,
@@ -160,6 +282,20 @@ class UserTrackingDataModel {
       scoreUpdatedAt: scoreUpdatedAt ?? this.scoreUpdatedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      // 🆕 PHASE B: Cópia de campos de telemetria
+      totalContentViews: totalContentViews ?? this.totalContentViews,
+      uniqueContentViews: uniqueContentViews ?? this.uniqueContentViews,
+      avgDailyUsageMinutes: avgDailyUsageMinutes ?? this.avgDailyUsageMinutes,
+      favoriteCategory: favoriteCategory ?? this.favoriteCategory,
+      favoriteContentType: favoriteContentType ?? this.favoriteContentType,
+      profileCompletionPercentage:
+          profileCompletionPercentage ?? this.profileCompletionPercentage,
+      lastContentViewAt: lastContentViewAt ?? this.lastContentViewAt,
+      // 🆕 PHASE B: Phone tracking fields copy
+      hasPhones: hasPhones ?? this.hasPhones,
+      totalPhones: totalPhones ?? this.totalPhones,
+      hasWhatsapp: hasWhatsapp ?? this.hasWhatsapp,
+      hasTelegram: hasTelegram ?? this.hasTelegram,
     );
   }
 
@@ -172,7 +308,13 @@ class UserTrackingDataModel {
         'totalScore: $totalScore, '
         'engagementLevel: $engagementLevel, '
         'streak: $consecutiveDaysStreak, '
-        'activeDays: $totalActiveDays'
+        'activeDays: $totalActiveDays, '
+        // 🆕 PHASE B: Telemetria em debug
+        'contentViews: $totalContentViews/$uniqueContentViews, '
+        'avgMinutes: $avgDailyUsageMinutes, '
+        'favCategory: $favoriteCategory, '
+        'favType: $favoriteContentType, '
+        'profileCompletion: $profileCompletionPercentage%'
         ')';
   }
 
@@ -189,7 +331,15 @@ class UserTrackingDataModel {
         other.lastActivityAt == lastActivityAt &&
         other.totalActiveDays == totalActiveDays &&
         other.consecutiveDaysStreak == consecutiveDaysStreak &&
-        other.engagementLevel == engagementLevel;
+        other.engagementLevel == engagementLevel &&
+        // 🆕 PHASE B: Comparação de campos de telemetria
+        other.totalContentViews == totalContentViews &&
+        other.uniqueContentViews == uniqueContentViews &&
+        other.avgDailyUsageMinutes == avgDailyUsageMinutes &&
+        other.favoriteCategory == favoriteCategory &&
+        other.favoriteContentType == favoriteContentType &&
+        other.profileCompletionPercentage == profileCompletionPercentage &&
+        other.lastContentViewAt == lastContentViewAt;
   }
 
   @override
@@ -203,6 +353,16 @@ class UserTrackingDataModel {
       totalActiveDays,
       consecutiveDaysStreak,
       engagementLevel,
+      // 🆕 PHASE B: Hash de campos de telemetria
+      Object.hash(
+        totalContentViews,
+        uniqueContentViews,
+        avgDailyUsageMinutes,
+        favoriteCategory,
+        favoriteContentType,
+        profileCompletionPercentage,
+        lastContentViewAt,
+      ),
     );
   }
 }

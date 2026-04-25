@@ -17,6 +17,10 @@ import 'package:portugal_guide/features/user_engagement/user_engagement_model.da
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_net_address_repository.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagament_metadata_repository.dart';
+import 'package:portugal_guide/features/user_message_flow/services/message_notification_service.dart';
+import 'package:portugal_guide/features/user_message_flow/widgets/new_message_top_snackbar.dart';
+import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_service.dart';
+import 'package:portugal_guide/features/user_tracking_data/enums/favorite_content_type_enum.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lottie/lottie.dart';
@@ -30,14 +34,21 @@ class MainContentTopicScreen extends StatefulWidget {
 }
 
 class _MainContentTopicScreenState extends State<MainContentTopicScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final MainContentTopicViewModel viewModel =
       injector<MainContentTopicViewModel>();
   final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
+  final UserTrackingDataService _trackingService = injector<UserTrackingDataService>(); // 🆕 PHASE B
+  final MessageNotificationService _messageNotificationService =
+      injector<MessageNotificationService>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
   Timer? _dialogTimer; // Timer para auto-fechar dialog
   double _savedScrollPosition = 0.0; // ✅ Posição do scroll antes de navegar
+  
+  // 🆕 PHASE B: Session Duration Tracking
+  DateTime? _sessionStartTime; // Timestamp de início da sessão
+  Timer? _sessionTimer; // Timer para enviar session duration periodicamente
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -53,6 +64,15 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     viewModel.loadPagedContentsIfNeeded();
     // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
     _loadUserDetails();
+    
+    // 🆕 PHASE B: Iniciar tracking de sessão
+    WidgetsBinding.instance.addObserver(this);
+    _startSessionTracking();
+
+    // 🔔 Inicia o serviço global de notificações de novas mensagens e
+    // registra listener para exibir top snackbar quando o user receber msg.
+    _messageNotificationService.start();
+    _messageNotificationService.events.addListener(_onNewMessageEvent);
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -90,6 +110,90 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: SESSION DURATION TRACKING
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Inicia tracking de duração de sessão
+  /// Registra timestamp de início e configura timer para envios periódicos
+  void _startSessionTracking() {
+    _sessionStartTime = DateTime.now();
+    
+    if (kDebugMode) {
+      debugPrint('⏱️  [MainContentTopicScreen] Session tracking iniciado: $_sessionStartTime');
+    }
+
+    // Timer periódico a cada 5 minutos para enviar session duration
+    _sessionTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      _sendSessionDuration();
+    });
+  }
+
+  /// Para tracking de sessão e envia duração final
+  void _stopSessionTracking() {
+    _sessionTimer?.cancel();
+    _sendSessionDuration(); // Envio final ao fechar
+    
+    if (kDebugMode) {
+      debugPrint('⏹️  [MainContentTopicScreen] Session tracking parado');
+    }
+  }
+
+  /// Envia duração da sessão atual para backend
+  Future<void> _sendSessionDuration() async {
+    if (_sessionStartTime == null) return;
+
+    final userId = _tokenManager.getUserId();
+    if (userId == null || userId.isEmpty) return;
+
+    final now = DateTime.now();
+    final sessionMinutes = now.difference(_sessionStartTime!).inMinutes;
+
+    // Só enviar se sessão teve pelo menos 1 minuto
+    if (sessionMinutes < 1) return;
+
+    if (kDebugMode) {
+      debugPrint('📊 [MainContentTopicScreen] Enviando session duration: $sessionMinutes min');
+    }
+
+    // Chamar service (non-blocking)
+    await _trackingService.updateSessionDuration(
+      userId: userId,
+      sessionMinutes: sessionMinutes,
+    );
+
+    // Resetar contador para próxima medição
+    _sessionStartTime = DateTime.now();
+  }
+
+  /// Observa mudanças de lifecycle do app (background/foreground)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (kDebugMode) {
+      debugPrint('🔄 [MainContentTopicScreen] App lifecycle: $state');
+    }
+
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        // App indo para background ou fechando → enviar session duration
+        _sendSessionDuration();
+        break;
+      case AppLifecycleState.resumed:
+        // App voltando para foreground → resetar timer
+        _sessionStartTime = DateTime.now();
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
   @override
   void dispose() {
     _debounce?.cancel(); // Cancela o timer pendente ao destruir o widget
@@ -97,7 +201,25 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     viewModel.dispose();
+    
+    // 🆕 PHASE B: Limpar session tracking
+    WidgetsBinding.instance.removeObserver(this);
+    _stopSessionTracking();
+
+    // 🔔 Remove listener de notificações de novas mensagens
+    // Não chamamos stop() no service pois ele é singleton app-wide
+    _messageNotificationService.events.removeListener(_onNewMessageEvent);
+    
     super.dispose();
+  }
+
+  /// 🔔 Listener de eventos de novas mensagens vindos do
+  /// MessageNotificationService global. Exibe top snackbar e consome o evento.
+  void _onNewMessageEvent() {
+    final event = _messageNotificationService.events.value;
+    if (event == null || !mounted) return;
+    showNewMessageTopSnackBar(context, event);
+    _messageNotificationService.consume();
   }
 
   /// Listener para detectar quando o usuário chegou próximo do final da lista
@@ -814,6 +936,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                           // ✅ PLAY: Registra engagement antes de reproduzir
                           if (kDebugMode) debugPrint('🎬 PLAY selecionado - Item: ${content.id}');
                           
+                          // 🆕 PHASE B: Track content view
+                          _MainContentTopicScreenState._trackContentViewStatic(
+                            context,
+                            content,
+                          );
+                          
                           // Logar engajamento (HISTÓRICO DE VÍDEOS NAVEGADOS)
                           _MainContentTopicScreenState._logEngagementStatic(
                             context,
@@ -828,6 +956,12 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                         case 1:
                           // ✅ DETALHES: Registra engagement ao visualizar detalhes
                           if (kDebugMode) debugPrint('📋 DETALHES selecionado - Item: ${content.id}');
+                          
+                          // 🆕 PHASE B: Track content view
+                          _MainContentTopicScreenState._trackContentViewStatic(
+                            context,
+                            content,
+                          );
                           
                           // Logar engajamento como PARTIAL_VIEW
                           _MainContentTopicScreenState._logEngagementStatic(
@@ -1662,6 +1796,123 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
         ],
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🆕 PHASE B: CONTENT VIEW TRACKING (STATIC HELPER)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  /// 🆕 PHASE B: Helper estático para rastrear content view de widgets estáticos
+  /// 
+  /// Chamado quando usuário clica em "Assistir" ou "Ver Detalhes"
+  /// Registra visualização no sistema de ranking (totalContentViews, uniqueContentViews)
+  /// 
+  /// **Diferença com _logEngagementStatic:**
+  /// - `_logEngagementStatic`: Registra em user_engagement (histórico de vídeos navegados)
+  /// - `_trackContentViewStatic`: Registra em user_tracking_data (sistema de pontos/ranking)
+  /// 
+  /// **Milestones automáticos (backend):**
+  /// - 10 views: +2 pontos
+  /// - 50 views: +5 pontos
+  /// - 100 views: +10 pontos
+  static Future<void> _trackContentViewStatic(
+    BuildContext context,
+    MainContentTopicModel content,
+  ) async {
+    try {
+      // Buscar instâncias do injector
+      final trackingService = injector<UserTrackingDataService>();
+      final tokenManager = injector<AuthTokenManager>();
+      
+      // Obter userId do token JWT
+      final userId = tokenManager.getUserId();
+      
+      if (userId == null || userId.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️  [_trackContentViewStatic] UserId não disponível - pulando tracking');
+        }
+        return;
+      }
+
+      // Mapear categoria para tipo de conteúdo
+      final contentType = _mapCategoryToContentTypeStatic(content.categoryName);
+
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  📺 CONTENT VIEW TRACKING - Registrando visualização              ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('   👤 UserId: $userId');
+        debugPrint('   🎬 ContentId: ${content.id}');
+        debugPrint('   📝 Title: ${content.title}');
+        debugPrint('   📂 Category: ${content.categoryName}');
+        debugPrint('   🎯 Type: ${contentType?.name ?? "video"}');
+        debugPrint('   ⏰ Timestamp: ${DateTime.now().toIso8601String()}');
+        debugPrint('───────────────────────────────────────────────────────────────────');
+      }
+
+      // Chamar service (non-blocking)
+      final result = await trackingService.trackContentView(
+        userId: userId,
+        contentId: content.id,
+        category: content.categoryName,
+        contentType: contentType,
+      );
+
+      if (result != null && kDebugMode) {
+        debugPrint('✅ Content view rastreado com sucesso!');
+        debugPrint('   📊 Total views: ${result.totalContentViews ?? 0}');
+        debugPrint('   🎯 Unique views: ${result.uniqueContentViews ?? 0}');
+        debugPrint('   💯 Score: ${result.totalScore}');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      } else if (kDebugMode) {
+        debugPrint('⚠️  Tracking falhou (API pode estar indisponível)');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    } catch (e) {
+      // ✅ NÃO bloqueia a navegação do usuário se o tracking falhar
+      if (kDebugMode) {
+        debugPrint('❌ Erro ao rastrear content view: $e');
+        debugPrint('╚════════════════════════════════════════════════════════════════════╝');
+        debugPrint('');
+      }
+    }
+  }
+
+  /// Mapeia nome de categoria para enum FavoriteContentType (versão estática)
+  /// 
+  /// Heurística baseada em palavras-chave comuns:
+  /// - "vídeo", "canal" → video
+  /// - "artigo", "post", "blog" → article
+  /// - "curso", "treinamento" → course
+  /// - "tutorial", "passo a passo" → tutorial
+  /// - "guia", "manual" → guide
+  static FavoriteContentType? _mapCategoryToContentTypeStatic(String category) {
+    final lowerCategory = category.toLowerCase();
+
+    if (lowerCategory.contains('vídeo') || 
+        lowerCategory.contains('video') ||
+        lowerCategory.contains('canal')) {
+      return FavoriteContentType.video;
+    } else if (lowerCategory.contains('artigo') || 
+               lowerCategory.contains('post') ||
+               lowerCategory.contains('blog')) {
+      return FavoriteContentType.article;
+    } else if (lowerCategory.contains('curso') || 
+               lowerCategory.contains('treinamento')) {
+      return FavoriteContentType.course;
+    } else if (lowerCategory.contains('tutorial') || 
+               lowerCategory.contains('passo a passo')) {
+      return FavoriteContentType.tutorial;
+    } else if (lowerCategory.contains('guia') || 
+               lowerCategory.contains('manual')) {
+      return FavoriteContentType.guide;
+    }
+
+    // Default: video (maioria do conteúdo é vídeo)
+    return FavoriteContentType.video;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

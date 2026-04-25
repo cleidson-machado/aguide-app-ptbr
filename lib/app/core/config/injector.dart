@@ -13,8 +13,17 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_repository
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
+import 'package:portugal_guide/features/user/user_phone_repository.dart';
+import 'package:portugal_guide/features/user/user_phone_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_view_model.dart';
 import 'package:portugal_guide/features/user/user_details_view_model.dart';
+import 'package:portugal_guide/features/user/user_list_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/message_user_list_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_bucket_view_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/services/message_notification_service.dart';
 import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository.dart';
 import 'package:portugal_guide/features/user_verified_content/user_verified_content_repository_interface.dart';
@@ -46,12 +55,12 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<AuthTokenManager>(
     () => AuthTokenManager(injector<SharedPreferences>()),
   );
-  
+
   // Registrar AuthErrorHandler (depende de AuthTokenManager)
   injector.registerLazySingleton<AuthErrorHandler>(
     () => AuthErrorHandler(injector<AuthTokenManager>()),
   );
-  
+
   injector.registerLazySingleton<AuthCredentialsService>(
     () => AuthCredentialsService(injector<http.Client>()),
   );
@@ -77,14 +86,23 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<UserRepositoryInterface>(
     () => UserRepository(),
   );
+  injector.registerLazySingleton<UserPhoneRepositoryInterface>(
+    () => UserPhoneRepository(),
+  );
   injector.registerFactory<UserViewModel>(
     () => UserViewModel(repository: injector<UserRepositoryInterface>()),
   );
   injector.registerFactory<UserDetailsViewModel>(
-    () => UserDetailsViewModel(repository: injector<UserRepositoryInterface>()),
+    () => UserDetailsViewModel(
+      repository: injector<UserRepositoryInterface>(),
+      trackingService: injector<UserTrackingDataService>(),
+    ),
   );
   injector.registerFactory<ProfileWelcomeViewModel>(
     () => ProfileWelcomeViewModel(injector<UserRepositoryInterface>()),
+  );
+  injector.registerFactory<UserListViewModel>(
+    () => UserListViewModel(repository: injector<UserRepositoryInterface>()),
   );
 
   //### For Main Content Topic ###
@@ -117,9 +135,7 @@ Future<void> setupDependencies() async {
     () => UserChoiceRepository(),
   );
   injector.registerFactory<UserChoiceViewModel>(
-    () => UserChoiceViewModel(
-      injector<UserChoiceRepositoryInterface>(),
-    ),
+    () => UserChoiceViewModel(injector<UserChoiceRepositoryInterface>()),
   );
 
   //### For User Engagement (Content Tracking) ###
@@ -134,11 +150,44 @@ Future<void> setupDependencies() async {
   injector.registerLazySingleton<UserTrackingDataService>(
     () => UserTrackingDataService(
       injector<UserTrackingDataRepositoryInterface>(),
+      injector<UserPhoneRepositoryInterface>(),
     ),
   );
   injector.registerFactory<UserTrackingDataViewModel>(
-    () => UserTrackingDataViewModel(
-      injector<UserTrackingDataService>(),
+    () => UserTrackingDataViewModel(injector<UserTrackingDataService>()),
+  );
+
+  //### For User Message Flow (Inbox + Chat) ###
+  injector.registerLazySingleton<UserMessageFlowRepositoryInterface>(
+    () => UserMessageFlowRepository(),
+  );
+  injector.registerFactory<UserMessageBucketViewModel>(
+    () => UserMessageBucketViewModel(
+      repository: injector<UserMessageFlowRepositoryInterface>(),
+    ),
+  );
+  injector.registerFactory<UserChatMessageViewModel>(
+    () => UserChatMessageViewModel(
+      repository: injector<UserMessageFlowRepositoryInterface>(),
+    ),
+  );
+  
+  // MessageUserListViewModel - ViewModel específico para lista de usuários com role designation
+  // DDD Pattern: Isolado da feature core 'user', combina UserModel + UserDetailsModel
+  injector.registerFactory<MessageUserListViewModel>(
+    () => MessageUserListViewModel(
+      repository: injector<UserRepositoryInterface>(),
+      messageRepository: injector<UserMessageFlowRepositoryInterface>(),
+    ),
+  );
+
+  // MessageNotificationService - singleton background poller que detecta
+  // novas mensagens recebidas e emite eventos para exibição de top snackbar
+  // app-wide (independente de qual screen está ativa).
+  injector.registerLazySingleton<MessageNotificationService>(
+    () => MessageNotificationService(
+      repository: injector<UserMessageFlowRepositoryInterface>(),
+      tokenManager: injector<AuthTokenManager>(),
     ),
   );
 }
