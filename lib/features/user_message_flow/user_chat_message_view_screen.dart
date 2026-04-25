@@ -41,6 +41,10 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
     _viewModel = injector<UserChatMessageViewModel>();
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.loadInitialMessages(widget.contact.id);
+    _viewModel.initializeConversationActions(
+      conversationId: widget.contact.id,
+      initialMuted: widget.contact.isMuted,
+    );
 
     // Auto-mark messages as read when conversation is opened
     // This will update unreadCount on backend and clear badges
@@ -75,7 +79,9 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       if (kDebugMode) {
-        debugPrint('▶️ [UserChatMessageViewScreen] App resumed → restart polling');
+        debugPrint(
+          '▶️ [UserChatMessageViewScreen] App resumed → restart polling',
+        );
       }
       _startPolling();
       // Immediate refresh on resume so user sees latest messages right away
@@ -121,8 +127,8 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
     // - Polling brought new messages from OTHERS (consume flag)
     // This prevents scroll-jacking when user is reading older messages.
     final hasIncomingFromOthers = _viewModel.consumeHasNewMessagesFromPolling();
-    final shouldAutoScroll = !_viewModel.isLoading &&
-        (hasIncomingFromOthers || _isUserAtBottom());
+    final shouldAutoScroll =
+        !_viewModel.isLoading && (hasIncomingFromOthers || _isUserAtBottom());
 
     if (shouldAutoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -195,32 +201,43 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
             title: Text(widget.contact.contactName),
             actions: [
               CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  if (kDebugMode) {
-                    debugPrint('🔇 Silenciar conversa');
-                  }
+                  if (_viewModel.isTogglingMute) return;
+                  await _viewModel.toggleMuteConversation(widget.contact.id);
+                  if (!mounted) return;
+                  _showTransientInfo(
+                    _viewModel.isConversationMuted
+                        ? 'Conversa silenciada.'
+                        : 'Conversa com notificacoes ativas.',
+                  );
                 },
-                child: const Text('Silenciar conversa'),
+                child: Text(
+                  _viewModel.isConversationMuted
+                      ? 'Ativar notificacoes'
+                      : 'Silenciar conversa',
+                ),
               ),
               CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.pop(context);
-                  if (kDebugMode) {
-                    debugPrint('🗑️ Limpar conversa');
-                  }
+                  if (_viewModel.isClearingConversation) return;
+                  _confirmAndClearConversation();
                 },
                 child: const Text('Limpar conversa'),
               ),
               CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.pop(context);
-                  if (kDebugMode) {
-                    debugPrint('🚫 Bloquear usuário');
-                  }
+                  if (_viewModel.isBlockingUser) return;
+                  _confirmAndToggleBlock();
                 },
                 isDestructiveAction: true,
-                child: const Text('Bloquear usuário'),
+                child: Text(
+                  _viewModel.isConversationBlocked
+                      ? 'Desbloquear usuario'
+                      : 'Bloquear usuario',
+                ),
               ),
             ],
             cancelButton: CupertinoActionSheetAction(
@@ -228,6 +245,102 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
               child: const Text('Cancelar'),
             ),
           ),
+    );
+  }
+
+  Future<void> _confirmAndClearConversation() async {
+    final shouldClear = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('Limpar conversa'),
+          content: const Text(
+            'As mensagens antigas ficarao ocultas apenas para voce. Deseja continuar?',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Limpar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldClear != true) return;
+    await _viewModel.clearConversation(widget.contact.id);
+    if (!mounted) return;
+
+    if (_viewModel.error == null) {
+      _showTransientInfo('Conversa limpa para sua conta.');
+    } else {
+      _showTransientInfo(_viewModel.error!);
+    }
+  }
+
+  Future<void> _confirmAndToggleBlock() async {
+    final currentlyBlocked = _viewModel.isConversationBlocked;
+    final shouldProceed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            currentlyBlocked ? 'Desbloquear usuario' : 'Bloquear usuario',
+          ),
+          content: Text(
+            currentlyBlocked
+                ? 'Voce voltara a enviar mensagens para este usuario.'
+                : 'Voce nao podera mais enviar mensagens para este usuario.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: !currentlyBlocked,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(currentlyBlocked ? 'Desbloquear' : 'Bloquear'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldProceed != true) return;
+    await _viewModel.toggleBlockForCurrentConversationUser(widget.contact.id);
+    if (!mounted) return;
+
+    if (_viewModel.error == null) {
+      _showTransientInfo(
+        _viewModel.isConversationBlocked
+            ? 'Usuario bloqueado.'
+            : 'Usuario desbloqueado.',
+      );
+    } else {
+      _showTransientInfo(_viewModel.error!);
+    }
+  }
+
+  void _showTransientInfo(String message) {
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          content: Text(message),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -248,6 +361,24 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
       child: SafeArea(
         child: Column(
           children: [
+            if (_viewModel.isConversationBlocked)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                color: CupertinoColors.systemRed.withOpacity(0.12),
+                child: const Text(
+                  'Voce bloqueou este usuario. O envio de mensagens esta desabilitado.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.systemRed,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
             // Messages list
             Expanded(
               child:
@@ -369,7 +500,10 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
                   ),
                 CupertinoTextField(
                   controller: _messageController,
-                  placeholder: 'Message...',
+                  placeholder:
+                      _viewModel.isConversationBlocked
+                          ? 'Desbloqueie para enviar mensagens'
+                          : 'Message...',
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -380,6 +514,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
                   ),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
+                  enabled: !_viewModel.isConversationBlocked,
                   onSubmitted: (_) => _handleSendMessage(),
                   onChanged: (_) {
                     if (_composerValidationMessage != null) {
@@ -398,11 +533,14 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
           // Send button
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: _viewModel.isSending ? null : _handleSendMessage,
+            onPressed:
+                (_viewModel.isSending || _viewModel.isConversationBlocked)
+                    ? null
+                    : _handleSendMessage,
             child: Icon(
               CupertinoIcons.arrow_up_circle_fill,
               color:
-                  _viewModel.isSending
+                  (_viewModel.isSending || _viewModel.isConversationBlocked)
                       ? CupertinoColors.systemGrey
                       : CupertinoColors.systemBlue,
               size: 32,
