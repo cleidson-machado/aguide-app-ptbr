@@ -123,7 +123,293 @@ injector.registerFactory<MainContentTopicViewModel>(
 
 ---
 
-## 🔄 DRY (Don't Repeat Yourself) - Evitar Duplicação
+## � Princípios DDD e Refatorações Seguras
+
+### ⚠️ REGRAS CRÍTICAS para Modificações em Features
+
+Este projeto segue **Domain-Driven Design (DDD)** onde cada feature em `lib/features/` representa um **Bounded Context** independente. Modificações em features CORE podem quebrar múltiplas features dependentes.
+
+**Features CORE (requerem cuidado extra):**
+- `user` - Gerenciamento de usuários básico
+- `auth_credentials` - Autenticação própria
+- `auth_google` - Autenticação Google OAuth
+- `main_contents` - Conteúdos principais (topic, profile, etc.)
+
+**Features CONSUMIDORAS (dependem de features core):**
+- `user_message_flow` - Mensagens/chat (depende de `user`)
+- `user_verified_content` - Conteúdos verificados (depende de `user` + `main_contents`)
+- `user_choice` - Escolhas de usuário (depende de `user`)
+- `user_tracking_data` - Rastreamento (depende de `user`)
+
+---
+
+### 📋 Checklist Pré-Refatoração (OBRIGATÓRIO)
+
+**ANTES de modificar qualquer feature CORE**, responder estas 5 perguntas:
+
+1. **Quais features dependem desta feature?**
+   - Buscar por imports de `lib/features/[feature]/` em todo o projeto
+   - Exemplo: `grep -r "import.*features/user/" lib/features/`
+
+2. **Esta modificação quebra a interface pública?**
+   - Mudar assinatura de métodos em `*_repository_interface.dart`?
+   - Mudar tipos de retorno em ViewModels públicos?
+   - Mudar estrutura de Models usados por outras features?
+
+3. **O endpoint backend realmente existe?**
+   - **NUNCA** assumir que endpoint existe sem validar com desenvolvedor
+   - Exemplo: `GET /users/details` **não existe** → não criar método `getAllWithDetails()`
+   - Testar endpoint manualmente ou consultar documentação backend
+
+4. **Há alternativa não-intrusiva?**
+   - Criar ViewModel/Widget específico na feature CONSUMIDORA em vez de modificar feature CORE?
+   - Usar Adapter Pattern para converter dados sem mudar feature CORE?
+   - Exemplo: `MessageUserData` em `user_message_flow` vs modificar `UserModel`
+
+5. **A mudança está sendo feita no lugar certo?**
+   - Lógica de negócio específica de mensagens → `user_message_flow`
+   - Lógica genérica de usuários → `user`
+   - Princípio: **Feature consumidora se adapta à feature core**, não o contrário
+
+---
+
+### ✅ Abordagem Recomendada: Adapter Pattern em Feature Consumidora
+
+**Cenário:** Feature `user_message_flow` precisa exibir role designation (PRODUTOR/CONSUMIDOR) de usuários.
+
+**❌ ERRADO - Modificar feature CORE `user`:**
+```dart
+// lib/features/user/user_list_view_model.dart
+class UserListViewModel extends ChangeNotifier {
+  List<UserDetailsModel> _users = []; // ← Forçou todas as features a usar UserDetailsModel
+  
+  Future<void> loadUsers() async {
+    _users = await _repository.getAllWithDetails(); // ← Endpoint inexistente
+  }
+}
+```
+
+**Problemas:**
+- Quebra features que usavam `UserListViewModel` com `UserModel`
+- Adiciona método que chama endpoint inexistente (`getAllWithDetails`)
+- Viola princípio DDD (feature core não deve assumir necessidades de consumidoras)
+
+**✅ CORRETO - Criar componentes isolados na feature CONSUMIDORA:**
+```dart
+// lib/features/user_message_flow/models/message_user_data.dart
+class MessageUserData {
+  final String id;
+  final String fullName;
+  final String? youtubeUserId;
+  final String? youtubeChannelId;
+  
+  factory MessageUserData.fromUserAndDetails(UserModel user, UserDetailsModel details) {
+    return MessageUserData(
+      id: user.id,
+      fullName: '${user.name} ${user.surname}',
+      youtubeUserId: details.youtubeUserId,
+      youtubeChannelId: details.youtubeChannelId,
+    );
+  }
+  
+  String get roleLabel => (youtubeUserId != null && youtubeChannelId != null) 
+      ? 'PRODUTOR' : 'CONSUMIDOR';
+}
+
+// lib/features/user_message_flow/message_user_list_view_model.dart
+class MessageUserListViewModel extends ChangeNotifier {
+  List<MessageUserData> _users = [];
+  
+  Future<void> loadUsers() async {
+    final basicUsers = await _repository.getAll(); // ← Usa endpoint existente
+    
+    for (final user in basicUsers) {
+      final details = await _repository.getUserDetails(user.id); // ← Endpoints existentes
+      _users.add(MessageUserData.fromUserAndDetails(user, details));
+    }
+  }
+}
+```
+
+**Benefícios:**
+- ✅ Feature `user` permanece intacta (não quebra outras features)
+- ✅ Usa apenas endpoints **existentes** (GET /users, GET /users/{id}/details)
+- ✅ Feature `user_message_flow` é independente (princípio DDD)
+- ✅ Fácil de reverter ou modificar sem impacto em outras features
+
+---
+
+### 🚫 Regras Proibitivas (NUNCA FAZER)
+
+**Regra 1: NUNCA assumir existência de endpoint backend**
+```dart
+// ❌ PROIBIDO
+Future<List<UserDetailsModel>> getAllWithDetails() async {
+  final response = await _dio.get('/users/details'); // ← Endpoint pode não existir
+  return response.data.map(...).toList();
+}
+
+// ✅ PERMITIDO - Validar primeiro
+// 1. Consultar desenvolvedor: "O endpoint GET /users/details existe?"
+// 2. Se NÃO: Usar endpoints existentes (GET /users + GET /users/{id}/details em loop)
+// 3. Se SIM: Adicionar método após confirmação
+```
+
+**Regra 2: NUNCA modificar `*_repository_interface.dart` sem aprovação**
+```dart
+// ❌ PROIBIDO - Adicionar método sem consultar desenvolvedor
+abstract class UserRepositoryInterface extends GenCrudRepositoryInterface<UserModel> {
+  Future<List<UserDetailsModel>> getAllWithDetails(); // ← Quebra contrato existente
+}
+
+// ✅ PERMITIDO - Criar interface específica em feature consumidora
+abstract class MessageUserRepositoryExtension {
+  Future<List<MessageUserData>> getAllUsersWithRoles();
+}
+```
+
+**Regra 3: NUNCA modificar Model usado por múltiplas features**
+```dart
+// ❌ PROIBIDO - Adicionar campos em UserModel usado globalmente
+class UserModel {
+  final String id;
+  final String name;
+  final String youtubeChannelId; // ← Força todas as features a lidar com isso
+}
+
+// ✅ PERMITIDO - Criar modelo híbrido local na feature consumidora
+class MessageUserData { // ← Modelo específico de user_message_flow
+  final String id;
+  final String name;
+  final String youtubeChannelId; // ← Não afeta outras features
+}
+```
+
+**Regra 4: NUNCA modificar ViewModel genérico para necessidade específica**
+```dart
+// ❌ PROIBIDO
+class UserListViewModel { // ← ViewModel genérico em feature core
+  List<UserDetailsModel> get users => _users; // ← Necessidade específica de mensagens
+}
+
+// ✅ PERMITIDO
+class MessageUserListViewModel { // ← ViewModel específico em user_message_flow
+  List<MessageUserData> get users => _users;
+}
+```
+
+**Regra 5: NUNCA ignorar warnings de breaking changes**
+```bash
+# Se ao modificar feature CORE aparecer:
+# "The argument type 'List<UserDetailsModel>' can't be assigned to 
+#  the parameter type 'List<UserModel>'"
+# 
+# ❌ NÃO ignore mudando tipos em cascata
+# ✅ REVERTA a mudança e use Adapter Pattern na feature consumidora
+```
+
+---
+
+### 📚 Caso de Estudo Real: user + user_message_flow
+
+**Problema Original:**
+- Feature `user_message_flow` precisava exibir "PRODUTOR" ou "CONSUMIDOR" ao lado de cada usuário
+- Solução inicial modificou feature CORE `user` para trabalhar com `UserDetailsModel`
+- Endpoint `GET /users/details` **não existia** no backend → erro 404
+
+**Impacto:**
+- ❌ Quebrou `UsersMessageBucketScreen` (erro de tipo)
+- ❌ Adicionou método `getAllWithDetails()` que chama endpoint inexistente
+- ❌ Forçou `UserListViewModel` a depender de dados que podem não estar disponíveis
+
+**Solução Aplicada (DDD-Compliant):**
+1. **Reversão:** Restaurou feature `user` ao estado original funcional
+2. **Isolamento:** Criou componentes específicos em `user_message_flow`:
+   - `MessageUserData` (modelo híbrido)
+   - `MessageUserListViewModel` (carrega UserModel + UserDetailsModel)
+   - `MessageUserListItemWidget` (exibe role designation)
+3. **Resultado:** Feature `user` intacta, feature `user_message_flow` independente
+
+**Lições Aprendidas:**
+- ✅ Features CORE devem ser modificadas apenas quando beneficiam TODAS as features
+- ✅ Necessidades específicas de uma feature devem ser resolvidas NELA MESMA
+- ✅ Sempre validar existência de endpoints backend ANTES de implementar
+
+---
+
+### 🎯 Exemplo de Fluxo Correto de Refatoração
+
+**Cenário:** Feature `user_verified_content` precisa filtrar usuários por nível de verificação.
+
+**Passo 1: Análise de Impacto**
+```bash
+# Buscar dependências da feature user
+grep -r "import.*features/user/" lib/features/
+# Resultado: user_message_flow, user_choice, user_tracking_data, user_verified_content
+```
+
+**Passo 2: Checklist**
+- [ ] ❓ Modificar `UserRepository` afeta outras 4 features?
+- [ ] ❓ Endpoint `GET /users?verificationLevel=X` existe?
+- [ ] ❓ Há alternativa sem modificar feature CORE?
+
+**Passo 3: Decisão**
+- Se endpoint existe E beneficia outras features → Modificar `UserRepositoryInterface`
+- Se endpoint **não existe** OU beneficia apenas `user_verified_content` → Criar componente isolado
+
+**Passo 4: Implementação (alternativa não-intrusiva)**
+```dart
+// lib/features/user_verified_content/verified_user_repository.dart
+class VerifiedUserRepository {
+  final UserRepositoryInterface _userRepo;
+  
+  Future<List<UserModel>> getUsersByVerificationLevel(String level) async {
+    final allUsers = await _userRepo.getAll(); // ← Usa método existente
+    return allUsers.where((u) => u.verificationLevel == level).toList(); // ← Filtra localmente
+  }
+}
+```
+
+---
+
+### 📝 Documentação de Mudanças Intrusivas
+
+Se uma mudança em feature CORE for REALMENTE necessária (aprovada pelo desenvolvedor):
+
+```dart
+// lib/features/user/user_repository_interface.dart
+
+/// Obtém lista de usuários filtrada por nível de verificação
+/// 
+/// ⚠️ BREAKING CHANGE (Data: 2026-04-12)
+/// Endpoint: GET /users?verificationLevel={level}
+/// Features afetadas: user_verified_content, user_choice
+/// Migração: Substituir getAll() por getUsersByVerificationLevel('VERIFIED')
+Future<List<UserModel>> getUsersByVerificationLevel(String level);
+```
+
+**Changelog obrigatório em `x_temp_files/BREAKING_CHANGES.md`:**
+```markdown
+## 2026-04-12 - UserRepositoryInterface.getUsersByVerificationLevel()
+
+**Mudança:** Adicionado método para filtrar usuários por nível de verificação.
+
+**Motivo:** Requisito de múltiplas features (user_verified_content, user_choice).
+
+**Endpoint Backend:** GET /users?verificationLevel={level} (CONFIRMADO existente)
+
+**Features Afetadas:**
+- user_verified_content → Migrada
+- user_choice → Migrada
+- user_tracking_data → Não afetada (não usa filtro)
+
+**Migration Guide:**
+- Substituir `repository.getAll()` por `repository.getUsersByVerificationLevel('VERIFIED')`
+```
+
+---
+
+## �🔄 DRY (Don't Repeat Yourself) - Evitar Duplicação
 
 ### ⚠️ Princípio Fundamental
 
