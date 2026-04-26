@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
-import 'package:portugal_guide/features/user_message_flow/user_message_bucket_screen.dart';
+import 'package:portugal_guide/features/user_choice/user_choice_navigation_guard.dart';
 
 //RE-APROVEITA OS CÓDIGOGOS E VOLTA O NOME HomeScreen SE NECESSÁRIO...
 
@@ -27,7 +30,41 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
     const MainContentProfileScreen(), //### PERFIL / PROFILE
   ];
 
-  void _onItemTapped(int index) {
+  /// Gerencia navegação das tabs da barra inferior
+  /// 
+  /// ⚠️ LÓGICA CONDICIONAL PARA TAB "RELAÇÕES" (index 1):
+  /// - Consulta backend via UserChoiceNavigationGuard
+  /// - SE user NÃO possui user-choice → main_relation_welcome_screen (onboarding)
+  /// - SE user JÁ possui user-choice → connections_network_screen (rede)
+  /// 
+  /// 📚 Documentação: x_temp_files/DESIGN_RELATIONS_TAB_ROUTING.md
+  Future<void> _onItemTapped(int index) async {
+    // ✅ ROTEAMENTO CONDICIONAL para botão "RELAÇÕES" (index 1)
+    if (index == 1) {
+      if (kDebugMode) {
+        print('📍 [HomeContentTabScreen] Botão RELAÇÕES tocado → verificando user-choice...');
+      }
+
+      final guard = injector<UserChoiceNavigationGuard>();
+      final decision = await guard.checkRouteDecision();
+
+      if (decision == RelationRouteDecision.welcome) {
+        // Usuário NÃO possui user-choice → onboarding
+        if (kDebugMode) {
+          print('🎯 [HomeContentTabScreen] Navegando para welcome/onboarding');
+        }
+        Modular.to.navigate(AppRoutes.relationsWelcome);
+      } else {
+        // Usuário JÁ possui user-choice → connections network
+        if (kDebugMode) {
+          print('🎯 [HomeContentTabScreen] Navegando para connections network');
+        }
+        Modular.to.navigate(AppRoutes.relationsConnections);
+      }
+      return; // ← IMPORTANTE: Não executar setState abaixo
+    }
+
+    // Comportamento normal para outras tabs (TEMAS, PERFIL)
     setState(() {
       _selectedIndex = index;
     });

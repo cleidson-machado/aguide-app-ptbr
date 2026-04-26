@@ -31,6 +31,7 @@ import 'package:portugal_guide/features/user_verified_content/user_verified_cont
 import 'package:portugal_guide/features/user_choice/user_choice_repository.dart';
 import 'package:portugal_guide/features/user_choice/user_choice_repository_interface.dart';
 import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart';
+import 'package:portugal_guide/features/user_choice/user_choice_navigation_guard.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
@@ -136,6 +137,12 @@ Future<void> setupDependencies() async {
   );
   injector.registerFactory<UserChoiceViewModel>(
     () => UserChoiceViewModel(injector<UserChoiceRepositoryInterface>()),
+  );
+  injector.registerLazySingleton<UserChoiceNavigationGuard>(
+    () => UserChoiceNavigationGuard(
+      repository: injector<UserChoiceRepositoryInterface>(),
+      tokenManager: injector<AuthTokenManager>(),
+    ),
   );
 
   //### For User Engagement (Content Tracking) ###
