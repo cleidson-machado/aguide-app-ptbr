@@ -75,35 +75,69 @@ class UserChoiceNavigationGuard {
     }
 
     try {
-      // 1. Obter userId do token JWT
+      // 1. Obter userId do token JWT (ID da chave primária na tabela users)
       final userId = _tokenManager.getUserId();
+      
+      if (kDebugMode) {
+        print('\n🔍 [UserChoiceNavigationGuard] ==================== INÍCIO VERIFICAÇÃO ====================');
+        print('🔑 [UserChoiceNavigationGuard] userId extraído do JWT: $userId');
+        print('📌 [UserChoiceNavigationGuard] userId = ID da chave primária na tabela users (PostgreSQL)');
+        
+        // Debug: mostrar payload completo do JWT (campos relacionados a userId)
+        final payload = _tokenManager.decodeToken();
+        if (payload != null) {
+          print('🔐 [UserChoiceNavigationGuard] Campos do JWT relacionados ao userId:');
+          final userIdKeys = ['userId', 'user_id', 'id', 'sub'];
+          for (final key in userIdKeys) {
+            if (payload.containsKey(key)) {
+              print('   - $key: ${payload[key]}');
+            }
+          }
+        }
+      }
       
       if (userId == null) {
         if (kDebugMode) {
           print('⚠️ [UserChoiceNavigationGuard] userId é null → redirect to welcome');
+          print('🔍 [UserChoiceNavigationGuard] ==================== FIM VERIFICAÇÃO ====================\n');
         }
         _cachedDecision = RelationRouteDecision.welcome;
         return _cachedDecision!;
       }
 
       if (kDebugMode) {
-        print('📍 [UserChoiceNavigationGuard] Verificando user-choice para userId: $userId');
+        print('📍 [UserChoiceNavigationGuard] Consultando user-choice para userId: $userId');
+        print('🌐 [UserChoiceNavigationGuard] Chamando repository.getUserActiveProfile($userId)...');
       }
 
       // 2. Consultar backend via repository
       final userChoice = await _repository.getUserActiveProfile(userId);
+
+      if (kDebugMode) {
+        print('📦 [UserChoiceNavigationGuard] Resposta do repository:');
+        print('   - userChoice é null? ${userChoice == null}');
+        if (userChoice != null) {
+          print('   - userChoice.id: ${userChoice.id}');
+          print('   - userChoice.userId: ${userChoice.userId}');
+          print('   - userChoice.profileType: ${userChoice.profileType}');
+        }
+      }
 
       // 3. Processar resposta e determinar rota
       if (userChoice != null) {
         // ✅ Perfil ativo encontrado → connections network
         if (kDebugMode) {
           print('✅ [UserChoiceNavigationGuard] user-choice encontrado (${userChoice.profileType}) → connections');
+          print('🎯 [UserChoiceNavigationGuard] DECISÃO: RelationRouteDecision.connections');
+          print('🔍 [UserChoiceNavigationGuard] ==================== FIM VERIFICAÇÃO ====================\n');
         }
         _cachedDecision = RelationRouteDecision.connections;
       } else {
         // ❌ Perfil não existe ou deletado → onboarding
         if (kDebugMode) {
           print('❌ [UserChoiceNavigationGuard] user-choice NÃO encontrado → welcome/onboarding');
+          print('🎯 [UserChoiceNavigationGuard] DECISÃO: RelationRouteDecision.welcome');
+          print('🔍 [UserChoiceNavigationGuard] ==================== FIM VERIFICAÇÃO ====================\n');
         }
         _cachedDecision = RelationRouteDecision.welcome;
       }
@@ -112,8 +146,11 @@ class UserChoiceNavigationGuard {
     } catch (e) {
       // 🚨 Erro de rede ou outro → fallback para onboarding (UX segura)
       if (kDebugMode) {
-        print('🚨 [UserChoiceNavigationGuard] Erro ao verificar user-choice: $e');
-        print('   Fallback: redirect to welcome (onboarding)');
+        print('🚨 [UserChoiceNavigationGuard] EXCEÇÃO CAPTURADA:');
+        print('   - Tipo: ${e.runtimeType}');
+        print('   - Mensagem: $e');
+        print('🎯 [UserChoiceNavigationGuard] Fallback: redirect to welcome (onboarding)');
+        print('🔍 [UserChoiceNavigationGuard] ==================== FIM VERIFICAÇÃO (COM ERRO) ====================\n');
       }
       _cachedDecision = RelationRouteDecision.welcome;
       return _cachedDecision!;

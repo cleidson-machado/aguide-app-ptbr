@@ -60,9 +60,10 @@ class UserChoiceRepository extends GenCrudRepository<UserChoiceModel>
     return dio;
   }
 
-  /// Helper privado: Endpoint para buscar perfil ativo do usuário
+  /// Helper privado: Endpoint para buscar perfil do usuário (Find By User Id)
+  /// Documentação: GET /api/v1/user-choices/user/{userId}
   String _getUserActiveProfileEndpoint(String userId) {
-    return '/user-choices/user/$userId/active';
+    return '/user-choices/user/$userId';
   }
 
   /// Helper privado: Endpoint para buscar todos os perfís de um usuário
@@ -85,28 +86,53 @@ class UserChoiceRepository extends GenCrudRepository<UserChoiceModel>
   @override
   Future<UserChoiceModel?> getUserActiveProfile(String userId) async {
     try {
-      print('📍 [UserChoiceRepository] Buscando perfil ativo do usuário: $userId');
+      print('\n🌐 [UserChoiceRepository] ==================== INÍCIO CHAMADA API ====================');
+      print('📍 [UserChoiceRepository] Buscando user-choice do usuário: $userId');
+      print('📌 [UserChoiceRepository] userId = ID da chave primária na tabela users (PostgreSQL)');
+      
+      final endpoint = _getUserActiveProfileEndpoint(userId);
+      print('🔗 [UserChoiceRepository] Endpoint: $endpoint');
+      print('🌍 [UserChoiceRepository] URL completa: ${EnvKeyHelperConfig.apiBaseUrl}$endpoint');
 
-      final response = await dioGenCrudRepo.get(
-        _getUserActiveProfileEndpoint(userId),
-      );
+      final response = await dioGenCrudRepo.get(endpoint);
+
+      print('📡 [UserChoiceRepository] Status HTTP: ${response.statusCode}');
+      print('📦 [UserChoiceRepository] Response data: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
-        print('✅ [UserChoiceRepository] Perfil ativo encontrado');
-        return UserChoiceModel.fromMap(response.data);
+        print('✅ [UserChoiceRepository] User-choice encontrado - convertendo para model...');
+        final model = UserChoiceModel.fromMap(response.data);
+        print('✅ [UserChoiceRepository] Model criado:');
+        print('   - id: ${model.id}');
+        print('   - userId: ${model.userId}');
+        print('   - profileType: ${model.profileType}');
+        print('🌐 [UserChoiceRepository] ==================== FIM CHAMADA API (SUCESSO) ====================\n');
+        return model;
       }
 
+      print('ℹ️ [UserChoiceRepository] Status 200 mas data é null → retornando null');
+      print('🌐 [UserChoiceRepository] ==================== FIM CHAMADA API (NULL) ====================\n');
       return null;
     } on DioException catch (e) {
+      print('🚨 [UserChoiceRepository] DioException capturada:');
+      print('   - Status code: ${e.response?.statusCode}');
+      print('   - Response data: ${e.response?.data}');
+      print('   - Message: ${e.message}');
+      
       if (e.response?.statusCode == 404) {
-        print('ℹ️ [UserChoiceRepository] Usuário não possui perfil ativo');
+        print('ℹ️ [UserChoiceRepository] 404 - Usuário não possui perfil ativo');
+        print('🌐 [UserChoiceRepository] ==================== FIM CHAMADA API (404) ====================\n');
         return null;
       }
 
-      print('❌ [UserChoiceRepository] Erro ao buscar perfil ativo: ${e.message}');
+      print('❌ [UserChoiceRepository] Erro HTTP ${e.response?.statusCode} - rethrowing...');
+      print('🌐 [UserChoiceRepository] ==================== FIM CHAMADA API (ERRO) ====================\n');
       rethrow;
     } catch (e) {
-      print('❌ [UserChoiceRepository] Erro inesperado: $e');
+      print('❌ [UserChoiceRepository] Erro inesperado:');
+      print('   - Tipo: ${e.runtimeType}');
+      print('   - Mensagem: $e');
+      print('🌐 [UserChoiceRepository] ==================== FIM CHAMADA API (EXCEÇÃO) ====================\n');
       rethrow;
     }
   }
