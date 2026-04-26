@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:portugal_guide/features/main_contents/profile/screens/main_content_profile_screen.dart';
+import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/screens/main_content_topic_screen.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_bucket_screen.dart';
 
@@ -19,10 +20,10 @@ class HomeContentTabScreenState extends State<HomeContentTabScreen> {
 
   final List<Widget> _pages = [
     const MainContentTopicScreen(), //###### TEMAS
-    // const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
+    const MainRelationWelcomeScreen(), //#### RELAÇÕES (Tela de boas-vindas intermediária) ORIGINAL
     // const UserRelationNetworkScreen(), //#### RELAÇÕES TESTE // EM PAUSA DESDE 7-04-2026 PARA TESTE SISTEMA DE MENSAGENS - REAPROVEITAR DEPOIS
     // Esta tela NÃO deve ter NavigationBar com botão voltar (é uma TAB, não rota navegada) // ⚠️ TEMPORÁRIO: UsersMessageBucketScreen como TAB para testes
-    const UsersMessageBucketScreen(),
+    //const UsersMessageBucketScreen(), // Tela Inicial de MENSAGENS - aqui ainda em estágio de teste, depois volta para a tela de boas-vindas de relações ou para a rede de relações
     const MainContentProfileScreen(), //### PERFIL / PROFILE
   ];
 
