@@ -2,9 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
-import 'package:portugal_guide/features/home_content/screens/home_content_tab_screen.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/main_contents/relation/relation_welcome_view_model.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_stepper_form_screen.dart';
 
@@ -83,15 +84,23 @@ class _MainRelationWelcomeScreenState extends State<MainRelationWelcomeScreen>
     if (mounted) setState(() => _cancelCount = 0);
   }
 
-  /// Chamado após 6s: reseta estado ANTES de navegar.
+  /// Chamado após 14s: reseta estado ANTES de navegar.
   void _redirectToHome() {
     if (!mounted) return;
     if (kDebugMode) print('🏠 [MainRelationWelcomeScreen] _redirectToHome');
-    // Reset FIRST → quando usuário voltar à tab verá WELCOME
+    
+    // Reset FIRST → quando usuário voltar verá WELCOME
     _resetToWelcome();
-    context
-        .findAncestorStateOfType<HomeContentTabScreenState>()
-        ?.resetToFirstTab();
+    
+    // ✅ CORRETO: Navegar de volta via pilha do Navigator
+    if (Navigator.of(context).canPop()) {
+      if (kDebugMode) print('📤 [MainRelationWelcomeScreen] Executando Navigator.pop()');
+      Navigator.of(context).pop();
+    } else {
+      // Fallback: navegar para tela principal
+      if (kDebugMode) print('📤 [MainRelationWelcomeScreen] Fallback: Modular.to.navigate(main)');
+      Modular.to.navigate(AppRoutes.main);
+    }
   }
 
   Future<void> _loadUserDetails() async {
@@ -136,30 +145,19 @@ class _MainRelationWelcomeScreenState extends State<MainRelationWelcomeScreen>
       print('🔴 [MainRelationWelcomeScreen] _handleCancel chamado');
     }
 
-    // ✅ CORRETO: Esta é uma TAB, não uma rota navegada
-    // Não pode usar Navigator.pop() pois não há para onde voltar
-    // Solução: Acessar o HomeContentTabScreen e resetar para primeira tab
-
-    final homeState =
-        context.findAncestorStateOfType<HomeContentTabScreenState>();
-
-    if (kDebugMode) {
-      print(
-        '🔍 [MainRelationWelcomeScreen] homeState encontrado: ${homeState != null}',
-      );
-    }
-
-    if (homeState != null) {
+    // ✅ CORRETO: Esta agora é uma ROTA NAVEGADA (não mais tab direta)
+    // Usar Navigator.pop() para voltar na pilha de navegação
+    if (Navigator.of(context).canPop()) {
       if (kDebugMode) {
-        print('✅ [MainRelationWelcomeScreen] Chamando resetToFirstTab()');
+        print('📤 [MainRelationWelcomeScreen] Executando Navigator.pop()');
       }
-      homeState.resetToFirstTab();
+      Navigator.of(context).pop();
     } else {
+      // Fallback: navegar para tela principal
       if (kDebugMode) {
-        print(
-          '❌ [MainRelationWelcomeScreen] HomeContentTabScreenState não encontrado',
-        );
+        print('📤 [MainRelationWelcomeScreen] Fallback: Modular.to.navigate(main)');
       }
+      Modular.to.navigate(AppRoutes.main);
     }
   }
 
