@@ -6,7 +6,7 @@ import 'package:portugal_guide/features/home_content/screens/home_content_tab_sc
 import 'package:portugal_guide/features/user_promo_main_contents/screens/user_promo_main_contents_screen.dart';
 import 'package:portugal_guide/features/user_verified_content/screens/user_verified_content_wizard_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
-import 'package:portugal_guide/features/main_contents/relation/screens/connections_network_screen.dart';
+import 'package:portugal_guide/features/user_relation_network/screens/user_relation_network_screen.dart';
 
 import 'app_routes.dart';
 
@@ -23,7 +23,7 @@ class AppRouteModule extends Module {
       AppRoutes.userPromoSlider: const UserPromoMainContentsScreen(), // Slider de promoção
       AppRoutes.userVerifiedContentWizard: const UserVerifiedContentWizardScreen(),
       AppRoutes.relationsWelcome: const MainRelationWelcomeScreen(), // Welcome screen de relações (onboarding)
-      AppRoutes.relationsConnections: const ConnectionsNetworkScreen(), // Connections Network (rede de relações)
+      AppRoutes.relationsConnections: const UserRelationNetworkScreen(), // Tela de relações para usuários com user-choice
       // AppRoutes.admin: const AdminPage(),
       // AppRoutes.sales: const SalesPage(),
       // AppRoutes.salesProfile: const SalesPageProfile(),
