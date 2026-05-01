@@ -5,6 +5,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
+import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
 
@@ -36,6 +37,8 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     _searchController = TextEditingController();
     // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
     _loadUserDetails();
+    // 🆕 Carrega conexões reais via API
+    _viewModel.loadConnections();
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -318,9 +321,41 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Minhas Conexões" - Scroll horizontal
+  /// Seção "Minhas Conexões" - Scroll horizontal com dados reais da API
+  /// Exibe até 20 usuários + botão "Ver Mais" no final
   Widget _buildConnectionsSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.myConnections);
+    // Estado de loading
+    if (_viewModel.isLoadingConnections) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(
+            child: CupertinoActivityIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Estado de erro
+    if (_viewModel.connectionsError != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              _viewModel.connectionsError!,
+              style: TextStyle(
+                color: CupertinoColors.systemRed.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final connections = _viewModel.connections; // Já limitado a 20
+    final hasMore = _viewModel.hasMoreConnections;
 
     return SliverToBoxAdapter(
       child: Container(
@@ -329,13 +364,20 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: profiles.length,
+          // +1 para incluir o botão "Ver Mais" se houver mais de 20
+          itemCount: hasMore ? connections.length + 1 : connections.length,
           itemBuilder: (context, index) {
-            final profile = profiles[index];
+            // Último item: botão "Ver Mais"
+            if (index == connections.length) {
+              return _buildViewMoreButton();
+            }
+
+            // Item normal: perfil de usuário
+            final user = connections[index];
             return Container(
               width: 100,
               margin: const EdgeInsets.only(right: 12),
-              child: _buildConnectionProfileCard(profile),
+              child: _buildConnectionProfileCardFromUser(user),
             );
           },
         ),
@@ -451,44 +493,97 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
       );
   }
 
-  /// Card de perfil circular (para "Minhas Conexões")
-  Widget _buildConnectionProfileCard(ConnectionProfileModel profile) {
+  /// Card de perfil circular (para "Minhas Conexões") - Dados reais da API
+  Widget _buildConnectionProfileCardFromUser(MessageUserData user) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar
-          ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
+        // Avatar com iniciais como fallback
+        ClipOval(
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey5.resolveFrom(context),
+            ),
+            child: Center(
+              child: Text(
+                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemGrey.resolveFrom(context),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Nome completo
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            user.fullName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Botão "Ver Mais" (seta para direita) no final da lista de conexões
+  Widget _buildViewMoreButton() {
+    return GestureDetector(
+      onTap: _navigateToMessageBucket,
+      child: Container(
+        width: 70,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Círculo com ícone de seta
+            Container(
               width: 70,
               height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                color: CupertinoColors.systemGrey5,
-                child: const Icon(CupertinoIcons.person_fill, size: 35),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey5.resolveFrom(context),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: CupertinoColors.systemGrey3.resolveFrom(context),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                CupertinoIcons.arrow_right,
+                size: 30,
+                color: CupertinoColors.systemGrey.resolveFrom(context),
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          // Nome
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              profile.name,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+            const SizedBox(height: 6),
+            // Texto "Ver Mais"
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                'Ver Mais',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
-      );
+          ],
+        ),
+      ),
+    );
   }
 
   /// Card de perfil circular (para "Sugestões")

@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_details_model.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
 import '../models/connection_profile_model.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
@@ -20,9 +22,21 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   UserDetailsModel? _userDetails;
   bool _isLoadingUserDetails = false;
 
+  // ===== Estado de Conexões Reais (via API) =====
+  List<MessageUserData> _connections = [];
+  bool _isLoadingConnections = false;
+  String? _connectionsError;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
+
+  // ===== Getters para Conexões =====
+  /// Retorna apenas os primeiros 20 usuários
+  List<MessageUserData> get connections => _connections.take(20).toList();
+  bool get isLoadingConnections => _isLoadingConnections;
+  String? get connectionsError => _connectionsError;
+  bool get hasMoreConnections => _connections.length > 20;
 
   /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
   /// 
@@ -468,6 +482,76 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   void setSearchQuery(String query) {
     if (_searchQuery != query) {
       _searchQuery = query;
+      notifyListeners();
+    }
+  }
+
+  /// Carrega lista de usuários reais para "Minhas Conexões"
+  /// 
+  /// Similar ao MessageUserListViewModel: GET /users + GET /users/{id}/details
+  /// Filtra o próprio usuário da lista
+  Future<void> loadConnections() async {
+    _isLoadingConnections = true;
+    _connectionsError = null;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🔄 CARREGANDO CONEXÕES - UserRelationNetworkViewModel        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+      }
+
+      // Step 1: Carregar lista básica de usuários
+      final basicUsers = await _userRepository.getAll();
+      if (kDebugMode) {
+        debugPrint('   📊 ${basicUsers.length} usuários básicos carregados');
+      }
+
+      // Step 2: Enriquecer com detalhes (role designation)
+      final List<MessageUserData> enrichedUsers = [];
+      
+      for (final user in basicUsers) {
+        try {
+          final details = await _userRepository.getUserDetails(user.id);
+          final messageUserData = MessageUserData.fromUserAndDetails(user, details);
+          enrichedUsers.add(messageUserData);
+        } catch (e) {
+          // Se falhar ao carregar detalhes, cria MessageUserData sem YouTube info
+          if (kDebugMode) {
+            debugPrint('   ⚠️  Detalhes não disponíveis para ${user.name}');
+          }
+          enrichedUsers.add(MessageUserData(
+            id: user.id,
+            name: user.name,
+            surname: user.surname,
+            email: user.email,
+            fullName: '${user.name} ${user.surname}',
+            youtubeUserId: null,
+            youtubeChannelId: null,
+          ));
+        }
+      }
+
+      // Step 3: Filtrar o próprio usuário
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      _connections = enrichedUsers.where((user) => user.id != currentUserId).toList();
+
+      if (kDebugMode) {
+        debugPrint('   ✅ ${_connections.length} conexões carregadas (filtrou currentUserId)');
+        debugPrint('   📋 Primeiros 20 serão exibidos na UI');
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      _connections = [];
+      _connectionsError = 'Erro ao carregar conexões';
+      if (kDebugMode) {
+        debugPrint('   ❌ Erro ao carregar conexões: $e');
+      }
+    } finally {
+      _isLoadingConnections = false;
       notifyListeners();
     }
   }
