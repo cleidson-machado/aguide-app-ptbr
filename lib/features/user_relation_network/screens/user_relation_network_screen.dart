@@ -101,6 +101,15 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     }
   }
 
+  /// Navega para a tela de mensagens (UsersMessageBucketScreen)
+  /// Usa pushNamed para adicionar à pilha de navegação
+  void _navigateToMessageBucket() {
+    if (kDebugMode) {
+      debugPrint('💬 [UserRelationNetworkScreen] Navegando para tela de mensagens...');
+    }
+    Modular.to.pushNamed(AppRoutes.messageBucket);
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -151,9 +160,12 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                         child: _buildDividerWithDot(),
                       ),
 
-                      // Seção "Minhas Conexões"
+                      // Seção "Minhas Conexões" (clicável - navega para mensagens)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle('Minhas Conexões'),
+                        child: _buildSectionTitle(
+                          'Minhas Conexões',
+                          onTap: _navigateToMessageBucket,
+                        ),
                       ),
                       _buildConnectionsSection(),
 
@@ -218,8 +230,9 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   }
 
   /// Título de seção com chevron
-  Widget _buildSectionTitle(String title) {
-    return Padding(
+  /// [onTap] callback opcional para tornar o título clicável
+  Widget _buildSectionTitle(String title, {VoidCallback? onTap}) {
+    final content = Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
         children: [
@@ -239,6 +252,18 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
           ),
         ],
       ),
+    );
+
+    // Se não há callback, retorna apenas o conteúdo estático
+    if (onTap == null) {
+      return content;
+    }
+
+    // Se há callback, envolve em GestureDetector com feedback visual
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
     );
   }
 

@@ -10,6 +10,7 @@ abstract class AppRoutes {
   static const String userVerifiedContentWizard = '/user-verified-content/wizard'; // Wizard de verificação de conteúdo
   static const String relationsWelcome = '/relations/welcome'; // Welcome screen de relações (onboarding)
   static const String relationsConnections = '/relations/connections'; // Connections Network (rede de relações)
+  static const String messageBucket = '/messages/bucket'; // Lista de conversas/usuários para mensagens
   static const String admin = '/admin';
   static const String sales = '/sales';
   static const String salesProfile = '/sales/profile';
