@@ -1,11 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
+import 'package:portugal_guide/app/routing/app_routes.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
-import '../../home_content/screens/home_content_tab_screen.dart';
 
 /// Tela de Rede de Conexões (Connections Network)
 /// Layout vertical com scroll contínuo:
@@ -78,26 +79,25 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     super.dispose();
   }
 
-  /// Navega para a home (primeira tab) independente de pilha de navegação
+  /// Navega de volta para a home (tela principal com tabs)
+  /// Como esta tela é navegada via Modular.to.navigate(), ela está em uma pilha de rotas.
   void _navigateToHome(BuildContext context) {
     if (kDebugMode) {
-      print('🔙 [UserRelationNetworkScreen] Navegando para home...');
+      print('🔙 [UserRelationNetworkScreen] Navegando de volta para home...');
     }
     
-    // Busca o HomeContentTabScreen na árvore de widgets
-    final homeState = context.findAncestorStateOfType<HomeContentTabScreenState>();
-    
-    if (homeState != null) {
-      // Reseta para a primeira tab (TEMAS)
-      homeState.resetToFirstTab();
-      
+    // Verifica se pode fazer pop (se há rota anterior na pilha)
+    if (Navigator.of(context).canPop()) {
       if (kDebugMode) {
-        print('✅ [UserRelationNetworkScreen] Navegação para home concluída');
+        print('📤 [UserRelationNetworkScreen] Fazendo Navigator.pop()...');
       }
+      Navigator.of(context).pop();
     } else {
+      // Fallback: navegar explicitamente para a rota main
       if (kDebugMode) {
-        print('⚠️ [UserRelationNetworkScreen] HomeContentTabScreen não encontrado na árvore');
+        print('📤 [UserRelationNetworkScreen] Fallback: Modular.to.navigate(main)');
       }
+      Modular.to.navigate(AppRoutes.main);
     }
   }
 
