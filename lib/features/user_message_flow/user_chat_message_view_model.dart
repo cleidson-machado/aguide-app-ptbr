@@ -18,6 +18,12 @@ class UserChatMessageViewModel extends ChangeNotifier {
   int _currentPage = 0;
   String? _error;
   bool _hasNewMessagesFromPolling = false;
+  bool _isConversationMuted = false;
+  bool _isConversationBlocked = false;
+  String? _blockedUserId;
+  bool _isTogglingMute = false;
+  bool _isClearingConversation = false;
+  bool _isBlockingUser = false;
 
   List<UserChatMessageModel> get messages => _messages;
   bool get isLoading => _isLoading;
@@ -25,6 +31,11 @@ class UserChatMessageViewModel extends ChangeNotifier {
   bool get hasNextPage => _hasNextPage;
   int get currentPage => _currentPage;
   String? get error => _error;
+  bool get isConversationMuted => _isConversationMuted;
+  bool get isConversationBlocked => _isConversationBlocked;
+  bool get isTogglingMute => _isTogglingMute;
+  bool get isClearingConversation => _isClearingConversation;
+  bool get isBlockingUser => _isBlockingUser;
 
   /// True when the last silent poll fetched new messages from other participants.
   /// Used by the screen to decide whether to auto-scroll to bottom.
@@ -103,6 +114,36 @@ class UserChatMessageViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> initializeConversationActions({
+    required String conversationId,
+    bool initialMuted = false,
+  }) async {
+    _isConversationMuted = initialMuted;
+    _blockedUserId = await _repository.getDirectConversationOtherUserId(
+      conversationId,
+    );
+
+    if (_blockedUserId == null || _blockedUserId!.isEmpty) {
+      _log('initializeConversationActions: otherUserId not resolved');
+      notifyListeners();
+      return;
+    }
+
+    try {
+      final blockedUsers = await _repository.getBlockedUsers();
+      _isConversationBlocked = blockedUsers.any(
+        (entry) => entry.blockedUserId == _blockedUserId,
+      );
+      _log(
+        'initializeConversationActions: blocked=$_isConversationBlocked userId=$_blockedUserId',
+      );
+    } catch (e) {
+      _log('initializeConversationActions failed (non-critical): $e');
+    } finally {
+      notifyListeners();
+    }
+  }
+
   /// Silent polling refresh - fetches latest messages without showing loading
   /// spinner or surfacing errors to the user. Designed for auto-refresh timers.
   ///
@@ -114,7 +155,9 @@ class UserChatMessageViewModel extends ChangeNotifier {
   /// - Errors are silently logged (non-critical)
   Future<void> silentRefreshMessages(String conversationId) async {
     if (_isLoading || _isSending) {
-      _log('silentRefresh skipped (busy: loading=$_isLoading sending=$_isSending)');
+      _log(
+        'silentRefresh skipped (busy: loading=$_isLoading sending=$_isSending)',
+      );
       return;
     }
 
@@ -168,6 +211,12 @@ class UserChatMessageViewModel extends ChangeNotifier {
       return;
     }
 
+    if (_isConversationBlocked) {
+      _error = 'Nao e possivel enviar mensagem para este usuario.';
+      notifyListeners();
+      return;
+    }
+
     _isSending = true;
     _log('sendTextMessage start conversationId=$conversationId');
     notifyListeners();
@@ -190,6 +239,9 @@ class UserChatMessageViewModel extends ChangeNotifier {
       _error = null;
       _log('sendTextMessage success totalMessages=${_messages.length}');
     } on UserMessageFlowException catch (e) {
+      if (e.isConflict) {
+        _isConversationBlocked = true;
+      }
       _error = _mapExceptionToMessage(
         e,
         ErrorMessages.defaultMsnFailedToSaveData,
@@ -204,15 +256,112 @@ class UserChatMessageViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> toggleMuteConversation(String conversationId) async {
+    if (_isTogglingMute) return;
+
+    _isTogglingMute = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final result = await _repository.toggleMuteConversation(conversationId);
+      _isConversationMuted = result.isMuted;
+      _log('toggleMuteConversation success muted=${result.isMuted}');
+    } on UserMessageFlowException catch (e) {
+      _error = _mapExceptionToMessage(e, 'Erro ao silenciar conversa.');
+      _log(
+        'toggleMuteConversation mapped error=$_error (status=${e.statusCode})',
+      );
+    } catch (_) {
+      _error = 'Erro ao silenciar conversa.';
+    } finally {
+      _isTogglingMute = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> clearConversation(String conversationId) async {
+    if (_isClearingConversation) return;
+
+    _isClearingConversation = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _repository.clearConversation(conversationId);
+      // Re-fetch from backend because clear is applied server-side per participant.
+      await loadInitialMessages(conversationId);
+      _log('clearConversation success');
+    } on UserMessageFlowException catch (e) {
+      _error = _mapExceptionToMessage(e, 'Erro ao limpar conversa.');
+      _log('clearConversation mapped error=$_error (status=${e.statusCode})');
+    } catch (_) {
+      _error = 'Erro ao limpar conversa.';
+    } finally {
+      _isClearingConversation = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleBlockForCurrentConversationUser(
+    String conversationId,
+  ) async {
+    if (_isBlockingUser) return;
+
+    _isBlockingUser = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _blockedUserId ??= await _repository.getDirectConversationOtherUserId(
+        conversationId,
+      );
+      final targetUserId = _blockedUserId;
+      if (targetUserId == null || targetUserId.isEmpty) {
+        throw const UserMessageFlowException(
+          'Nao foi possivel identificar o usuario desta conversa.',
+          statusCode: 400,
+        );
+      }
+
+      if (_isConversationBlocked) {
+        await _repository.unblockUser(targetUserId);
+        _isConversationBlocked = false;
+      } else {
+        await _repository.blockUser(targetUserId);
+        _isConversationBlocked = true;
+      }
+
+      _log(
+        'toggleBlock success blocked=$_isConversationBlocked user=$targetUserId',
+      );
+    } on UserMessageFlowException catch (e) {
+      _error = _mapExceptionToMessage(
+        e,
+        _isConversationBlocked
+            ? 'Erro ao desbloquear usuario.'
+            : 'Erro ao bloquear usuario.',
+      );
+      _log('toggleBlock mapped error=$_error (status=${e.statusCode})');
+    } catch (_) {
+      _error =
+          _isConversationBlocked
+              ? 'Erro ao desbloquear usuario.'
+              : 'Erro ao bloquear usuario.';
+    } finally {
+      _isBlockingUser = false;
+      notifyListeners();
+    }
+  }
+
   /// Mark all unread messages in the conversation as read
   /// Called automatically when user opens a conversation
   /// This is a non-critical operation - failures are logged but not shown to user
   Future<void> markAllAsRead() async {
     try {
       // Filter messages that are not sent by me and not yet read
-      final unreadMessages = _messages.where(
-        (msg) => !msg.isSentByMe && !msg.isRead,
-      ).toList();
+      final unreadMessages =
+          _messages.where((msg) => !msg.isSentByMe && !msg.isRead).toList();
 
       if (unreadMessages.isEmpty) {
         _log('markAllAsRead: no unread messages to mark');
@@ -225,10 +374,15 @@ class UserChatMessageViewModel extends ChangeNotifier {
       for (final message in unreadMessages) {
         await _repository.markMessageAsRead(message.id);
         // Update local state (optimistic update)
-        message.copyWith(isRead: true);
+        final index = _messages.indexWhere((m) => m.id == message.id);
+        if (index >= 0) {
+          _messages[index] = _messages[index].copyWith(isRead: true);
+        }
       }
 
-      _log('markAllAsRead: successfully marked ${unreadMessages.length} messages');
+      _log(
+        'markAllAsRead: successfully marked ${unreadMessages.length} messages',
+      );
       notifyListeners();
     } catch (e) {
       // Don't show error to user - read receipts are non-critical
@@ -249,6 +403,11 @@ class UserChatMessageViewModel extends ChangeNotifier {
     }
     if (exception.isNotFound) {
       return 'Conversa nao encontrada.';
+    }
+    if (exception.isConflict) {
+      return exception.message.trim().isNotEmpty
+          ? exception.message
+          : 'Nao e possivel enviar mensagem para este usuario.';
     }
     if (exception.isServerError) {
       return 'Erro no servidor. Tente novamente mais tarde.';

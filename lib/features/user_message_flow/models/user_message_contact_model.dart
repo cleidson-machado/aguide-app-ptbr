@@ -17,6 +17,8 @@ class UserMessageContactModel implements BaseModel {
   final String type;
   final bool isPinned;
   final bool isArchived;
+  final bool isMuted;
+  final DateTime? mutedAt;
 
   const UserMessageContactModel({
     required this.id,
@@ -30,6 +32,8 @@ class UserMessageContactModel implements BaseModel {
     this.type = 'DIRECT',
     this.isPinned = false,
     this.isArchived = false,
+    this.isMuted = false,
+    this.mutedAt,
   });
 
   UserMessageContactModel copyWith({
@@ -43,6 +47,8 @@ class UserMessageContactModel implements BaseModel {
     String? type,
     bool? isPinned,
     bool? isArchived,
+    bool? isMuted,
+    DateTime? mutedAt,
   }) {
     return UserMessageContactModel(
       id: id ?? this.id,
@@ -55,6 +61,8 @@ class UserMessageContactModel implements BaseModel {
       type: type ?? this.type,
       isPinned: isPinned ?? this.isPinned,
       isArchived: isArchived ?? this.isArchived,
+      isMuted: isMuted ?? this.isMuted,
+      mutedAt: mutedAt ?? this.mutedAt,
     );
   }
 
@@ -71,6 +79,8 @@ class UserMessageContactModel implements BaseModel {
       'type': type,
       'isPinned': isPinned,
       'isArchived': isArchived,
+      'isMuted': isMuted,
+      'mutedAt': mutedAt?.toIso8601String(),
     };
   }
 
@@ -86,6 +96,11 @@ class UserMessageContactModel implements BaseModel {
       type: map['type'] ?? 'DIRECT',
       isPinned: map['isPinned'] ?? false,
       isArchived: map['isArchived'] ?? false,
+      isMuted: map['isMuted'] ?? false,
+      mutedAt:
+          map['mutedAt'] != null
+              ? DateTime.tryParse(map['mutedAt'].toString())
+              : null,
     );
   }
 
@@ -98,9 +113,10 @@ class UserMessageContactModel implements BaseModel {
     // 2º) `name`        → preenchido apenas em GROUP/CHANNEL (sempre null em DIRECT)
     // 3º) fallback hardcoded
     // Sem ler `displayName` primeiro, conversas DIRECT exibem "Unknown Contact".
-    final resolvedName = (map['displayName']?.toString().trim().isNotEmpty ?? false)
-        ? map['displayName'].toString()
-        : (map['name']?.toString().trim().isNotEmpty ?? false)
+    final resolvedName =
+        (map['displayName']?.toString().trim().isNotEmpty ?? false)
+            ? map['displayName'].toString()
+            : (map['name']?.toString().trim().isNotEmpty ?? false)
             ? map['name'].toString()
             : 'Unknown Contact';
     return UserMessageContactModel(
@@ -108,15 +124,21 @@ class UserMessageContactModel implements BaseModel {
       contactName: resolvedName,
       lastMessage: map['lastMessagePreview']?.toString() ?? '',
       timestamp: map['formattedTimestamp']?.toString() ?? '',
-      lastMessageAt: rawLastMessageAt != null
-          ? DateTime.tryParse(rawLastMessageAt.toString())
-          : null,
+      lastMessageAt:
+          rawLastMessageAt != null
+              ? DateTime.tryParse(rawLastMessageAt.toString())
+              : null,
       avatarUrl: map['iconUrl']?.toString(),
       isOnline: false,
       unreadCount: map['unreadCount'] as int? ?? 0,
       type: map['type']?.toString() ?? 'DIRECT',
       isPinned: map['isPinned'] as bool? ?? false,
       isArchived: map['isArchived'] as bool? ?? false,
+      isMuted: map['isMuted'] as bool? ?? false,
+      mutedAt:
+          map['mutedAt'] != null
+              ? DateTime.tryParse(map['mutedAt'].toString())
+              : null,
     );
   }
 
@@ -145,7 +167,9 @@ class UserMessageContactModel implements BaseModel {
         other.unreadCount == unreadCount &&
         other.type == type &&
         other.isPinned == isPinned &&
-        other.isArchived == isArchived;
+        other.isArchived == isArchived &&
+        other.isMuted == isMuted &&
+        other.mutedAt == mutedAt;
   }
 
   @override
@@ -159,7 +183,9 @@ class UserMessageContactModel implements BaseModel {
         unreadCount.hashCode ^
         type.hashCode ^
         isPinned.hashCode ^
-        isArchived.hashCode;
+        isArchived.hashCode ^
+        isMuted.hashCode ^
+        mutedAt.hashCode;
   }
 
   /// Helper method to get initials from contact name for avatar placeholders
