@@ -6,6 +6,9 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
 
@@ -28,13 +31,16 @@ class UserRelationNetworkScreen extends StatefulWidget {
 class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   late final UserRelationNetworkViewModel _viewModel;
   late final TextEditingController _searchController;
+  late final UserMessageFlowRepositoryInterface _messageRepository;
   final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
+  bool _isCreatingConversation = false;
 
   @override
   void initState() {
     super.initState();
     _viewModel = UserRelationNetworkViewModel();
     _searchController = TextEditingController();
+    _messageRepository = injector<UserMessageFlowRepositoryInterface>();
     // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
     _loadUserDetails();
     // 🆕 Carrega conexões reais via API
@@ -111,6 +117,132 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
       debugPrint('💬 [UserRelationNetworkScreen] Navegando para tela de mensagens...');
     }
     Modular.to.pushNamed(AppRoutes.messageBucket);
+  }
+
+  /// Navega para o chat direto com o usuário selecionado
+  /// Cria/busca conversa e navega para UserChatMessageViewScreen
+  Future<void> _handleUserTap(MessageUserData user) async {
+    if (_isCreatingConversation) return;
+
+    if (kDebugMode) {
+      debugPrint('');
+      debugPrint('👤 [UserRelationNetworkScreen] Usuário selecionado: ${user.fullName} (id=${user.id})');
+    }
+
+    setState(() {
+      _isCreatingConversation = true;
+    });
+
+    try {
+      // Mostra loading modal
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CupertinoActivityIndicator(radius: 20),
+        ),
+      );
+
+      if (kDebugMode) {
+        debugPrint('🔄 [UserRelationNetworkScreen] Criando/buscando conversa direta...');
+      }
+
+      UserMessageContactModel? conversation;
+
+      try {
+        // Tenta criar conversa - backend retorna existente se já existe
+        conversation = await _messageRepository.createDirectConversation(
+          otherUserId: user.id,
+        );
+      } catch (e) {
+        // Fallback: busca conversa existente na lista
+        if (kDebugMode) {
+          debugPrint('⚠️  [UserRelationNetworkScreen] Erro ao criar: $e');
+          debugPrint('🔍 [UserRelationNetworkScreen] Buscando conversa existente...');
+        }
+
+        final existingConversations = await _messageRepository.getConversations();
+        final directConversations = existingConversations
+            .where((c) => c.type == 'DIRECT')
+            .toList();
+
+        // Tenta encontrar conversa acessível
+        for (final conv in directConversations) {
+          try {
+            await _messageRepository.getConversationDetails(conv.id);
+            conversation = conv;
+            if (kDebugMode) {
+              debugPrint('✅ [UserRelationNetworkScreen] Conversa encontrada: ${conv.id}');
+            }
+            break;
+          } catch (detailsError) {
+            // Continua para próxima
+            continue;
+          }
+        }
+
+        if (conversation == null) {
+          rethrow;
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ [UserRelationNetworkScreen] Conversa: ${conversation.id} - ${conversation.contactName}');
+      }
+
+      // Fecha loading modal
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Navega para tela de chat
+      if (mounted) {
+        await Navigator.of(context).push(
+          CupertinoPageRoute(
+            builder: (context) => UserChatMessageViewScreen(
+              contact: conversation!,
+            ),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ [UserRelationNetworkScreen] Erro ao criar conversa:');
+        debugPrint('   Tipo: ${e.runtimeType}');
+        debugPrint('   Mensagem: $e');
+        debugPrint('   StackTrace: $stackTrace');
+      }
+
+      // Fecha loading modal se ainda estiver exibindo
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Mostra dialog de erro
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Erro'),
+            content: Text(
+              'Não foi possível iniciar a conversa.\n\nDetalhes: ${e.toString()}',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingConversation = false;
+        });
+      }
+    }
   }
 
   @override
@@ -495,45 +627,49 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
 
   /// Card de perfil circular (para "Minhas Conexões") - Dados reais da API
   Widget _buildConnectionProfileCardFromUser(MessageUserData user) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Avatar com iniciais como fallback
-        ClipOval(
-          child: Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey5.resolveFrom(context),
-            ),
-            child: Center(
-              child: Text(
-                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w600,
-                  color: CupertinoColors.systemGrey.resolveFrom(context),
+    return GestureDetector(
+      onTap: () => _handleUserTap(user),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar com iniciais como fallback
+          ClipOval(
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey5.resolveFrom(context),
+              ),
+              child: Center(
+                child: Text(
+                  user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
+                    color: CupertinoColors.systemGrey.resolveFrom(context),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 6),
-        // Nome completo
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Text(
-            user.fullName,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 6),
+          // Nome completo
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              user.fullName,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
