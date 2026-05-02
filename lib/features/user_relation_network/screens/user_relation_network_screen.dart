@@ -298,7 +298,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                       // Seção "Minhas Conexões" (clicável - navega para mensagens)
                       SliverToBoxAdapter(
                         child: _buildSectionTitle(
-                          'Minhas Conexões',
+                          'Conexões e Papos',
                           onTap: _navigateToMessageBucket,
                         ),
                       ),
