@@ -9,6 +9,7 @@ import 'package:portugal_guide/features/user_message_flow/models/message_user_da
 import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
 
@@ -45,6 +46,8 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     _loadUserDetails();
     // 🆕 Carrega conexões reais via API
     _viewModel.loadConnections();
+    // 🆕 Carrega conteúdos verificados (ownership)
+    _loadOwnershipContents();
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -77,6 +80,18 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     } else {
       if (kDebugMode) {
         debugPrint('⚠️  [UserRelationNetworkScreen] UserId não disponível - não é possível carregar user details');
+      }
+    }
+  }
+
+  /// 🆕 Carrega conteúdos verificados (ownership) do usuário
+  Future<void> _loadOwnershipContents() async {
+    final userId = _tokenManager.getUserId();
+    if (userId != null && userId.isNotEmpty) {
+      await _viewModel.loadOwnershipContents(userId);
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️  [UserRelationNetworkScreen] UserId não disponível - não é possível carregar ownership');
       }
     }
   }
@@ -428,9 +443,57 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Meus Vídeos" - Scroll horizontal
+  /// Seção "Meus Vídeos" - Scroll horizontal com dados reais de Ownership
   Widget _buildMeusVideosSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.featuredProfiles);
+    // Estado de loading
+    if (_viewModel.isLoadingOwnership) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(
+            child: CupertinoActivityIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Estado de erro
+    if (_viewModel.ownershipError != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              _viewModel.ownershipError!,
+              style: TextStyle(
+                color: CupertinoColors.systemRed.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final contents = _viewModel.ownershipContents;
+
+    // Estado vazio
+    if (contents.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              'Nenhum conteúdo verificado',
+              style: TextStyle(
+                color: CupertinoColors.systemGrey.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -439,13 +502,13 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: profiles.length,
+          itemCount: contents.length,
           itemBuilder: (context, index) {
-            final profile = profiles[index];
+            final content = contents[index];
             return Container(
               width: 100,
               margin: const EdgeInsets.only(right: 12),
-              child: _buildMeusVideosProfileCard(profile),
+              child: _buildOwnershipContentCard(content),
             );
           },
         ),
@@ -581,48 +644,50 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Card de perfil quadrado (para "Meus Vídeos")
-  Widget _buildMeusVideosProfileCard(ConnectionProfileModel profile) {
+  /// Card de conteúdo verificado (Ownership) - Dados reais da API
+  Widget _buildOwnershipContentCard(OwnershipContentModel content) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar quadrado com bordas arredondadas
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey5,
-                  borderRadius: BorderRadius.circular(12),
+        // Avatar circular com inicial do canal
+        ClipOval(
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey5.resolveFrom(context),
+            ),
+            child: Center(
+              child: Text(
+                content.channelName.isNotEmpty
+                    ? content.channelName[0].toUpperCase()
+                    : '🎥',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemGrey.resolveFrom(context),
                 ),
-                child: const Icon(CupertinoIcons.play_rectangle_fill, size: 35),
               ),
             ),
           ),
-          const SizedBox(height: 6),
-          // Nome
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              profile.name,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
+        // Nome do canal
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            content.channelName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 
   /// Card de perfil circular (para "Minhas Conexões") - Dados reais da API

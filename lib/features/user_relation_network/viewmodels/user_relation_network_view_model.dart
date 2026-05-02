@@ -4,15 +4,20 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_details_model.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import '../models/connection_profile_model.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
-/// MOCKADO - dados temporários para desenvolvimento da UI
 class UserRelationNetworkViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;
+  final OwnershipRepositoryInterface _ownershipRepository;
 
-  UserRelationNetworkViewModel({UserRepositoryInterface? userRepository})
-      : _userRepository = userRepository ?? injector<UserRepositoryInterface>();
+  UserRelationNetworkViewModel({
+    UserRepositoryInterface? userRepository,
+    OwnershipRepositoryInterface? ownershipRepository,
+  })  : _userRepository = userRepository ?? injector<UserRepositoryInterface>(),
+        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>();
 
   // Query de busca
   String _searchQuery = '';
@@ -27,6 +32,11 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   bool _isLoadingConnections = false;
   String? _connectionsError;
 
+  // ===== Estado de Ownership (Conteúdos Verificados) =====
+  List<OwnershipContentModel> _ownershipContents = [];
+  bool _isLoadingOwnership = false;
+  String? _ownershipError;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
@@ -37,6 +47,11 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   bool get isLoadingConnections => _isLoadingConnections;
   String? get connectionsError => _connectionsError;
   bool get hasMoreConnections => _connections.length > 20;
+
+  // ===== Getters para Ownership =====
+  List<OwnershipContentModel> get ownershipContents => _ownershipContents;
+  bool get isLoadingOwnership => _isLoadingOwnership;
+  String? get ownershipError => _ownershipError;
 
   /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
   /// 
@@ -482,6 +497,59 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   void setSearchQuery(String query) {
     if (_searchQuery != query) {
       _searchQuery = query;
+      notifyListeners();
+    }
+  }
+
+  /// Carrega conteúdos verificados (ownership) do usuário
+  /// 
+  /// Usa endpoint: GET /api/v1/ownership/user/{userId}/content
+  /// Exibe "Meus Vídeos - CRIADOS" para CRIADORES
+  Future<void> loadOwnershipContents(String userId) async {
+    _isLoadingOwnership = true;
+    _ownershipError = null;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🎬 CARREGANDO OWNERSHIP - UserRelationNetworkViewModel        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+        debugPrint('   🆔 UserId: $userId');
+      }
+
+      final result = await _ownershipRepository.getUserVerifiedContents(
+        userId: userId,
+      );
+
+      if (result.isOwner && result.contents != null) {
+        _ownershipContents = result.contents!;
+        if (kDebugMode) {
+          debugPrint('   ✅ ${_ownershipContents.length} conteúdo(s) verificado(s) carregado(s)');
+          for (final content in _ownershipContents) {
+            debugPrint('      - ${content.channelName} (${content.title})');
+          }
+        }
+      } else {
+        _ownershipContents = [];
+        if (kDebugMode) {
+          debugPrint('   ⚠️  Nenhum conteúdo verificado (não é dono ou erro)');
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      _ownershipContents = [];
+      _ownershipError = 'Erro ao carregar conteúdos verificados';
+      if (kDebugMode) {
+        debugPrint('   ❌ Erro ao carregar ownership: $e');
+      }
+    } finally {
+      _isLoadingOwnership = false;
       notifyListeners();
     }
   }
