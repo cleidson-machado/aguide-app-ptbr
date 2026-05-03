@@ -85,13 +85,13 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   /// Retorna o título dinâmico da primeira seção
   /// - CRIADOR: "Meus Vídeos - CRIADOS"
   /// - CONSUMIDOR: "Conteúdo Visualizado"
-  String get meusVideosTitle {
+  String get dynamicTitlesByOwner {
     final title = isContentCreator
         ? 'Meus Vídeos - CRIADOS'
         : 'Conteúdo Visualizado';
 
     if (kDebugMode) {
-      debugPrint('🏷️  [UserRelationNetworkVM] meusVideosTitle: "$title"');
+      debugPrint('🏷️  [UserRelationNetworkVM] dynamicTitlesByOwner: "$title"');
     }
 
     return title;
@@ -648,7 +648,7 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
         debugPrint('   📺 YouTube User ID: "${_userDetails?.youtubeUserId ?? "NULL"}"');
         debugPrint('   📺 YouTube Channel ID: "${_userDetails?.youtubeChannelId ?? "NULL"}"');
         debugPrint('   🎯 Tipo detectado: ${isContentCreator ? "CRIADOR" : "CONSUMIDOR"}');
-        debugPrint('   🏷️  Título: "$meusVideosTitle"');
+        debugPrint('   🏷️  Título: "$dynamicTitlesByOwner"');
         debugPrint('─────────────────────────────────────────────────────────────────');
         debugPrint('');
       }

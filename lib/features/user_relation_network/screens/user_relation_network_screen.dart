@@ -73,7 +73,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         debugPrint('╚════════════════════════════════════════════════════════════════╝');
         debugPrint('   📊 userDetails: ${_viewModel.userDetails != null ? "CARREGADO" : "NULL"}');
         debugPrint('   🎯 isContentCreator: ${_viewModel.isContentCreator}');
-        debugPrint('   🏷️  meusVideosTitle: "${_viewModel.meusVideosTitle}"');
+        debugPrint('   🏷️  dynamicTitlesByOwner: "${_viewModel.dynamicTitlesByOwner}"');
         debugPrint('─────────────────────────────────────────────────────────────────');
         debugPrint('');
       }
@@ -301,7 +301,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                     slivers: [
                       // Seção "Meus Vídeos" ou "Conteúdo Visualizado" (dinâmico)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle(_viewModel.meusVideosTitle),
+                        child: _buildSectionTitle(_viewModel.dynamicTitlesByOwner),
                       ),
                       _buildMeusVideosSection(),
 

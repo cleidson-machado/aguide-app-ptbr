@@ -102,7 +102,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
               padding: const EdgeInsets.all(12),
               child: CupertinoSearchTextField(
                 onChanged: _onSearchChanged,
-                placeholder: 'Pesquisar ${topicViewerViewModel.isContentCreator ? 'em criados' : ' em assistidos'}',
+                placeholder: 'Pesquisar ${topicViewerViewModel.isContentCreator ? 'em assistidos' : 'em criados'}',
               ),
             ),
           ),
