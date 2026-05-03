@@ -180,15 +180,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 }
 
                 final content = mainContentTopicViewModel.contents[index];
-                return Column(
-                  // Key única baseada no ID do conteúdo para otimizar rebuilds
-                  // Permite que o Flutter identifique e reutilize widgets corretamente
-                  key: ValueKey('content_${content.id}'),
-                  children: [
-                    _buildBlogCard(content),
-                    const Divider(color: CupertinoColors.systemGrey4),
-                  ],
-                );
+                return _buildBlogCard(content);
               },
               childCount:
                   mainContentTopicViewModel.contents.length + (mainContentTopicViewModel.isLoadingMore ? 1 : 0),
@@ -201,6 +193,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
 
   Widget _buildBlogCard(MainContentTopicModel content) {
     return Padding(
+      key: ValueKey('content_${content.id}'), // Key única para otimizar rebuilds
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Container(
         decoration: BoxDecoration(
@@ -214,79 +207,179 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             ),
           ],
         ),
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: [
-            // Thumbnail à esquerda
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: content.videoThumbnailUrl,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                memCacheWidth: 200,
-                memCacheHeight: 200,
-                maxWidthDiskCache: 200,
-                maxHeightDiskCache: 200,
-                placeholder: (context, url) => Container(
-                  width: 100,
-                  height: 100,
-                  color: CupertinoColors.systemGrey5,
-                  child: const Center(
-                    child: CupertinoActivityIndicator(),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  width: 100,
-                  height: 100,
-                  color: CupertinoColors.systemGrey5,
-                  child: const Icon(
-                    CupertinoIcons.photo,
-                    color: CupertinoColors.systemGrey,
-                    size: 32,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            
-            // Conteúdo textual
-            Expanded(
-              child: Column(
+            // Card principal (thumbnail + conteúdo)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
-                  Text(
-                    content.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.black,
+                  // Thumbnail à esquerda
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: content.videoThumbnailUrl,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 200,
+                      memCacheHeight: 200,
+                      maxWidthDiskCache: 200,
+                      maxHeightDiskCache: 200,
+                      placeholder: (context, url) => Container(
+                        width: 100,
+                        height: 100,
+                        color: CupertinoColors.systemGrey5,
+                        child: const Center(
+                          child: CupertinoActivityIndicator(),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 100,
+                        height: 100,
+                        color: CupertinoColors.systemGrey5,
+                        child: const Icon(
+                          CupertinoIcons.photo,
+                          color: CupertinoColors.systemGrey,
+                          size: 32,
+                        ),
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(width: 12),
                   
-                  // Descrição
-                  Text(
-                    content.description.isNotEmpty
-                        ? content.description
-                        : 'Este vídeo não possui descrição.',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: CupertinoColors.systemGrey,
+                  // Conteúdo textual
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Título
+                        Text(
+                          content.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.black,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        
+                        // Descrição
+                        Text(
+                          content.description.isNotEmpty
+                              ? content.description
+                              : 'Este vídeo não possui descrição.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.systemGrey,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            
+            // Divider
+            const Divider(height: 1, color: CupertinoColors.systemGrey5),
+            
+            // Métricas de engajamento
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF3E5F5), Color(0xFFE1F5FE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildMetric(
+                    icon: CupertinoIcons.eye_fill,
+                    value: _formatNumber(content.viewCount),
+                    label: 'Views',
+                    color: const Color(0xFF9575CD),
+                  ),
+                  Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                  _buildMetric(
+                    icon: CupertinoIcons.hand_thumbsup_fill,
+                    value: _formatNumber(content.likeCount),
+                    label: 'Likes',
+                    color: const Color(0xFFE57373),
+                  ),
+                  Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
+                  _buildMetric(
+                    icon: CupertinoIcons.chat_bubble_fill,
+                    value: _formatNumber(content.commentCount),
+                    label: 'Comentários',
+                    color: const Color(0xFF4FC3F7),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Formata números grandes (ex: 1.5M, 250K, 1.2K)
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    } else {
+      return number.toString();
+    }
+  }
+
+  /// Constrói widget de métrica com ícone, valor e label
+  Widget _buildMetric({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: CupertinoColors.systemGrey,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -299,12 +392,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         itemCount: 8, // Mostra 8 skeletons placeholder
         itemBuilder: (context, index) {
-          return Column(
-            children: [
-              _buildSkeletonCardContent(),
-              const Divider(color: CupertinoColors.systemGrey4),
-            ],
-          );
+          return _buildSkeletonCardContent();
         },
       ),
     );
@@ -314,12 +402,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   Widget _buildSkeletonCard() {
     return Skeletonizer(
       enabled: true,
-      child: Column(
-        children: [
-          _buildSkeletonCardContent(),
-          const Divider(color: CupertinoColors.systemGrey4),
-        ],
-      ),
+      child: _buildSkeletonCardContent(),
     );
   }
 
@@ -332,19 +415,50 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
           color: CupertinoColors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: [
-            Bone.square(size: 100, borderRadius: BorderRadius.circular(8)),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Bone.text(words: 3, fontSize: 16),
-                  SizedBox(height: 4),
-                  Bone.text(words: 6, fontSize: 13),
+                  Bone.square(size: 100, borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Bone.text(words: 3, fontSize: 16),
+                        SizedBox(height: 4),
+                        Bone.text(words: 6, fontSize: 13),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: CupertinoColors.systemGrey5),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF3E5F5), Color(0xFFE1F5FE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Expanded(child: Bone.text(words: 1, fontSize: 14)),
+                  SizedBox(width: 8),
+                  Expanded(child: Bone.text(words: 1, fontSize: 14)),
+                  SizedBox(width: 8),
+                  Expanded(child: Bone.text(words: 1, fontSize: 14)),
                 ],
               ),
             ),
