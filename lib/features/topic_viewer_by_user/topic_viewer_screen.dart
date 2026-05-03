@@ -3,15 +3,12 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
-import 'package:portugal_guide/resources/locale_provider.dart';
-import 'package:portugal_guide/resources/translation/app_localizations.dart';
-import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -30,6 +27,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
       injector<TopicViewerViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce;
+  Timer? _dialogTimer; // Timer para auto-fechar dialogs
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -52,6 +50,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   @override
   void dispose() {
     _debounce?.cancel();
+    _dialogTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     mainContentTopicViewModel.dispose();
@@ -113,7 +112,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         ),
         trailing: GestureDetector(
           onTap: () {
-            _popUpHandler(context);
+            _filterPopUpHandler(context);
           },
           child: const Icon(CupertinoIcons.slider_horizontal_3, size: 24),
         ),
@@ -468,110 +467,140 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     );
   }
 
-  Future<dynamic> _popUpHandler(BuildContext context) {
+  Future<dynamic> _filterPopUpHandler(BuildContext context) {
     return showCupertinoModalPopup(
       context: context,
       builder:
           (BuildContext context) => CupertinoActionSheet(
-            title: Text(
-              AppLocalizations.of(context)?.selectLanguage ?? 'Select Language',
+            title: const Text(
+              'Selecione a ordenação dos conteúdos',
+              style: TextStyle(fontSize: 14),
+            ),
+            message: const Text(
+              'Escolha como deseja visualizar os conteúdos',
+              style: TextStyle(fontSize: 12),
             ),
             actions: <CupertinoActionSheetAction>[
               CupertinoActionSheetAction(
-                onPressed: () {
-                  Provider.of<AppLocaleProvider>(
-                    context,
-                    listen: false,
-                  ).changeLocale(const Locale('pt', ''));
+                onPressed: () async {
                   Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.titleAscending,
+                  );
                 },
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CountryFlag.fromCountryCode(
-                      'BR',
-                      height: 16,
-                      width: 24,
-                      shape: const RoundedRectangle(4),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)?.languagePortuguese ??
-                          'Portuguese',
-                    ),
+                    Icon(CupertinoIcons.sort_up, size: 20),
+                    SizedBox(width: 8),
+                    Text('Título A-Z'),
                   ],
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  Provider.of<AppLocaleProvider>(
-                    context,
-                    listen: false,
-                  ).changeLocale(const Locale('en', ''));
+                onPressed: () async {
                   Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.titleDescending,
+                  );
                 },
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CountryFlag.fromCountryCode(
-                      'US',
-                      height: 16,
-                      width: 24,
-                      shape: const RoundedRectangle(4),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)?.languageEnglish ??
-                          'English',
-                    ),
+                    Icon(CupertinoIcons.sort_down, size: 20),
+                    SizedBox(width: 8),
+                    Text('Título Z-A'),
                   ],
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  Provider.of<AppLocaleProvider>(
-                    context,
-                    listen: false,
-                  ).changeLocale(const Locale('es', ''));
+                onPressed: () async {
                   Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.newestPublished,
+                  );
                 },
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CountryFlag.fromCountryCode(
-                      'ES',
-                      height: 16,
-                      width: 24,
-                      shape: const RoundedRectangle(4),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)?.languageSpanish ??
-                          'Spanish',
-                    ),
+                    Icon(CupertinoIcons.clock_fill, size: 20),
+                    SizedBox(width: 8),
+                    Text('Mais Recentes'),
                   ],
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () {
-                  Provider.of<AppLocaleProvider>(
-                    context,
-                    listen: false,
-                  ).changeLocale(const Locale('fr', ''));
+                onPressed: () async {
                   Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.oldestPublished,
+                  );
                 },
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CountryFlag.fromCountryCode(
-                      'FR',
-                      height: 16,
-                      width: 24,
-                      shape: const RoundedRectangle(4),
+                    Icon(CupertinoIcons.time, size: 20),
+                    SizedBox(width: 8),
+                    Text('Mais Antigos'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.channelNameAscending,
+                  );
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.tv, size: 20),
+                    SizedBox(width: 8),
+                    Text('Canal A-Z'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await mainContentTopicViewModel.applyManualFilter(
+                    MainContentSortOption.recentlyAdded,
+                  );
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(CupertinoIcons.add_circled_solid, size: 20),
+                    SizedBox(width: 8),
+                    Text('Adicionados Recentemente'),
+                  ],
+                ),
+              ),
+              CupertinoActionSheetAction(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await mainContentTopicViewModel.resetToRandomMode();
+                  if (context.mounted) {
+                    _showResetMessage(context, '🎲 Modo Aleatório ativado!');
+                  }
+                },
+                isDestructiveAction: false,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.shuffle,
+                      size: 20,
+                      color: CupertinoColors.activeBlue,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
-                      AppLocalizations.of(context)?.languageFrench ?? 'French',
+                      '🎲 Surpreenda-me (Aleatório)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: CupertinoColors.activeBlue,
+                      ),
                     ),
                   ],
                 ),
@@ -581,9 +610,46 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              child: const Text('Sair'),
             ),
           ),
     );
+  }
+
+  /// Exibe mensagem de confirmação com auto-close
+  void _showResetMessage(BuildContext context, String message) {
+    if (!mounted) return;
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (BuildContext context) => CupertinoAlertDialog(
+            title: const Icon(
+              CupertinoIcons.checkmark_circle_fill,
+              color: CupertinoColors.activeGreen,
+              size: 48,
+            ),
+            content: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(message, style: const TextStyle(fontSize: 16)),
+            ),
+          ),
+    );
+
+    // Auto-fechar após 1.5 segundos
+    _dialogTimer?.cancel();
+    _dialogTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      if (context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Dialog já foi fechado: $e');
+          }
+        }
+      }
+    });
   }
 }
