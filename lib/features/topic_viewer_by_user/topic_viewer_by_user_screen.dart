@@ -13,14 +13,14 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class MainContentTopicScreen extends StatefulWidget {
-  const MainContentTopicScreen({super.key});
+class TopicViewerByUserScreen extends StatefulWidget {
+  const TopicViewerByUserScreen({super.key});
 
   @override
-  State<MainContentTopicScreen> createState() => _MainContentTopicScreenState();
+  State<TopicViewerByUserScreen> createState() => _TopicViewerByUserScreenState();
 }
 
-class _MainContentTopicScreenState extends State<MainContentTopicScreen>
+class _TopicViewerByUserScreenState extends State<TopicViewerByUserScreen>
     with AutomaticKeepAliveClientMixin {
   final MainContentTopicViewModel viewModel =
       injector<MainContentTopicViewModel>();
@@ -62,7 +62,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
       if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
         if (kDebugMode) {
           debugPrint(
-            "📜 [_MainContentTopicScreenState] Scroll trigger: carregando próxima página",
+            "📜 [_TopicViewerByUserScreenState] Scroll trigger: carregando próxima página",
           );
         }
         viewModel.loadNextPage();
@@ -91,7 +91,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: false,
-        middle: const Text(">> Perfil de Consumidor - Default <<"),
+        middle: const Text("| Meus Videos Criados |"),
         trailing: GestureDetector(
           onTap: () {
             _popUpHandler(context);
