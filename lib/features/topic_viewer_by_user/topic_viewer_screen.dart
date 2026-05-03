@@ -5,10 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
-import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
-import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -26,8 +24,6 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     with AutomaticKeepAliveClientMixin {
   final MainContentTopicViewModel viewModel =
       injector<MainContentTopicViewModel>();
-  final TopicViewerViewModel _titleViewModel = TopicViewerViewModel();
-  final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
   late ScrollController _scrollController;
   Timer? _debounce; // Timer para debounce na busca
 
@@ -43,42 +39,6 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     _scrollController.addListener(_onScroll);
     // Carrega apenas se for a primeira vez (viewModel não inicializado)
     viewModel.loadPagedContentsIfNeeded();
-    // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
-    _loadUserDetails();
-  }
-
-  /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
-  Future<void> _loadUserDetails() async {
-    final userId = _tokenManager.getUserId();
-    if (userId != null && userId.isNotEmpty) {
-      if (kDebugMode) {
-        debugPrint('');
-        debugPrint('╔════════════════════════════════════════════════════════════════╗');
-        debugPrint('║  👤 CARREGANDO USER DETAILS - TopicViewerScreen              ║');
-        debugPrint('╚════════════════════════════════════════════════════════════════╝');
-        debugPrint('   🆔 UserId: $userId');
-        debugPrint('   📍 Origem: TopicViewerScreen.initState()');
-        debugPrint('─────────────────────────────────────────────────────────────────');
-      }
-
-      await _titleViewModel.loadUserDetails(userId);
-
-      if (kDebugMode) {
-        debugPrint('');
-        debugPrint('╔════════════════════════════════════════════════════════════════╗');
-        debugPrint('║  🔄 ESTADO ATUAL DO VIEWMODEL - TopicViewer                  ║');
-        debugPrint('╚════════════════════════════════════════════════════════════════╝');
-        debugPrint('   📊 userDetails: ${_titleViewModel.userDetails != null ? "CARREGADO" : "NULL"}');
-        debugPrint('   🎯 isContentCreator: ${_titleViewModel.isContentCreator}');
-        debugPrint('   🏷️  screenTitle: "${_titleViewModel.screenTitle}"');
-        debugPrint('─────────────────────────────────────────────────────────────────');
-        debugPrint('');
-      }
-    } else {
-      if (kDebugMode) {
-        debugPrint('⚠️  [TopicViewerScreen] UserId não disponível - não é possível carregar user details');
-      }
-    }
   }
 
   @override
@@ -87,7 +47,6 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     viewModel.dispose();
-    _titleViewModel.dispose();
     super.dispose();
   }
 
@@ -140,13 +99,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             }
           },
         ),
-        // 🆕 Título dinâmico baseado em CRIADOR/CONSUMIDOR
-        middle: AnimatedBuilder(
-          animation: _titleViewModel,
-          builder: (context, child) {
-            return Text(_titleViewModel.screenTitle);
-          },
-        ),
+        middle: const Text("| Meus Videos Criados |"),
         trailing: GestureDetector(
           onTap: () {
             _popUpHandler(context);
