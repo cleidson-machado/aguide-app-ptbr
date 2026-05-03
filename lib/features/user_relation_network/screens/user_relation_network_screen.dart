@@ -266,6 +266,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
           _isCreatingConversation = false;
         });
       }
+      Modular.to.navigate(AppRoutes.main);
     }
   }
 
