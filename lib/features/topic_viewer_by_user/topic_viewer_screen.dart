@@ -7,6 +7,8 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/ownership_content_adapter.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/content_metrics_formatter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -242,8 +244,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final ownershipContent = topicViewerViewModel.ownershipContents[index];
-                // Converte OwnershipContentModel para MainContentTopicModel
-                final content = _convertToMainContentModel(ownershipContent);
+                final content = _getDisplayContent(ownershipContent);
                 return _buildBlogCard(content);
               },
               childCount: topicViewerViewModel.ownershipContents.length,
@@ -254,11 +255,11 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     );
   }
 
-  /// Converte OwnershipContentModel para MainContentTopicModel
-  /// Usado para manter compatibilidade com widgets existentes
+  /// Obtém conteúdo para exibição, priorizando dados enriquecidos (com métricas)
   /// 
-  /// **OTIMIZAÇÃO:** Busca dados enriquecidos (com métricas reais) se disponíveis
-  MainContentTopicModel _convertToMainContentModel(
+  /// **Strategy:** Tenta cache de métricas enriquecidas primeiro, fallback para adapter.
+  /// **Separation of Concerns:** Delegação para ViewModel (enriquecimento) e Adapter (conversão).
+  MainContentTopicModel _getDisplayContent(
     ownershipContent,
   ) {
     // 🚀 Tentar obter dados completos (com métricas) do cache
@@ -269,48 +270,21 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     if (enrichedContent != null) {
       if (kDebugMode) {
         debugPrint(
-          '✅ [Adapter] Usando dados enriquecidos: ${enrichedContent.title} '
+          '✅ [Screen] Usando dados enriquecidos: ${enrichedContent.title} '
           '(Views: ${enrichedContent.viewCount}, Likes: ${enrichedContent.likeCount})',
         );
       }
       return enrichedContent;
     }
 
-    // ⚠️ Fallback: Retornar dados básicos com métricas zeradas
+    // ⚠️ Fallback: Converter dados básicos via Adapter (métricas zeradas)
     if (kDebugMode) {
       debugPrint(
-        '⚠️  [Adapter] Dados enriquecidos não disponíveis para: ${ownershipContent.contentId}',
+        '⚠️  [Screen] Dados enriquecidos não disponíveis para: ${ownershipContent.contentId}',
       );
     }
 
-    return MainContentTopicModel(
-      id: ownershipContent.contentId,
-      title: ownershipContent.title,
-      description: ownershipContent.description,
-      videoUrl: ownershipContent.videoUrl,
-      videoThumbnailUrl: ownershipContent.videoThumbnailUrl,
-      publishedAt: ownershipContent.publishedAt,
-      createdAt: ownershipContent.verifiedAt, // Usa verifiedAt como createdAt
-      updatedAt: ownershipContent.verifiedAt,
-      channelId: ownershipContent.channelId,
-      channelOwnerLinkId: null,
-      channelName: ownershipContent.channelName,
-      type: 'VIDEO',
-      categoryId: '',
-      categoryName: '',
-      tags: null,
-      durationSeconds: 0,
-      durationIso: 'PT0S',
-      definition: 'hd',
-      caption: false,
-      // Métricas zeradas (ownership não fornece)
-      viewCount: 0,
-      likeCount: 0,
-      commentCount: 0,
-      defaultLanguage: null,
-      defaultAudioLanguage: null,
-      validationHash: ownershipContent.validationHash,
-    );
+    return OwnershipContentAdapter.toMainContentModel(ownershipContent);
   }
 
   Widget _buildBlogCard(MainContentTopicModel content) {
@@ -430,21 +404,21 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 children: [
                   _buildMetric(
                     icon: CupertinoIcons.eye_fill,
-                    value: _formatNumber(content.viewCount),
+                    value: ContentMetricsFormatter.formatNumber(content.viewCount),
                     label: 'Views',
                     color: const Color(0xFF9575CD),
                   ),
                   Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
                   _buildMetric(
                     icon: CupertinoIcons.hand_thumbsup_fill,
-                    value: _formatNumber(content.likeCount),
+                    value: ContentMetricsFormatter.formatNumber(content.likeCount),
                     label: 'Likes',
                     color: const Color(0xFFE57373),
                   ),
                   Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
                   _buildMetric(
                     icon: CupertinoIcons.chat_bubble_fill,
-                    value: _formatNumber(content.commentCount),
+                    value: ContentMetricsFormatter.formatNumber(content.commentCount),
                     label: 'Comentários',
                     color: const Color(0xFF4FC3F7),
                   ),
@@ -455,17 +429,6 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         ),
       ),
     );
-  }
-
-  /// Formata números grandes (ex: 1.5M, 250K, 1.2K)
-  String _formatNumber(int number) {
-    if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
-    } else {
-      return number.toString();
-    }
   }
 
   /// Constrói widget de métrica com ícone, valor e label
