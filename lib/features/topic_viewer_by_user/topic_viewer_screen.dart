@@ -5,9 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
-import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
-import 'package:portugal_guide/features/main_contents/topic/sorting/main_content_sort_option.dart';
 import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -21,8 +19,6 @@ class TopicViewerScreen extends StatefulWidget {
 
 class _TopicViewerScreenState extends State<TopicViewerScreen>
     with AutomaticKeepAliveClientMixin {
-  final MainContentTopicViewModel mainContentTopicViewModel =
-      injector<MainContentTopicViewModel>();
   final TopicViewerViewModel topicViewerViewModel =
       injector<TopicViewerViewModel>();
   late ScrollController _scrollController;
@@ -38,12 +34,12 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _scrollController.addListener(_onScroll);
-    mainContentTopicViewModel.loadPagedContentsIfNeeded();
     
     final userId = injector<AuthTokenManager>().getUserId();
     if (userId != null) {
+      // Carrega user details e ownership contents (vídeos do usuário)
       topicViewerViewModel.loadUserDetails(userId);
+      topicViewerViewModel.loadOwnershipContents(userId);
     }
   }
 
@@ -51,44 +47,16 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   void dispose() {
     _debounce?.cancel();
     _dialogTimer?.cancel();
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    mainContentTopicViewModel.dispose();
     topicViewerViewModel.dispose();
     super.dispose();
   }
 
-  /// Listener para detectar quando o usuário chegou próximo do final da lista
-  /// Usa uma margem de 200px para disparar o carregamento antes de atingir o final absoluto
-  void _onScroll() {
-    final position = _scrollController.position;
-    final maxScroll = position.maxScrollExtent;
-    final currentScroll = position.pixels;
-
-    // Se chegou perto do final (dentro de 200px) e há mais páginas
-    if (currentScroll >= maxScroll - 200) {
-      if (mainContentTopicViewModel.hasMorePages && !mainContentTopicViewModel.isLoadingMore) {
-        if (kDebugMode) {
-          debugPrint(
-            "📜 [_TopicViewerScreenState] Scroll trigger: carregando próxima página",
-          );
-        }
-        mainContentTopicViewModel.loadNextPage();
-      }
-    }
-  }
-
   /// Handler de busca com debounce de 500ms
-  /// Cancela requisições anteriores se o usuário continuar digitando
-  /// Reduz em ~95% o número de chamadas à API durante a digitação
+  /// Filtra conteúdos localmente (ownership já carregado)
   void _onSearchChanged(String value) {
-    // Cancela timer anterior se existir
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-
-    // Cria novo timer de 500ms
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      mainContentTopicViewModel.searchContents(value);
-    });
+    // TODO: Implementar filtro local se necessário
+    // Por enquanto, busca está desabilitada para ownership contents
   }
 
   @override
@@ -127,7 +95,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
           ),
           Expanded(
             child: AnimatedBuilder(
-              animation: mainContentTopicViewModel,
+              animation: topicViewerViewModel,
               builder: (context, child) {
                 return _buildBody();
               },
@@ -139,54 +107,134 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   }
 
   Widget _buildBody() {
-    if (mainContentTopicViewModel.isLoading) {
-      // Skeleton loader para carregamento inicial
+    // Loading inicial
+    if (topicViewerViewModel.isLoadingOwnership) {
       return _buildSkeletonList();
     }
 
-    if (mainContentTopicViewModel.error != null) {
+    // Erro ao carregar
+    if (topicViewerViewModel.ownershipError != null) {
       return Center(
-        child: Text(
-          mainContentTopicViewModel.errorMessage ?? 'Erro desconhecido',
-          style: const TextStyle(color: CupertinoColors.systemRed),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              CupertinoIcons.exclamationmark_triangle,
+              size: 48,
+              color: CupertinoColors.systemRed,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              topicViewerViewModel.ownershipError!,
+              style: const TextStyle(color: CupertinoColors.systemRed),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            CupertinoButton(
+              onPressed: () {
+                final userId = injector<AuthTokenManager>().getUserId();
+                if (userId != null) {
+                  topicViewerViewModel.loadOwnershipContents(userId);
+                }
+              },
+              child: const Text('Tentar Novamente'),
+            ),
+          ],
         ),
       );
     }
 
-    if (mainContentTopicViewModel.contents.isEmpty) {
-      return const Center(child: Text("Nenhum conteúdo encontrado."));
+    // Lista vazia
+    if (!topicViewerViewModel.hasOwnershipContents) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              CupertinoIcons.video_camera,
+              size: 64,
+              color: CupertinoColors.systemGrey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              topicViewerViewModel.isContentCreator
+                  ? 'Você ainda não tem vídeos verificados'
+                  : 'Nenhum conteúdo assistido',
+              style: const TextStyle(
+                fontSize: 16,
+                color: CupertinoColors.systemGrey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
     }
 
-    // CustomScrollView permite usar CupertinoSliverRefreshControl (pull-to-refresh nativo iOS)
+    // Lista de conteúdos (ownership)
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        // Pull-to-refresh control nativo do iOS
+        // Pull-to-refresh
         CupertinoSliverRefreshControl(
           onRefresh: () async {
-            await mainContentTopicViewModel.refreshContents();
+            final userId = injector<AuthTokenManager>().getUserId();
+            if (userId != null) {
+              await topicViewerViewModel.loadOwnershipContents(userId);
+            }
           },
         ),
-        // Lista de conteúdos com paginação
+        // Lista de cards
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                // Se for o último item e estamos carregando, mostrar skeleton loader
-                if (index == mainContentTopicViewModel.contents.length) {
-                  return _buildSkeletonCard();
-                }
-
-                final content = mainContentTopicViewModel.contents[index];
+                final ownershipContent = topicViewerViewModel.ownershipContents[index];
+                // Converte OwnershipContentModel para MainContentTopicModel
+                final content = _convertToMainContentModel(ownershipContent);
                 return _buildBlogCard(content);
               },
-              childCount:
-                  mainContentTopicViewModel.contents.length + (mainContentTopicViewModel.isLoadingMore ? 1 : 0),
+              childCount: topicViewerViewModel.ownershipContents.length,
             ),
           ),
         ),
       ],
+    );
+  }
+
+  /// Converte OwnershipContentModel para MainContentTopicModel
+  /// Usado para manter compatibilidade com widgets existentes
+  MainContentTopicModel _convertToMainContentModel(
+    ownershipContent,
+  ) {
+    return MainContentTopicModel(
+      id: ownershipContent.contentId,
+      title: ownershipContent.title,
+      description: ownershipContent.description,
+      videoUrl: ownershipContent.videoUrl,
+      videoThumbnailUrl: ownershipContent.videoThumbnailUrl,
+      publishedAt: ownershipContent.publishedAt,
+      createdAt: ownershipContent.verifiedAt, // Usa verifiedAt como createdAt
+      updatedAt: ownershipContent.verifiedAt,
+      channelId: ownershipContent.channelId,
+      channelOwnerLinkId: null,
+      channelName: ownershipContent.channelName,
+      type: 'VIDEO',
+      categoryId: '',
+      categoryName: '',
+      tags: null,
+      durationSeconds: 0,
+      durationIso: 'PT0S',
+      definition: 'hd',
+      caption: false,
+      // Métricas zeradas (ownership não fornece)
+      viewCount: 0,
+      likeCount: 0,
+      commentCount: 0,
+      defaultLanguage: null,
+      defaultAudioLanguage: null,
+      validationHash: ownershipContent.validationHash,
     );
   }
 
@@ -397,14 +445,6 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     );
   }
 
-  /// Skeleton loader para um único card (carregamento incremental)
-  Widget _buildSkeletonCard() {
-    return Skeletonizer(
-      enabled: true,
-      child: _buildSkeletonCardContent(),
-    );
-  }
-
   /// Conteúdo do skeleton card (reutilizável)
   Widget _buildSkeletonCardContent() {
     return Padding(
@@ -482,11 +522,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             ),
             actions: <CupertinoActionSheetAction>[
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.titleAscending,
-                  );
+                  topicViewerViewModel.sortByTitleAscending();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -498,11 +536,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.titleDescending,
-                  );
+                  topicViewerViewModel.sortByTitleDescending();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -514,11 +550,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.newestPublished,
-                  );
+                  topicViewerViewModel.sortByNewestPublished();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -530,11 +564,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.oldestPublished,
-                  );
+                  topicViewerViewModel.sortByOldestPublished();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -546,11 +578,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.channelNameAscending,
-                  );
+                  topicViewerViewModel.sortByChannelNameAscending();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -562,11 +592,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.applyManualFilter(
-                    MainContentSortOption.recentlyAdded,
-                  );
+                  topicViewerViewModel.sortByRecentlyAdded();
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -578,9 +606,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 ),
               ),
               CupertinoActionSheetAction(
-                onPressed: () async {
+                onPressed: () {
                   Navigator.pop(context);
-                  await mainContentTopicViewModel.resetToRandomMode();
+                  topicViewerViewModel.shuffleContents();
                   if (context.mounted) {
                     _showResetMessage(context, '🎲 Modo Aleatório ativado!');
                   }
