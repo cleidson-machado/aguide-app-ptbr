@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
 import 'package:portugal_guide/resources/locale_provider.dart';
 import 'package:portugal_guide/resources/translation/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -22,10 +24,12 @@ class TopicViewerScreen extends StatefulWidget {
 
 class _TopicViewerScreenState extends State<TopicViewerScreen>
     with AutomaticKeepAliveClientMixin {
-  final MainContentTopicViewModel viewModel =
+  final MainContentTopicViewModel mainContentTopicViewModel =
       injector<MainContentTopicViewModel>();
+  final TopicViewerViewModel topicViewerViewModel =
+      injector<TopicViewerViewModel>();
   late ScrollController _scrollController;
-  Timer? _debounce; // Timer para debounce na busca
+  Timer? _debounce;
 
   /// Mantém o estado vivo quando a tab não está ativa
   /// Evita recriação do widget e recarregamento de dados ao trocar de tab
@@ -37,16 +41,21 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    // Carrega apenas se for a primeira vez (viewModel não inicializado)
-    viewModel.loadPagedContentsIfNeeded();
+    mainContentTopicViewModel.loadPagedContentsIfNeeded();
+    
+    final userId = injector<AuthTokenManager>().getUserId();
+    if (userId != null) {
+      topicViewerViewModel.loadUserDetails(userId);
+    }
   }
 
   @override
   void dispose() {
-    _debounce?.cancel(); // Cancela o timer pendente ao destruir o widget
+    _debounce?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    viewModel.dispose();
+    mainContentTopicViewModel.dispose();
+    topicViewerViewModel.dispose();
     super.dispose();
   }
 
@@ -59,13 +68,13 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
 
     // Se chegou perto do final (dentro de 200px) e há mais páginas
     if (currentScroll >= maxScroll - 200) {
-      if (viewModel.hasMorePages && !viewModel.isLoadingMore) {
+      if (mainContentTopicViewModel.hasMorePages && !mainContentTopicViewModel.isLoadingMore) {
         if (kDebugMode) {
           debugPrint(
             "📜 [_TopicViewerScreenState] Scroll trigger: carregando próxima página",
           );
         }
-        viewModel.loadNextPage();
+        mainContentTopicViewModel.loadNextPage();
       }
     }
   }
@@ -79,7 +88,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
 
     // Cria novo timer de 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      viewModel.searchContents(value);
+      mainContentTopicViewModel.searchContents(value);
     });
   }
 
@@ -93,13 +102,15 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         transitionBetweenRoutes: false,
         leading: CupertinoNavigationBarBackButton(
           onPressed: () {
-            // TODO: Implementar função de voltar
             if (kDebugMode) {
               debugPrint('🔙 [TopicViewerScreen] Botão de voltar clicado');
             }
           },
         ),
-        middle: const Text("| Meus Videos Criados |"),
+        middle: AnimatedBuilder(
+          animation: topicViewerViewModel,
+          builder: (context, _) => Text(topicViewerViewModel.dinamicTitle),
+        ),
         trailing: GestureDetector(
           onTap: () {
             _popUpHandler(context);
@@ -117,7 +128,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
           ),
           Expanded(
             child: AnimatedBuilder(
-              animation: viewModel,
+              animation: mainContentTopicViewModel,
               builder: (context, child) {
                 return _buildBody();
               },
@@ -129,21 +140,21 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   }
 
   Widget _buildBody() {
-    if (viewModel.isLoading) {
+    if (mainContentTopicViewModel.isLoading) {
       // Skeleton loader para carregamento inicial
       return _buildSkeletonList();
     }
 
-    if (viewModel.error != null) {
+    if (mainContentTopicViewModel.error != null) {
       return Center(
         child: Text(
-          viewModel.errorMessage ?? 'Erro desconhecido',
+          mainContentTopicViewModel.errorMessage ?? 'Erro desconhecido',
           style: const TextStyle(color: CupertinoColors.systemRed),
         ),
       );
     }
 
-    if (viewModel.contents.isEmpty) {
+    if (mainContentTopicViewModel.contents.isEmpty) {
       return const Center(child: Text("Nenhum conteúdo encontrado."));
     }
 
@@ -154,7 +165,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         // Pull-to-refresh control nativo do iOS
         CupertinoSliverRefreshControl(
           onRefresh: () async {
-            await viewModel.refreshContents();
+            await mainContentTopicViewModel.refreshContents();
           },
         ),
         // Lista de conteúdos com paginação
@@ -164,11 +175,11 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 // Se for o último item e estamos carregando, mostrar skeleton loader
-                if (index == viewModel.contents.length) {
+                if (index == mainContentTopicViewModel.contents.length) {
                   return _buildSkeletonCard();
                 }
 
-                final content = viewModel.contents[index];
+                final content = mainContentTopicViewModel.contents[index];
                 return Column(
                   // Key única baseada no ID do conteúdo para otimizar rebuilds
                   // Permite que o Flutter identifique e reutilize widgets corretamente
@@ -180,7 +191,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 );
               },
               childCount:
-                  viewModel.contents.length + (viewModel.isLoadingMore ? 1 : 0),
+                  mainContentTopicViewModel.contents.length + (mainContentTopicViewModel.isLoadingMore ? 1 : 0),
             ),
           ),
         ),

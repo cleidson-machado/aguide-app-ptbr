@@ -11,6 +11,7 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_r
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
 import 'package:portugal_guide/features/user/user_repository.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user/user_phone_repository.dart';
@@ -113,6 +114,13 @@ Future<void> setupDependencies() async {
   injector.registerFactory<MainContentTopicViewModel>(
     () => MainContentTopicViewModel(
       repository: injector<MainContentTopicRepositoryInterface>(),
+    ),
+  );
+
+  //### For Topic Viewer (User-specific content view with dynamic title) ###
+  injector.registerFactory<TopicViewerViewModel>(
+    () => TopicViewerViewModel(
+      userRepository: injector<UserRepositoryInterface>(),
     ),
   );
 
