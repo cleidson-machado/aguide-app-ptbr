@@ -73,6 +73,10 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             if (kDebugMode) {
               debugPrint('🔙 [TopicViewerScreen] Botão de voltar clicado');
             }
+            // Só faz pop se estiver em pilha de navegação (não em TAB)
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           },
         ),
         middle: AnimatedBuilder(

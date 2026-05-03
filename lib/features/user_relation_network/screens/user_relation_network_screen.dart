@@ -134,6 +134,15 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     Modular.to.pushNamed(AppRoutes.messageBucket);
   }
 
+  /// Navega para a tela de visualização de tópicos (TopicViewerScreen)
+  /// Usa pushNamed para adicionar à pilha de navegação
+  void _navigateToTopicViewer() {
+    if (kDebugMode) {
+      debugPrint('📺 [UserRelationNetworkScreen] Navegando para visualizador de tópicos...');
+    }
+    Modular.to.pushNamed(AppRoutes.topicViewer);
+  }
+
   /// Navega para o chat direto com o usuário selecionado
   /// Cria/busca conversa e navega para UserChatMessageViewScreen
   Future<void> _handleUserTap(MessageUserData user) async {
@@ -301,7 +310,10 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                     slivers: [
                       // Seção "Meus Vídeos" ou "Conteúdo Visualizado" (dinâmico)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle(_viewModel.dynamicTitlesByOwner),
+                        child: _buildSectionTitle(
+                          _viewModel.dynamicTitlesByOwner,
+                          onTap: _navigateToTopicViewer,
+                        ),
                       ),
                       _buildMeusVideosSection(),
 
