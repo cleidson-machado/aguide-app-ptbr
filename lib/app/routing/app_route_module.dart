@@ -7,6 +7,8 @@ import 'package:portugal_guide/features/user_promo_main_contents/screens/user_pr
 import 'package:portugal_guide/features/user_verified_content/screens/user_verified_content_wizard_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
 import 'package:portugal_guide/features/user_relation_network/screens/user_relation_network_screen.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_bucket_screen.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_screen.dart';
 
 import 'app_routes.dart';
 
@@ -24,6 +26,8 @@ class AppRouteModule extends Module {
       AppRoutes.userVerifiedContentWizard: const UserVerifiedContentWizardScreen(),
       AppRoutes.relationsWelcome: const MainRelationWelcomeScreen(), // Welcome screen de relações (onboarding)
       AppRoutes.relationsConnections: const UserRelationNetworkScreen(), // Tela de relações para usuários com user-choice
+      AppRoutes.messageBucket: const UsersMessageBucketScreen(), // Lista de conversas/usuários para mensagens
+      AppRoutes.topicViewer: const TopicViewerScreen(), // Visualizador de tópicos por usuário
       // AppRoutes.admin: const AdminPage(),
       // AppRoutes.sales: const SalesPage(),
       // AppRoutes.salesProfile: const SalesPageProfile(),
