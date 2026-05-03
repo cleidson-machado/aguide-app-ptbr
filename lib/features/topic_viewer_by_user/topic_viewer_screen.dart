@@ -19,8 +19,7 @@ class TopicViewerScreen extends StatefulWidget {
 
 class _TopicViewerScreenState extends State<TopicViewerScreen>
     with AutomaticKeepAliveClientMixin {
-  final TopicViewerViewModel topicViewerViewModel =
-      injector<TopicViewerViewModel>();
+  final TopicViewerViewModel topicViewerViewModel = injector<TopicViewerViewModel>();
   late ScrollController _scrollController;
   Timer? _debounce;
   Timer? _dialogTimer; // Timer para auto-fechar dialogs
@@ -88,9 +87,9 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: CupertinoSearchTextField(
-              onChanged: _onSearchChanged, // Usa handler com debounce
+              onChanged: _onSearchChanged,
             ),
           ),
           Expanded(
@@ -226,7 +225,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         
         // Lista de cards
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 2, bottom: 20),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -500,8 +499,8 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
     return Skeletonizer(
       enabled: true,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        itemCount: 8, // Mostra 8 skeletons placeholder
+        padding: const EdgeInsets.only(left: 20, right: 20, top: 2, bottom: 20),
+        itemCount: 8,
         itemBuilder: (context, index) {
           return _buildSkeletonCardContent();
         },
