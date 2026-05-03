@@ -201,71 +201,92 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
 
   Widget _buildBlogCard(MainContentTopicModel content) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  content.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: CupertinoColors.systemGrey.withOpacity(0.50),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail à esquerda
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: CachedNetworkImage(
+                imageUrl: content.videoThumbnailUrl,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                memCacheWidth: 200,
+                memCacheHeight: 200,
+                maxWidthDiskCache: 200,
+                maxHeightDiskCache: 200,
+                placeholder: (context, url) => Container(
+                  width: 100,
+                  height: 100,
+                  color: CupertinoColors.systemGrey5,
+                  child: const Center(
+                    child: CupertinoActivityIndicator(),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  content
-                      .description, // Usando description no lugar de subtitle
-                  style: const TextStyle(
-                    fontSize: 14,
+                errorWidget: (context, url, error) => Container(
+                  width: 100,
+                  height: 100,
+                  color: CupertinoColors.systemGrey5,
+                  child: const Icon(
+                    CupertinoIcons.photo,
                     color: CupertinoColors.systemGrey,
+                    size: 32,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: content.videoThumbnailUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              // Redimensiona em memória para 160x160 (2x para telas retina)
-              memCacheWidth: 160,
-              memCacheHeight: 160,
-              // Redimensiona no cache de disco para economizar espaço
-              maxWidthDiskCache: 160,
-              maxHeightDiskCache: 160,
-              // Placeholder enquanto carrega (atividade indicator nativo iOS)
-              placeholder:
-                  (context, url) => Container(
-                    width: 80,
-                    height: 80,
-                    color: CupertinoColors.systemGrey5,
-                    child: const Center(child: CupertinoActivityIndicator()),
-                  ),
-              // Widget de erro mantido igual ao original
-              errorWidget:
-                  (context, url, error) => Container(
-                    width: 80,
-                    height: 80,
-                    color: CupertinoColors.systemGrey5,
-                    child: const Icon(
-                      CupertinoIcons.photo,
-                      color: CupertinoColors.white,
+            const SizedBox(width: 12),
+            
+            // Conteúdo textual
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Título
+                  Text(
+                    content.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.black,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4),
+                  
+                  // Descrição
+                  Text(
+                    content.description.isNotEmpty
+                        ? content.description
+                        : 'Este vídeo não possui descrição.',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -305,23 +326,30 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
   /// Conteúdo do skeleton card (reutilizável)
   Widget _buildSkeletonCardContent() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Bone.text(words: 3, fontSize: 16),
-                SizedBox(height: 4),
-                Bone.text(words: 6, fontSize: 14),
-              ],
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Bone.square(size: 100, borderRadius: BorderRadius.circular(8)),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Bone.text(words: 3, fontSize: 16),
+                  SizedBox(height: 4),
+                  Bone.text(words: 6, fontSize: 13),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Bone.square(size: 80, borderRadius: BorderRadius.circular(8)),
-        ],
+          ],
+        ),
       ),
     );
   }
