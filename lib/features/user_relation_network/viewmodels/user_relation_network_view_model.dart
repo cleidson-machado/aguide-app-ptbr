@@ -1,16 +1,23 @@
 import 'package:flutter/foundation.dart';
+import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/features/user/user_details_model.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import '../models/connection_profile_model.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
-/// MOCKADO - dados temporários para desenvolvimento da UI
 class UserRelationNetworkViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;
+  final OwnershipRepositoryInterface _ownershipRepository;
 
-  UserRelationNetworkViewModel({UserRepositoryInterface? userRepository})
-      : _userRepository = userRepository ?? injector<UserRepositoryInterface>();
+  UserRelationNetworkViewModel({
+    UserRepositoryInterface? userRepository,
+    OwnershipRepositoryInterface? ownershipRepository,
+  })  : _userRepository = userRepository ?? injector<UserRepositoryInterface>(),
+        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>();
 
   // Query de busca
   String _searchQuery = '';
@@ -20,9 +27,31 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   UserDetailsModel? _userDetails;
   bool _isLoadingUserDetails = false;
 
+  // ===== Estado de Conexões Reais (via API) =====
+  List<MessageUserData> _connections = [];
+  bool _isLoadingConnections = false;
+  String? _connectionsError;
+
+  // ===== Estado de Ownership (Conteúdos Verificados) =====
+  List<OwnershipContentModel> _ownershipContents = [];
+  bool _isLoadingOwnership = false;
+  String? _ownershipError;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
+
+  // ===== Getters para Conexões =====
+  /// Retorna apenas os primeiros 20 usuários
+  List<MessageUserData> get connections => _connections.take(20).toList();
+  bool get isLoadingConnections => _isLoadingConnections;
+  String? get connectionsError => _connectionsError;
+  bool get hasMoreConnections => _connections.length > 20;
+
+  // ===== Getters para Ownership =====
+  List<OwnershipContentModel> get ownershipContents => _ownershipContents;
+  bool get isLoadingOwnership => _isLoadingOwnership;
+  String? get ownershipError => _ownershipError;
 
   /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
   /// 
@@ -56,13 +85,13 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   /// Retorna o título dinâmico da primeira seção
   /// - CRIADOR: "Meus Vídeos - CRIADOS"
   /// - CONSUMIDOR: "Conteúdo Visualizado"
-  String get meusVideosTitle {
+  String get dynamicTitlesByOwner {
     final title = isContentCreator
         ? 'Meus Vídeos - CRIADOS'
         : 'Conteúdo Visualizado';
 
     if (kDebugMode) {
-      debugPrint('🏷️  [UserRelationNetworkVM] meusVideosTitle: "$title"');
+      debugPrint('🏷️  [UserRelationNetworkVM] dynamicTitlesByOwner: "$title"');
     }
 
     return title;
@@ -472,6 +501,129 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
     }
   }
 
+  /// Carrega conteúdos verificados (ownership) do usuário
+  /// 
+  /// Usa endpoint: GET /api/v1/ownership/user/{userId}/content
+  /// Exibe "Meus Vídeos - CRIADOS" para CRIADORES
+  Future<void> loadOwnershipContents(String userId) async {
+    _isLoadingOwnership = true;
+    _ownershipError = null;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🎬 CARREGANDO OWNERSHIP - UserRelationNetworkViewModel        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+        debugPrint('   🆔 UserId: $userId');
+      }
+
+      final result = await _ownershipRepository.getUserVerifiedContents(
+        userId: userId,
+      );
+
+      if (result.isOwner && result.contents != null) {
+        _ownershipContents = result.contents!;
+        if (kDebugMode) {
+          debugPrint('   ✅ ${_ownershipContents.length} conteúdo(s) verificado(s) carregado(s)');
+          for (final content in _ownershipContents) {
+            debugPrint('      - ${content.channelName} (${content.title})');
+          }
+        }
+      } else {
+        _ownershipContents = [];
+        if (kDebugMode) {
+          debugPrint('   ⚠️  Nenhum conteúdo verificado (não é dono ou erro)');
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      _ownershipContents = [];
+      _ownershipError = 'Erro ao carregar conteúdos verificados';
+      if (kDebugMode) {
+        debugPrint('   ❌ Erro ao carregar ownership: $e');
+      }
+    } finally {
+      _isLoadingOwnership = false;
+      notifyListeners();
+    }
+  }
+
+  /// Carrega lista de usuários reais para "Minhas Conexões"
+  /// 
+  /// Similar ao MessageUserListViewModel: GET /users + GET /users/{id}/details
+  /// Filtra o próprio usuário da lista
+  Future<void> loadConnections() async {
+    _isLoadingConnections = true;
+    _connectionsError = null;
+    notifyListeners();
+
+    try {
+      if (kDebugMode) {
+        debugPrint('');
+        debugPrint('╔════════════════════════════════════════════════════════════════╗');
+        debugPrint('║  🔄 CARREGANDO CONEXÕES - UserRelationNetworkViewModel        ║');
+        debugPrint('╚════════════════════════════════════════════════════════════════╝');
+      }
+
+      // Step 1: Carregar lista básica de usuários
+      final basicUsers = await _userRepository.getAll();
+      if (kDebugMode) {
+        debugPrint('   📊 ${basicUsers.length} usuários básicos carregados');
+      }
+
+      // Step 2: Enriquecer com detalhes (role designation)
+      final List<MessageUserData> enrichedUsers = [];
+      
+      for (final user in basicUsers) {
+        try {
+          final details = await _userRepository.getUserDetails(user.id);
+          final messageUserData = MessageUserData.fromUserAndDetails(user, details);
+          enrichedUsers.add(messageUserData);
+        } catch (e) {
+          // Se falhar ao carregar detalhes, cria MessageUserData sem YouTube info
+          if (kDebugMode) {
+            debugPrint('   ⚠️  Detalhes não disponíveis para ${user.name}');
+          }
+          enrichedUsers.add(MessageUserData(
+            id: user.id,
+            name: user.name,
+            surname: user.surname,
+            email: user.email,
+            fullName: '${user.name} ${user.surname}',
+            youtubeUserId: null,
+            youtubeChannelId: null,
+          ));
+        }
+      }
+
+      // Step 3: Filtrar o próprio usuário
+      final currentUserId = injector<AuthTokenManager>().getUserId();
+      _connections = enrichedUsers.where((user) => user.id != currentUserId).toList();
+
+      if (kDebugMode) {
+        debugPrint('   ✅ ${_connections.length} conexões carregadas (filtrou currentUserId)');
+        debugPrint('   📋 Primeiros 20 serão exibidos na UI');
+        debugPrint('─────────────────────────────────────────────────────────────────');
+        debugPrint('');
+      }
+    } catch (e) {
+      _connections = [];
+      _connectionsError = 'Erro ao carregar conexões';
+      if (kDebugMode) {
+        debugPrint('   ❌ Erro ao carregar conexões: $e');
+      }
+    } finally {
+      _isLoadingConnections = false;
+      notifyListeners();
+    }
+  }
+
   /// Carrega os detalhes do usuário via API
   /// 
   /// Consome: GET /api/v1/users/{userId}/details
@@ -496,7 +648,7 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
         debugPrint('   📺 YouTube User ID: "${_userDetails?.youtubeUserId ?? "NULL"}"');
         debugPrint('   📺 YouTube Channel ID: "${_userDetails?.youtubeChannelId ?? "NULL"}"');
         debugPrint('   🎯 Tipo detectado: ${isContentCreator ? "CRIADOR" : "CONSUMIDOR"}');
-        debugPrint('   🏷️  Título: "$meusVideosTitle"');
+        debugPrint('   🏷️  Título: "$dynamicTitlesByOwner"');
         debugPrint('─────────────────────────────────────────────────────────────────');
         debugPrint('');
       }

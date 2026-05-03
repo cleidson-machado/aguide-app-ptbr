@@ -5,6 +5,11 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/app/routing/app_routes.dart';
+import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
+import 'package:portugal_guide/features/user_message_flow/models/user_message_contact_model.dart';
+import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
+import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
+import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import '../models/connection_profile_model.dart';
 import '../viewmodels/user_relation_network_view_model.dart';
 
@@ -27,15 +32,22 @@ class UserRelationNetworkScreen extends StatefulWidget {
 class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   late final UserRelationNetworkViewModel _viewModel;
   late final TextEditingController _searchController;
+  late final UserMessageFlowRepositoryInterface _messageRepository;
   final AuthTokenManager _tokenManager = injector<AuthTokenManager>();
+  bool _isCreatingConversation = false;
 
   @override
   void initState() {
     super.initState();
     _viewModel = UserRelationNetworkViewModel();
     _searchController = TextEditingController();
+    _messageRepository = injector<UserMessageFlowRepositoryInterface>();
     // 🆕 Carrega os detalhes do usuário para determinar CRIADOR/CONSUMIDOR
     _loadUserDetails();
+    // 🆕 Carrega conexões reais via API
+    _viewModel.loadConnections();
+    // 🆕 Carrega conteúdos verificados (ownership)
+    _loadOwnershipContents();
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -61,13 +73,25 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         debugPrint('╚════════════════════════════════════════════════════════════════╝');
         debugPrint('   📊 userDetails: ${_viewModel.userDetails != null ? "CARREGADO" : "NULL"}');
         debugPrint('   🎯 isContentCreator: ${_viewModel.isContentCreator}');
-        debugPrint('   🏷️  meusVideosTitle: "${_viewModel.meusVideosTitle}"');
+        debugPrint('   🏷️  dynamicTitlesByOwner: "${_viewModel.dynamicTitlesByOwner}"');
         debugPrint('─────────────────────────────────────────────────────────────────');
         debugPrint('');
       }
     } else {
       if (kDebugMode) {
         debugPrint('⚠️  [UserRelationNetworkScreen] UserId não disponível - não é possível carregar user details');
+      }
+    }
+  }
+
+  /// 🆕 Carrega conteúdos verificados (ownership) do usuário
+  Future<void> _loadOwnershipContents() async {
+    final userId = _tokenManager.getUserId();
+    if (userId != null && userId.isNotEmpty) {
+      await _viewModel.loadOwnershipContents(userId);
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️  [UserRelationNetworkScreen] UserId não disponível - não é possível carregar ownership');
       }
     }
   }
@@ -96,6 +120,151 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
       // Fallback: navegar explicitamente para a rota main
       if (kDebugMode) {
         print('📤 [UserRelationNetworkScreen] Fallback: Modular.to.navigate(main)');
+      }
+      Modular.to.navigate(AppRoutes.main);
+    }
+  }
+
+  /// Navega para a tela de mensagens (UsersMessageBucketScreen)
+  /// Usa pushNamed para adicionar à pilha de navegação
+  void _navigateToMessageBucket() {
+    if (kDebugMode) {
+      debugPrint('💬 [UserRelationNetworkScreen] Navegando para tela de mensagens...');
+    }
+    Modular.to.pushNamed(AppRoutes.messageBucket);
+  }
+
+  /// Navega para a tela de visualização de tópicos (TopicViewerScreen)
+  /// Usa pushNamed para adicionar à pilha de navegação
+  void _navigateToTopicViewer() {
+    if (kDebugMode) {
+      debugPrint('📺 [UserRelationNetworkScreen] Navegando para visualizador de tópicos...');
+    }
+    Modular.to.pushNamed(AppRoutes.topicViewer);
+  }
+
+  /// Navega para o chat direto com o usuário selecionado
+  /// Cria/busca conversa e navega para UserChatMessageViewScreen
+  Future<void> _handleUserTap(MessageUserData user) async {
+    if (_isCreatingConversation) return;
+
+    if (kDebugMode) {
+      debugPrint('');
+      debugPrint('👤 [UserRelationNetworkScreen] Usuário selecionado: ${user.fullName} (id=${user.id})');
+    }
+
+    setState(() {
+      _isCreatingConversation = true;
+    });
+
+    try {
+      // Mostra loading modal
+      showCupertinoDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CupertinoActivityIndicator(radius: 20),
+        ),
+      );
+
+      if (kDebugMode) {
+        debugPrint('🔄 [UserRelationNetworkScreen] Criando/buscando conversa direta...');
+      }
+
+      UserMessageContactModel? conversation;
+
+      try {
+        // Tenta criar conversa - backend retorna existente se já existe
+        conversation = await _messageRepository.createDirectConversation(
+          otherUserId: user.id,
+        );
+      } catch (e) {
+        // Fallback: busca conversa existente na lista
+        if (kDebugMode) {
+          debugPrint('⚠️  [UserRelationNetworkScreen] Erro ao criar: $e');
+          debugPrint('🔍 [UserRelationNetworkScreen] Buscando conversa existente...');
+        }
+
+        final existingConversations = await _messageRepository.getConversations();
+        final directConversations = existingConversations
+            .where((c) => c.type == 'DIRECT')
+            .toList();
+
+        // Tenta encontrar conversa acessível
+        for (final conv in directConversations) {
+          try {
+            await _messageRepository.getConversationDetails(conv.id);
+            conversation = conv;
+            if (kDebugMode) {
+              debugPrint('✅ [UserRelationNetworkScreen] Conversa encontrada: ${conv.id}');
+            }
+            break;
+          } catch (detailsError) {
+            // Continua para próxima
+            continue;
+          }
+        }
+
+        if (conversation == null) {
+          rethrow;
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ [UserRelationNetworkScreen] Conversa: ${conversation.id} - ${conversation.contactName}');
+      }
+
+      // Fecha loading modal
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Navega para tela de chat
+      if (mounted) {
+        await Navigator.of(context).push(
+          CupertinoPageRoute(
+            builder: (context) => UserChatMessageViewScreen(
+              contact: conversation!,
+            ),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ [UserRelationNetworkScreen] Erro ao criar conversa:');
+        debugPrint('   Tipo: ${e.runtimeType}');
+        debugPrint('   Mensagem: $e');
+        debugPrint('   StackTrace: $stackTrace');
+      }
+
+      // Fecha loading modal se ainda estiver exibindo
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Mostra dialog de erro
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Erro'),
+            content: Text(
+              'Não foi possível iniciar a conversa.\n\nDetalhes: ${e.toString()}',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingConversation = false;
+        });
       }
       Modular.to.navigate(AppRoutes.main);
     }
@@ -142,7 +311,10 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                     slivers: [
                       // Seção "Meus Vídeos" ou "Conteúdo Visualizado" (dinâmico)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle(_viewModel.meusVideosTitle),
+                        child: _buildSectionTitle(
+                          _viewModel.dynamicTitlesByOwner,
+                          onTap: _navigateToTopicViewer,
+                        ),
                       ),
                       _buildMeusVideosSection(),
 
@@ -151,9 +323,12 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
                         child: _buildDividerWithDot(),
                       ),
 
-                      // Seção "Minhas Conexões"
+                      // Seção "Minhas Conexões" (clicável - navega para mensagens)
                       SliverToBoxAdapter(
-                        child: _buildSectionTitle('Minhas Conexões'),
+                        child: _buildSectionTitle(
+                          'Conexões e Papos',
+                          onTap: _navigateToMessageBucket,
+                        ),
                       ),
                       _buildConnectionsSection(),
 
@@ -218,8 +393,9 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   }
 
   /// Título de seção com chevron
-  Widget _buildSectionTitle(String title) {
-    return Padding(
+  /// [onTap] callback opcional para tornar o título clicável
+  Widget _buildSectionTitle(String title, {VoidCallback? onTap}) {
+    final content = Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
         children: [
@@ -239,6 +415,18 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
           ),
         ],
       ),
+    );
+
+    // Se não há callback, retorna apenas o conteúdo estático
+    if (onTap == null) {
+      return content;
+    }
+
+    // Se há callback, envolve em GestureDetector com feedback visual
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
     );
   }
 
@@ -268,9 +456,57 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Meus Vídeos" - Scroll horizontal
+  /// Seção "Meus Vídeos" - Scroll horizontal com dados reais de Ownership
   Widget _buildMeusVideosSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.featuredProfiles);
+    // Estado de loading
+    if (_viewModel.isLoadingOwnership) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(
+            child: CupertinoActivityIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Estado de erro
+    if (_viewModel.ownershipError != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              _viewModel.ownershipError!,
+              style: TextStyle(
+                color: CupertinoColors.systemRed.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final contents = _viewModel.ownershipContents;
+
+    // Estado vazio
+    if (contents.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              'Nenhum conteúdo verificado',
+              style: TextStyle(
+                color: CupertinoColors.systemGrey.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -279,13 +515,13 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: profiles.length,
+          itemCount: contents.length,
           itemBuilder: (context, index) {
-            final profile = profiles[index];
+            final content = contents[index];
             return Container(
               width: 100,
               margin: const EdgeInsets.only(right: 12),
-              child: _buildMeusVideosProfileCard(profile),
+              child: _buildOwnershipContentCard(content),
             );
           },
         ),
@@ -293,9 +529,41 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Minhas Conexões" - Scroll horizontal
+  /// Seção "Minhas Conexões" - Scroll horizontal com dados reais da API
+  /// Exibe até 20 usuários + botão "Ver Mais" no final
   Widget _buildConnectionsSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.myConnections);
+    // Estado de loading
+    if (_viewModel.isLoadingConnections) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(
+            child: CupertinoActivityIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Estado de erro
+    if (_viewModel.connectionsError != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              _viewModel.connectionsError!,
+              style: TextStyle(
+                color: CupertinoColors.systemRed.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final connections = _viewModel.connections; // Já limitado a 20
+    final hasMore = _viewModel.hasMoreConnections;
 
     return SliverToBoxAdapter(
       child: Container(
@@ -304,13 +572,20 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: profiles.length,
+          // +1 para incluir o botão "Ver Mais" se houver mais de 20
+          itemCount: hasMore ? connections.length + 1 : connections.length,
           itemBuilder: (context, index) {
-            final profile = profiles[index];
+            // Último item: botão "Ver Mais"
+            if (index == connections.length) {
+              return _buildViewMoreButton();
+            }
+
+            // Item normal: perfil de usuário
+            final user = connections[index];
             return Container(
               width: 100,
               margin: const EdgeInsets.only(right: 12),
-              child: _buildConnectionProfileCard(profile),
+              child: _buildConnectionProfileCardFromUser(user),
             );
           },
         ),
@@ -382,77 +657,86 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Card de perfil quadrado (para "Meus Vídeos")
-  Widget _buildMeusVideosProfileCard(ConnectionProfileModel profile) {
+  /// Card de conteúdo verificado (Ownership) - Dados reais da API
+  Widget _buildOwnershipContentCard(OwnershipContentModel content) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar quadrado com bordas arredondadas
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey5,
-                  borderRadius: BorderRadius.circular(12),
+        // Avatar circular com inicial do canal
+        ClipOval(
+          child: Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey5.resolveFrom(context),
+            ),
+            child: Center(
+              child: Text(
+                content.channelName.isNotEmpty
+                    ? content.channelName[0].toUpperCase()
+                    : '🎥',
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.systemGrey.resolveFrom(context),
                 ),
-                child: const Icon(CupertinoIcons.play_rectangle_fill, size: 35),
               ),
             ),
           ),
-          const SizedBox(height: 6),
-          // Nome
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
-              profile.name,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 6),
+        // Nome do canal
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            content.channelName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 
-  /// Card de perfil circular (para "Minhas Conexões")
-  Widget _buildConnectionProfileCard(ConnectionProfileModel profile) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-          // Avatar
+  /// Card de perfil circular (para "Minhas Conexões") - Dados reais da API
+  Widget _buildConnectionProfileCardFromUser(MessageUserData user) {
+    return GestureDetector(
+      onTap: () => _handleUserTap(user),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar com iniciais como fallback
           ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
+            child: Container(
               width: 70,
               height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                color: CupertinoColors.systemGrey5,
-                child: const Icon(CupertinoIcons.person_fill, size: 35),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey5.resolveFrom(context),
+              ),
+              child: Center(
+                child: Text(
+                  user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
+                    color: CupertinoColors.systemGrey.resolveFrom(context),
+                  ),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 6),
-          // Nome
+          // Nome completo
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
-              profile.name,
+              user.fullName,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -463,7 +747,57 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
             ),
           ),
         ],
-      );
+      ),
+    );
+  }
+
+  /// Botão "Ver Mais" (seta para direita) no final da lista de conexões
+  Widget _buildViewMoreButton() {
+    return GestureDetector(
+      onTap: _navigateToMessageBucket,
+      child: Container(
+        width: 70,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Círculo com ícone de seta
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey5.resolveFrom(context),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: CupertinoColors.systemGrey3.resolveFrom(context),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                CupertinoIcons.arrow_right,
+                size: 30,
+                color: CupertinoColors.systemGrey.resolveFrom(context),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Texto "Ver Mais"
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                'Ver Mais',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Card de perfil circular (para "Sugestões")
