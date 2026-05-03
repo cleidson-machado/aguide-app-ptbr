@@ -7,8 +7,8 @@ import 'package:portugal_guide/app/core/config/injector.dart';
 import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_view_model.dart';
-import 'package:portugal_guide/features/topic_viewer_by_user/ownership_content_adapter.dart';
-import 'package:portugal_guide/features/topic_viewer_by_user/content_metrics_formatter.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_content_adapter.dart';
+import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_metrics_formatter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -284,7 +284,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
       );
     }
 
-    return OwnershipContentAdapter.toMainContentModel(ownershipContent);
+    return TopicViewerContentAdapter.toMainContentModel(ownershipContent);
   }
 
   Widget _buildBlogCard(MainContentTopicModel content) {
@@ -404,21 +404,21 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
                 children: [
                   _buildMetric(
                     icon: CupertinoIcons.eye_fill,
-                    value: ContentMetricsFormatter.formatNumber(content.viewCount),
+                    value: TopicViewerMetricsFormatter.formatNumber(content.viewCount),
                     label: 'Views',
                     color: const Color(0xFF9575CD),
                   ),
                   Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
                   _buildMetric(
                     icon: CupertinoIcons.hand_thumbsup_fill,
-                    value: ContentMetricsFormatter.formatNumber(content.likeCount),
+                    value: TopicViewerMetricsFormatter.formatNumber(content.likeCount),
                     label: 'Likes',
                     color: const Color(0xFFE57373),
                   ),
                   Container(width: 1, height: 40, color: CupertinoColors.systemGrey4),
                   _buildMetric(
                     icon: CupertinoIcons.chat_bubble_fill,
-                    value: ContentMetricsFormatter.formatNumber(content.commentCount),
+                    value: TopicViewerMetricsFormatter.formatNumber(content.commentCount),
                     label: 'Comentários',
                     color: const Color(0xFF4FC3F7),
                   ),

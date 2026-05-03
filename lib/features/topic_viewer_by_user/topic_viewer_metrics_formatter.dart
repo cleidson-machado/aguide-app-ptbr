@@ -8,9 +8,9 @@
 /// - 999 → "999"
 /// 
 /// **Nota:** Esta classe é stateless e todas as operações são puras (sem side effects).
-class ContentMetricsFormatter {
+class TopicViewerMetricsFormatter {
   // Private constructor - forçar uso via métodos estáticos
-  ContentMetricsFormatter._();
+  TopicViewerMetricsFormatter._();
 
   /// Formata número para exibição compacta (K = mil, M = milhão)
   /// 

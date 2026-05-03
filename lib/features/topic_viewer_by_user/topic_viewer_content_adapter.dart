@@ -15,7 +15,7 @@ import 'package:portugal_guide/features/main_contents/topic/main_content_topic_m
 /// **Semantic Mapping:**
 /// - `createdAt: verifiedAt` - Data de verificação representa quando o conteúdo foi "criado" no sistema
 /// - `updatedAt: verifiedAt` - Sem histórico de atualizações, usa mesma data
-class OwnershipContentAdapter {
+class TopicViewerContentAdapter {
   /// Converte OwnershipContentModel para MainContentTopicModel
   /// 
   /// **Não deve ser chamada diretamente pela UI** - Use este adapter via ViewModel.
