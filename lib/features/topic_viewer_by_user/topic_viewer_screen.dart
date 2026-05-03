@@ -184,6 +184,46 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
             }
           },
         ),
+        
+        // 📊 Indicador de enriquecimento de métricas (não-bloqueante)
+        if (topicViewerViewModel.isEnrichingMetrics)
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE3F2FD), Color(0xFFF3E5F5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF90CAF9),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CupertinoActivityIndicator(radius: 8),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '📊 Carregando métricas de engajamento...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF1976D2),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        
         // Lista de cards
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -205,9 +245,33 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
 
   /// Converte OwnershipContentModel para MainContentTopicModel
   /// Usado para manter compatibilidade com widgets existentes
+  /// 
+  /// **OTIMIZAÇÃO:** Busca dados enriquecidos (com métricas reais) se disponíveis
   MainContentTopicModel _convertToMainContentModel(
     ownershipContent,
   ) {
+    // 🚀 Tentar obter dados completos (com métricas) do cache
+    final enrichedContent = topicViewerViewModel.getEnrichedContent(
+      ownershipContent.contentId,
+    );
+
+    if (enrichedContent != null) {
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [Adapter] Usando dados enriquecidos: ${enrichedContent.title} '
+          '(Views: ${enrichedContent.viewCount}, Likes: ${enrichedContent.likeCount})',
+        );
+      }
+      return enrichedContent;
+    }
+
+    // ⚠️ Fallback: Retornar dados básicos com métricas zeradas
+    if (kDebugMode) {
+      debugPrint(
+        '⚠️  [Adapter] Dados enriquecidos não disponíveis para: ${ownershipContent.contentId}',
+      );
+    }
+
     return MainContentTopicModel(
       id: ownershipContent.contentId,
       title: ownershipContent.title,

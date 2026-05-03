@@ -4,16 +4,21 @@ import 'package:portugal_guide/features/user/user_details_model.dart';
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
+import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 
 class TopicViewerViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;
   final OwnershipRepositoryInterface _ownershipRepository;
+  final MainContentTopicViewModel _contentViewModel;
 
   TopicViewerViewModel({
     UserRepositoryInterface? userRepository,
     OwnershipRepositoryInterface? ownershipRepository,
+    MainContentTopicViewModel? contentViewModel,
   })  : _userRepository = userRepository ?? injector<UserRepositoryInterface>(),
-        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>();
+        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>(),
+        _contentViewModel = contentViewModel ?? injector<MainContentTopicViewModel>();
 
   // ===== Estado de User Details =====
   UserDetailsModel? _userDetails;
@@ -24,6 +29,10 @@ class TopicViewerViewModel extends ChangeNotifier {
   bool _isLoadingOwnership = false;
   String? _ownershipError;
 
+  // ===== Estado de Conteúdos Enriquecidos (com métricas) =====
+  Map<String, MainContentTopicModel> _enrichedContents = {};
+  bool _isEnrichingMetrics = false;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
@@ -33,6 +42,15 @@ class TopicViewerViewModel extends ChangeNotifier {
   bool get isLoadingOwnership => _isLoadingOwnership;
   String? get ownershipError => _ownershipError;
   bool get hasOwnershipContents => _ownershipContents.isNotEmpty;
+
+  // ===== Getters para Conteúdos Enriquecidos =====
+  Map<String, MainContentTopicModel> get enrichedContents => _enrichedContents;
+  bool get isEnrichingMetrics => _isEnrichingMetrics;
+
+  /// Retorna dados completos de um conteúdo (com métricas) ou null se não enriquecido
+  MainContentTopicModel? getEnrichedContent(String contentId) {
+    return _enrichedContents[contentId];
+  }
 
   /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
   /// 
@@ -144,6 +162,9 @@ class TopicViewerViewModel extends ChangeNotifier {
             debugPrint('      - ${content.channelName} (${content.title})');
           }
         }
+
+        // 🚀 Enriquecer conteúdos com métricas automaticamente
+        await _enrichContentsWithMetrics();
       } else {
         _ownershipContents = [];
         if (kDebugMode) {
@@ -255,6 +276,109 @@ class TopicViewerViewModel extends ChangeNotifier {
     notifyListeners();
     if (kDebugMode) {
       debugPrint('🎲 [TopicViewerVM] Conteúdos embaralhados aleatoriamente');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ENRIQUECIMENTO DE MÉTRICAS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Enriquece ownership contents com dados completos (incluindo métricas)
+  /// 
+  /// **Solução:** Busca dados do cache de MainContentTopicViewModel
+  /// **Justificativa:** Evita N chamadas à API, usa cache existente
+  /// **Trade-off aceitável:** TopicViewer geralmente é acessada DEPOIS da tela principal
+  Future<void> _enrichContentsWithMetrics() async {
+    if (_ownershipContents.isEmpty) return;
+
+    _isEnrichingMetrics = true;
+    notifyListeners();
+
+    if (kDebugMode) {
+      debugPrint('');
+      debugPrint('════════════════════════════════════════════════════════════════');
+      debugPrint('📊 ENRIQUECENDO CONTEÚDOS COM MÉTRICAS (VIA CACHE)');
+      debugPrint('════════════════════════════════════════════════════════════════');
+      debugPrint('   📌 Total a enriquecer: ${_ownershipContents.length}');
+    }
+
+    // 🔐 Garantir que há conteúdos no cache
+    if (_contentViewModel.contents.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('   ⚠️  Cache vazio, carregando conteúdos primeiro...');
+      }
+      try {
+        await _contentViewModel.loadPagedContents();
+        if (kDebugMode) {
+          debugPrint('   ✅ ${_contentViewModel.contents.length} conteúdos carregados no cache');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('   ❌ Erro ao carregar cache: $e');
+        }
+        _isEnrichingMetrics = false;
+        notifyListeners();
+        return;
+      }
+    }
+
+    if (kDebugMode) {
+      debugPrint('   🗄️  Conteúdos disponíveis no cache: ${_contentViewModel.contents.length}');
+    }
+
+    int successCount = 0;
+    int errorCount = 0;
+
+    // Criar mapa de contentId -> MainContentTopicModel para busca O(1)
+    final Map<String, MainContentTopicModel> contentCache = {
+      for (var content in _contentViewModel.contents)
+        content.id: content,
+    };
+
+    for (final ownershipContent in _ownershipContents) {
+      try {
+        // Buscar do cache em vez de chamar API
+        final fullContent = contentCache[ownershipContent.contentId];
+
+        if (fullContent != null) {
+          _enrichedContents[ownershipContent.contentId] = fullContent;
+          successCount++;
+
+          if (kDebugMode) {
+            debugPrint(
+              '   ✅ ${fullContent.title} → '
+              'Views: ${fullContent.viewCount}, '
+              'Likes: ${fullContent.likeCount}, '
+              'Comments: ${fullContent.commentCount}',
+            );
+          }
+        } else {
+          errorCount++;
+          if (kDebugMode) {
+            debugPrint(
+              '   ⚠️  Conteúdo ${ownershipContent.contentId} não encontrado no cache '
+              '(pode não estar na página atual)',
+            );
+          }
+        }
+      } catch (e) {
+        errorCount++;
+        if (kDebugMode) {
+          debugPrint('   ❌ Erro ao enriquecer ${ownershipContent.contentId}: $e');
+        }
+      }
+    }
+
+    _isEnrichingMetrics = false;
+    notifyListeners();
+
+    if (kDebugMode) {
+      debugPrint('   📈 Enriquecidos: $successCount | ⚠️  Não encontrados: $errorCount');
+      if (errorCount > 0) {
+        debugPrint('   💡 Dica: Conteúdos não encontrados podem estar em páginas não carregadas');
+      }
+      debugPrint('────────────────────────────────────────────────────────────────');
+      debugPrint('');
     }
   }
 }
