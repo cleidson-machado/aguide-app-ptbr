@@ -237,7 +237,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
         
         // Lista de cards
         SliverPadding(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 2, bottom: 20),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 20),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
