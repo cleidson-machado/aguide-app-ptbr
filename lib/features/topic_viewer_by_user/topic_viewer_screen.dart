@@ -86,12 +86,15 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
       ),
       child: Column(
         children: [
+          const Divider(height: 1, thickness: 0.5, color: CupertinoColors.systemGrey4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: CupertinoSearchTextField(
               onChanged: _onSearchChanged,
+              placeholder: 'Pesquisar ${topicViewerViewModel.isContentCreator ? 'em criados' : ' em assistidos'}',
             ),
           ),
+          const Divider(height: 1, thickness: 0.5, color: CupertinoColors.systemGrey4),
           Expanded(
             child: AnimatedBuilder(
               animation: topicViewerViewModel,
