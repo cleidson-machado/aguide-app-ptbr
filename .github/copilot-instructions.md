@@ -633,10 +633,12 @@ Modular.to.pop();
 
 ### 🎯 REGRAS OBRIGATÓRIAS para Preservar Build Android
 
-**Baseline aprovada em 03/10/2026:** Flutter 3.47.6 / Dart 3.13.5,
-AGP 8.11.1, Gradle 8.14.3 e Kotlin 2.2.20. Java source/target 17;
-o Flutter local usa JDK 21. Android API 24+ e iOS 15+.
+**Baseline aprovada em 03/10/2026 (atualizada após migração AGP 9):**
+Flutter 3.47.6 / Dart 3.13.5, AGP 9.0.1, Gradle 9.1.0 e Kotlin 2.3.20.
+Java source/target 17; o Flutter local usa JDK 21. Android API 24+ e iOS 15+.
 SDK Android 36 e NDK 28.2.13676358 seguem os valores do Flutter.
+Flags `android.builtInKotlin=false` e `android.newDsl=false` mantêm o DSL
+legado e o KGP externo até a migração para Built-in Kotlin do Flutter.
 
 #### 1. Validação Antes de Adicionar Dependências
 **SEMPRE** que propor adicionar/atualizar um pacote no `pubspec.yaml`:
@@ -645,10 +647,10 @@ SDK Android 36 e NDK 28.2.13676358 seguem os valores do Flutter.
 - Verificar compatibilidade Android do pacote no pub.dev
 - Checar se requer configurações específicas em `android/build.gradle.kts` ou `android/app/build.gradle.kts`
 - Alertar se a versão do pacote requer:
-  - Gradle diferente de 8.14.3 (baseline atual)
+  - Gradle diferente de 9.1.0 (baseline atual)
   - Android SDK/NDK específico
   - Configurações Kotlin DSL específicas
-  - Java/Kotlin versions diferentes das atuais (source/target Java 17, Kotlin 2.2.20)
+  - Java/Kotlin versions diferentes das atuais (source/target Java 17, Kotlin 2.3.20)
 - Verificar se há issues conhecidas com Gradle Kotlin DSL
 - Testar mentalmente se o pacote funciona em **ambas** as plataformas
 
@@ -661,7 +663,7 @@ SDK Android 36 e NDK 28.2.13676358 seguem os valores do Flutter.
 
 **ALERTA AUTOMÁTICO** quando detectar:
 - Plugins com build.gradle (Groovy) em projetos Kotlin DSL
-- Versões de plugins Android que não suportam Gradle 8.14.3 / AGP 8.11.1
+- Versões de plugins Android que não suportam Gradle 9.1.0 / AGP 9.0.1
 - Conflitos entre `compileSdk`, `targetSdk`, `minSdk` em diferentes módulos
 - Uso de APIs descontinuadas do Gradle (ex: `getOrElse`, `orNull` em propriedades simples)
 
@@ -760,7 +762,7 @@ Para lista completa de comandos de build, limpeza e manutenção, consulte: **[F
 - Versão de pacote requer Dart SDK > 3.13.5
 - Pacote não tem suporte oficial para Android
 - Plugin nativo requer modificações manuais em código nativo Android
-- Gradle plugin version upgrade necessário (> AGP 8.11.1), especialmente migração para AGP 9
+- Gradle plugin version upgrade necessário (> AGP 9.0.1), especialmente migração para AGP 10
 - NDK version incompatível detectada
 
 ---
