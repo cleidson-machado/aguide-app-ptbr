@@ -77,11 +77,12 @@ fi
 
 # 1. Verificar Flutter Doctor
 print_step "🔍 1. Verificando Flutter Doctor"
-if flutter doctor | grep -q "Xcode"; then
+if flutter doctor | grep -q '\[✓\] Xcode'; then
     print_success "Flutter doctor OK"
 else
-    print_warning "Possíveis problemas detectados pelo flutter doctor"
+    print_error "Xcode indisponível ou com problemas"
     flutter doctor
+    exit 1
 fi
 
 # 2. Verificar Xcode
@@ -116,17 +117,23 @@ cd ios
 if pod install; then
     print_success "CocoaPods instalado com sucesso"
 else
-    print_warning "Problemas ao instalar CocoaPods"
+    print_error "Problemas ao instalar CocoaPods"
+    exit 1
 fi
 cd ..
 
 # 7. Análise estática
 print_step "🔍 7. Análise estática do código"
-if flutter analyze; then
-    print_success "Análise estática passou sem erros críticos"
+if flutter analyze --no-fatal-infos; then
+    print_success "Análise sem erros ou warnings (infos continuam visíveis)"
 else
-    print_warning "Análise encontrou issues - verifique acima"
+    print_error "Análise encontrou erros ou warnings"
+    exit 1
 fi
+
+print_step "🧪 Executando testes"
+flutter test --no-pub
+print_success "Testes passaram"
 
 # 8. Verificar simuladores disponíveis
 print_step "📱 8. Verificando simuladores iOS disponíveis"
@@ -139,9 +146,7 @@ if flutter devices | grep -q "ios.*simulator"; then
     flutter devices | grep "ios.*simulator"
 else
     print_info "Nenhum simulador rodando no momento"
-    print_info "Abrindo simulador..."
-    open -a Simulator
-    sleep 3
+    print_info "O build de simulador não exige um simulador rodando"
 fi
 
 # 9. Build iOS para Simulador (NÃO requer certificado)
@@ -167,7 +172,8 @@ print_step "🔧 10. Verificando projeto Xcode"
 if xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showdestinations > /dev/null 2>&1; then
     print_success "Projeto Xcode configurado corretamente"
 else
-    print_warning "Possíveis problemas com projeto Xcode"
+    print_error "Falha ao verificar projeto Xcode"
+    exit 1
 fi
 
 # 11. Resumo final
