@@ -64,11 +64,12 @@ fi
 
 # 1. Verificar Flutter Doctor
 print_step "🔍 1. Verificando Flutter Doctor"
-if flutter doctor | grep -q "Android toolchain"; then
+if flutter doctor | grep -q '\[✓\] Android toolchain'; then
     print_success "Flutter doctor OK"
 else
-    print_warning "Possíveis problemas detectados pelo flutter doctor"
+    print_error "Android toolchain indisponível ou com problemas"
     flutter doctor
+    exit 1
 fi
 
 # 2. Limpar cache
@@ -83,11 +84,16 @@ print_success "Dependências instaladas"
 
 # 4. Análise estática
 print_step "🔍 4. Análise estática do código"
-if flutter analyze; then
-    print_success "Análise estática passou sem erros críticos"
+if flutter analyze --no-fatal-infos; then
+    print_success "Análise sem erros ou warnings (infos continuam visíveis)"
 else
-    print_warning "Análise encontrou issues - verifique acima"
+    print_error "Análise encontrou erros ou warnings"
+    exit 1
 fi
+
+print_step "🧪 Executando testes"
+flutter test --no-pub
+print_success "Testes passaram"
 
 # 5. Verificar dispositivos Android
 print_step "📱 5. Verificando dispositivos Android disponíveis"
@@ -124,7 +130,8 @@ if flutter build apk --debug --split-per-abi; then
     echo -e "\n${GREEN}APKs gerados:${NC}"
     ls -lh build/app/outputs/flutter-apk/*.apk | awk '{print $9, "(" $5 ")"}'
 else
-    print_warning "Build com splits falhou (não crítico)"
+    print_error "Build com splits falhou"
+    exit 1
 fi
 
 # 8. Verificar Gradle (opcional)
@@ -133,7 +140,8 @@ cd android
 if ./gradlew tasks > /dev/null 2>&1; then
     print_success "Gradle configurado corretamente"
 else
-    print_warning "Possíveis problemas com Gradle"
+    print_error "Falha ao verificar configuração Gradle"
+    exit 1
 fi
 cd ..
 

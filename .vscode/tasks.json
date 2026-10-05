@@ -1,0 +1,72 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Flutter: Android debug build",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"build",
+				"apk",
+				"--debug",
+				"--no-pub"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Flutter: iOS simulator debug build",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"build",
+				"ios",
+				"--debug",
+				"--simulator",
+				"--no-pub"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Flutter: iOS migration smoke run",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"--no-pub",
+				"-d",
+				"5364DA51-05B3-48CF-A73D-6C67447C12CE"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Flutter: Android release bundle build",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"build",
+				"appbundle",
+				"--release",
+				"--no-pub"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Flutter: iOS unsigned release build",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"build",
+				"ios",
+				"--release",
+				"--no-codesign",
+				"--no-pub"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

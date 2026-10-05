@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.7.2 <4.0.0"
+  sdk: ">=3.13.5 <4.0.0"
+  flutter: ">=3.47.6"
 
 dependencies:
   # FLUTTER & CORE SDK
@@ -27,7 +28,7 @@ dependencies:
   http: ^1.4.0                      ############################ Cliente HTTP mais simples e fundamental para requisições web.
 
   # UI & VISUAL
-  google_fonts: ^5.0.0              ############################ Para usar fontes do Google Fonts de forma fácil.
+  google_fonts: ^9.0.0              ############################ Para usar fontes do Google Fonts de forma fácil.
   cupertino_icons: ^1.0.8           ############################ Ícones padrões do estilo iOS.
   country_flags: ^3.2.0             ############################ Widget para exibir bandeiras de países.
   skeletonizer: ^2.1.2              ############################ Para criar skeleton loaders modernos e melhorar UX durante carregamentos.

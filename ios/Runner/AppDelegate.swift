@@ -2,27 +2,24 @@ import Flutter
 import UIKit
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-  
-  // ============================================
-  // Google OAuth Callback Handler (REQUIRED)
-  // ============================================
-  // Intercepta URLs de callback do Google OAuth
-  // Sem este método, o iOS NÃO sabe que o app deve abrir
-  // quando Google tenta redirecionar para com.googleusercontent.apps...:/
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+  }
+
+  // Preserve AppDelegate URL handling for plugins using legacy OAuth callbacks.
   override func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    // Delega para o plugin google_sign_in
     return super.application(app, open: url, options: options)
   }
 }
