@@ -633,6 +633,13 @@ Modular.to.pop();
 
 ### 🎯 REGRAS OBRIGATÓRIAS para Preservar Build Android
 
+**Baseline aprovada em 03/10/2026 (atualizada após migração AGP 9):**
+Flutter 3.47.6 / Dart 3.13.5, AGP 9.0.1, Gradle 9.1.0 e Kotlin 2.3.20.
+Java source/target 17; o Flutter local usa JDK 21. Android API 24+ e iOS 15+.
+SDK Android 36 e NDK 28.2.13676358 seguem os valores do Flutter.
+Flags `android.builtInKotlin=false` e `android.newDsl=false` mantêm o DSL
+legado e o KGP externo até a migração para Built-in Kotlin do Flutter.
+
 #### 1. Validação Antes de Adicionar Dependências
 **SEMPRE** que propor adicionar/atualizar um pacote no `pubspec.yaml`:
 
@@ -640,27 +647,27 @@ Modular.to.pop();
 - Verificar compatibilidade Android do pacote no pub.dev
 - Checar se requer configurações específicas em `android/build.gradle.kts` ou `android/app/build.gradle.kts`
 - Alertar se a versão do pacote requer:
-  - Gradle 8.x+ (verificar compatibilidade com Gradle 8.7 atual)
+  - Gradle diferente de 9.1.0 (baseline atual)
   - Android SDK/NDK específico
   - Configurações Kotlin DSL específicas
-  - Java/Kotlin versions diferentes das atuais (Java 17, Kotlin 1.8.22)
+  - Java/Kotlin versions diferentes das atuais (source/target Java 17, Kotlin 2.3.20)
 - Verificar se há issues conhecidas com Gradle Kotlin DSL
 - Testar mentalmente se o pacote funciona em **ambas** as plataformas
 
 ❌ **NUNCA:**
 - Adicionar pacotes sem verificar seção "Platforms" no pub.dev
-- Propor versões que exijam Dart SDK > 3.8.0 (limite atual do projeto)
+- Propor versões que exijam Dart SDK > 3.13.5 sem aprovar nova migração do SDK
 - Ignorar avisos de compatibilidade Android em pacotes nativos
 
 #### 2. Monitoramento Proativo de Problemas Gradle
 
 **ALERTA AUTOMÁTICO** quando detectar:
 - Plugins com build.gradle (Groovy) em projetos Kotlin DSL
-- Versões de plugins Android que não suportam Gradle 8.7
+- Versões de plugins Android que não suportam Gradle 9.1.0 / AGP 9.0.1
 - Conflitos entre `compileSdk`, `targetSdk`, `minSdk` em diferentes módulos
 - Uso de APIs descontinuadas do Gradle (ex: `getOrElse`, `orNull` em propriedades simples)
 
-**Exemplo de Alerta Esperado:**
+**Exemplo histórico de alerta (anterior à migração de 03/10/2026):**
 ```
 ⚠️ ATENÇÃO: O pacote 'sqflite_android' v2.4.1 pode causar problemas no build Android:
 - Usa build.gradle (Groovy) enquanto o projeto usa Kotlin DSL
@@ -718,15 +725,19 @@ Esses scripts executam automaticamente:
 
 #### 4. Configurações Gradle Preventivas
 
-Sempre manter no `android/build.gradle.kts`:
+Manter o alinhamento de SDK para plugins antigos no `android/build.gradle.kts`,
+sem fixar API 35. Registrar o callback antes de `evaluationDependsOn(":app")`:
 
 ```kotlin
 subprojects {
     afterEvaluate {
-        if (project.hasProperty("android")) {
-            extensions.configure<com.android.build.gradle.BaseExtension>("android") {
-                compileSdkVersion(35) // Forçar SDK consistente
-            }
+        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+            compileSdkVersion(
+                requireNotNull(
+                    project(":app").extensions
+                        .getByType<com.android.build.gradle.BaseExtension>().compileSdkVersion
+                )
+            )
         }
     }
 }
@@ -748,10 +759,10 @@ Para lista completa de comandos de build, limpeza e manutenção, consulte: **[F
 #### 7. Sinais de Alerta para Intervenção Imediata
 
 🚨 **PARAR e AVISAR o desenvolvedor** se:
-- Versão de pacote requer Dart SDK > 3.8.0
+- Versão de pacote requer Dart SDK > 3.13.5
 - Pacote não tem suporte oficial para Android
 - Plugin nativo requer modificações manuais em código nativo Android
-- Gradle plugin version upgrade necessário (> 8.7.0)
+- Gradle plugin version upgrade necessário (> AGP 9.0.1), especialmente migração para AGP 10
 - NDK version incompatível detectada
 
 ---

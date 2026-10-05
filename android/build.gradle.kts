@@ -11,15 +11,21 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-    
-    // Fix para sqflite_android compatibilidade com Gradle 8.7
+    // Older plugins pin compileSdk 34; align them with the app's Flutter SDK.
     afterEvaluate {
-        if (project.hasProperty("android")) {
-            extensions.configure<com.android.build.gradle.BaseExtension>("android") {
-                compileSdkVersion(35)
-            }
+        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+            compileSdkVersion(
+                requireNotNull(
+                    project(":app").extensions
+                        .getByType<com.android.build.gradle.BaseExtension>().compileSdkVersion
+                )
+            )
         }
     }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {

@@ -21,14 +21,60 @@ Um aplicativo para auxiliar brasileiros que planejam morar, trabalhar ou viajar 
 Este projeto utiliza Flutter para criar uma experiência multiplataforma.
 
 ### Pré-requisitos
-- Flutter SDK (versão 3.32 ou superior)
-- Dart (versão 3.8.0 ou superior)
+- Flutter SDK 3.47.6 stable (baseline validada; Dart 3.13.5 incluído)
+- Android SDK 36, NDK 28.2.13676358 e JDK 17+ compatível com Gradle 8.14.3
+- Xcode 27.0 e CocoaPods 1.16.2 para reproduzir a validação iOS
+- Android 7.0/API 24+ ou iOS 15.0+
 - Dispositivo ou emulador para teste
 
 ### Instalação
 1. Clone este repositório
    ```sh
    git clone https://github.com/cleidson-machado/aguide-app-ptbr.git
+   cd aguide-app-ptbr
+   flutter --version
+   flutter pub get
+   ```
+
+O projeto usa o Flutter selecionado no ambiente/IDE. A revisão em `.metadata`
+é histórica e não fixa a versão do SDK. Os limites em `pubspec.yaml` impedem
+SDKs antigos, mas não instalam nem fixam uma versão exata do Flutter.
+Preserve `pubspec.lock` e `ios/Podfile.lock` para reproduzir as dependências.
+
+### Validação da migração
+
+```bash
+flutter analyze
+flutter test
+flutter build apk --debug --no-pub
+flutter build ios --debug --simulator --no-pub
+flutter build appbundle --release --no-pub
+flutter build ios --release --no-codesign --no-pub
+```
+
+As tarefas de build também estão disponíveis no VS Code. Execute
+`flutter pub get` antes delas. Não execute scripts que fazem `flutter clean`
+em paralelo com builds ou com uma sessão de desenvolvimento ativa.
+
+O toolchain Android usa AGP 8.11.1, Gradle 8.14.3 e Kotlin 2.2.20.
+Essa escolha atende aos mínimos do Flutter 3.47.6 sem introduzir AGP 9,
+mas o Flutter ainda pode avisar sobre a futura atualização dessas versões.
+`compileSdk`, `targetSdk`, `minSdk` e NDK seguem os padrões do SDK Flutter;
+reavalie-os em futuras atualizações.
+
+Build debug não certifica publicação: o Android ainda utiliza assinatura
+debug no build release. Valide assinatura própria, AAB e instalação em
+dispositivo antes de publicar. No iOS, valide assinatura, archive e OAuth
+em dispositivo real. UIScene foi adotado para permitir execução no iOS 27.
+Os plugins compatíveis usam Swift Package Manager; `device_info_plus` ainda
+usa CocoaPods. Preserve também os arquivos `Package.resolved` do Xcode.
+
+**Pendência aceita no toolchain:** Kotlin 2.2.20 está afetado por
+[GHSA-r937-wjx7-w2jp](https://github.com/advisories/GHSA-r937-wjx7-w2jp).
+Cache de build Gradle/Kotlin e compilação incremental Kotlin estão desabilitados
+como mitigação temporária, não como correção da vulnerabilidade.
+A atualização para Kotlin 2.4.20+ e o toolchain Android correspondente fica
+para uma próxima etapa aprovada. Não reutilize caches de build não confiáveis.
 
 ### Key Concepts of The language and The Project Itself:
 # A Widget in Dart is just a class.
@@ -56,8 +102,14 @@ Estes scripts executam:
 - ✅ Limpeza de cache
 - ✅ Instalação de dependências
 - ✅ Análise estática
+- ✅ Testes automatizados
 - ✅ Build debug
 - ✅ Validação de ambiente
+
+Os scripts interrompem a execução em erros, warnings, falhas de testes ou
+build. A análise usa `--no-fatal-infos`: infos são exibidos, mas não bloqueiam
+essa verificação de compatibilidade. `flutter analyze` sem essa opção continua
+sendo a verificação estrita da dívida de lint.
 
 📚 **Ver comandos detalhados:** [FLUTTER_BUILD_COMMANDS.md](FLUTTER_BUILD_COMMANDS.md)
 
