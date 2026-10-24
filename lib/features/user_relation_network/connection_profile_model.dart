@@ -1,5 +1,7 @@
 /// Modelo para representar perfis de conexões na rede
 /// Usado na tela UserRelationNetworkScreen (dados mockados)
+/// 
+/// ### PAREI AQUI
 class ConnectionProfileModel {
   final String id;
   final String name;

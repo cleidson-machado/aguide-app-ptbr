@@ -15,12 +15,10 @@ class GenCrudRepository<T extends BaseModel>
   final T Function(Map<String, dynamic>) _fromMap;
 
   GenCrudRepository({
-    required String endpoint,
-    required T Function(Map<String, dynamic>) fromMap,
+    required this._endpoint,
+    required this._fromMap,
     Dio? dio,
-  }) : _endpoint = endpoint,
-       _fromMap = fromMap,
-       _dio = dio ?? Dio();
+  }) : _dio = dio ?? Dio();
 
   // MUDANÇA 2: Criar getters públicos, mas protegidos, para as subclasses
   @protected

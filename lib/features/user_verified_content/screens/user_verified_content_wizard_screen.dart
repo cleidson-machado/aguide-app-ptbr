@@ -288,7 +288,7 @@ class _UserVerifiedContentWizardScreenState
                           isActive
                               ? CupertinoColors.activeBlue
                               : (isCompleted
-                                  ? CupertinoColors.activeBlue.withOpacity(0.2)
+                                  ? CupertinoColors.activeBlue.withValues(alpha: 0.2)
                                   : CupertinoColors.white),
                       border: Border.all(
                         color:
@@ -526,7 +526,7 @@ class _UserVerifiedContentWizardScreenState
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: CupertinoColors.systemGrey.withOpacity(0.12),
+                color: CupertinoColors.systemGrey.withValues(alpha: 0.12),
                 offset: const Offset(0, 1),
                 blurRadius: 3,
                 spreadRadius: 0,
@@ -603,14 +603,14 @@ class _UserVerifiedContentWizardScreenState
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: CupertinoColors.systemGreen.withOpacity(0.12),
+            color: CupertinoColors.systemGreen.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: CupertinoColors.systemGreen.withOpacity(0.3),
+              color: CupertinoColors.systemGreen.withValues(alpha: 0.3),
             ),
             boxShadow: [
               BoxShadow(
-                color: CupertinoColors.systemGreen.withOpacity(0.15),
+                color: CupertinoColors.systemGreen.withValues(alpha: 0.15),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
                 spreadRadius: 0,
@@ -800,9 +800,9 @@ class _UserVerifiedContentWizardScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: CupertinoColors.systemRed.withOpacity(0.1),
+        color: CupertinoColors.systemRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: CupertinoColors.systemRed.withOpacity(0.3)),
+        border: Border.all(color: CupertinoColors.systemRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -902,7 +902,7 @@ class _UserVerifiedContentWizardScreenState
                   color: CupertinoColors.black,
                 ),
                 placeholderStyle: TextStyle(
-                  color: CupertinoColors.systemGrey2.withOpacity(0.8),
+                  color: CupertinoColors.systemGrey2.withValues(alpha: 0.8),
                   fontSize: 16,
                 ),
               ),

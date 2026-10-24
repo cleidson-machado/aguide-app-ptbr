@@ -14,8 +14,8 @@ enum UserSortCriteria {
 /// Follows MVVM architecture with state management via ChangeNotifier
 class UserListViewModel extends ChangeNotifier {
   UserListViewModel({
-    required UserRepositoryInterface repository,
-  }) : _repository = repository;
+    required this._repository,
+  });
 
   final UserRepositoryInterface _repository;
 

@@ -22,10 +22,9 @@ enum MessageUserSortCriteria {
 /// e timestamp da última mensagem sem modificar feature core.
 class MessageUserListViewModel extends ChangeNotifier {
   MessageUserListViewModel({
-    required UserRepositoryInterface repository,
-    required UserMessageFlowRepositoryInterface messageRepository,
-  })  : _repository = repository,
-        _messageRepository = messageRepository;
+    required this._repository,
+    required this._messageRepository,
+  });
 
   final UserRepositoryInterface _repository;
   final UserMessageFlowRepositoryInterface _messageRepository;

@@ -6,7 +6,7 @@ import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/models/message_user_data.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
-import '../models/connection_profile_model.dart';
+import 'connection_profile_model.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
 class UserRelationNetworkViewModel extends ChangeNotifier {

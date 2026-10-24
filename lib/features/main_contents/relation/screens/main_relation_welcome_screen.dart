@@ -286,7 +286,7 @@ class _MainRelationWelcomeScreenState extends State<MainRelationWelcomeScreen>
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: CupertinoColors.systemGrey.withOpacity(0.35),
+                          color: CupertinoColors.systemGrey.withValues(alpha: 0.35),
                           blurRadius: 10,
                           spreadRadius: 1.1,
                           offset: const Offset(0, 0),
@@ -446,7 +446,7 @@ class _MainRelationWelcomeScreenState extends State<MainRelationWelcomeScreen>
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: CupertinoColors.systemGrey.withOpacity(0.25),
+                  color: CupertinoColors.systemGrey.withValues(alpha: 0.25),
                   blurRadius: 22,
                   spreadRadius: 0.8,
                   offset: const Offset(0, 0),

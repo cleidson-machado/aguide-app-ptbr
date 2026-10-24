@@ -30,10 +30,9 @@ class AuthCredentialsLoginViewModel extends ChangeNotifier {
   bool get isAuthenticated => _tokenManager.isAuthenticated();
 
   AuthCredentialsLoginViewModel({
-    required AuthCredentialsService service,
-    required AuthTokenManager tokenManager,
-  })  : _service = service,
-        _tokenManager = tokenManager;
+    required this._service,
+    required this._tokenManager,
+  });
 
   /// Realiza o login
   Future<void> login({

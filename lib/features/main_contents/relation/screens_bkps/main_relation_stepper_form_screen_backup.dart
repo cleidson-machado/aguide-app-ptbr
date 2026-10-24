@@ -96,7 +96,7 @@ class _MainStepperFormScreenState extends State<MainStepperFormScreen> {
   ];
 
   // Respostas armazenadas (para exibição na última etapa)
-  Map<int, String> _answers = {};
+  final Map<int, String> _answers = {};
 
   @override
   void dispose() {

@@ -302,7 +302,7 @@ class _ConnectionsNetworkScreenState extends State<ConnectionsNetworkScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...profiles.map((profile) => _buildConnectionCard(profile)).toList(),
+              ...profiles.map((profile) => _buildConnectionCard(profile)),
             ],
           ),
         );
@@ -331,7 +331,7 @@ class _ConnectionsNetworkScreenState extends State<ConnectionsNetworkScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...profiles.map((profile) => _buildSuggestionCard(profile)).toList(),
+              ...profiles.map((profile) => _buildSuggestionCard(profile)),
             ],
           ),
         );

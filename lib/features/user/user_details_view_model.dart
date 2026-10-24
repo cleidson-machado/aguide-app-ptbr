@@ -13,10 +13,9 @@ class UserDetailsViewModel extends ChangeNotifier {
   final logger = Logger();
 
   UserDetailsViewModel({
-    required UserRepositoryInterface repository,
-    required UserTrackingDataService trackingService,
-  })  : _repository = repository,
-        _trackingService = trackingService;
+    required this._repository,
+    required this._trackingService,
+  });
 
   UserDetailsModel? _userDetails;
   String? error;
@@ -92,8 +91,4 @@ class UserDetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

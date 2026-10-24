@@ -10,8 +10,8 @@ import 'package:portugal_guide/features/user_message_flow/models/user_message_co
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
-import '../models/connection_profile_model.dart';
-import '../viewmodels/user_relation_network_view_model.dart';
+import 'connection_profile_model.dart';
+import 'user_relation_network_view_model.dart';
 
 /// Tela de Rede de Conexões (Connections Network)
 /// Layout vertical com scroll contínuo:
@@ -22,6 +22,8 @@ import '../viewmodels/user_relation_network_view_model.dart';
 /// - Seção "Temas em Destaque" (grid vertical)
 /// 
 /// Dados mockados para desenvolvimento da UI
+/// 
+/// ### PAREI AQUI
 class UserRelationNetworkScreen extends StatefulWidget {
   const UserRelationNetworkScreen({super.key});
 

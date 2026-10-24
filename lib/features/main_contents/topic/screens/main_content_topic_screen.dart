@@ -3333,7 +3333,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemPink.withOpacity(0.15),
+                          color: CupertinoColors.systemPink.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -3546,7 +3546,7 @@ class _MainContentTopicScreenState extends State<MainContentTopicScreen>
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w700,
-                                            color: CupertinoColors.systemRed.withOpacity(0.9),
+                                            color: CupertinoColors.systemRed.withValues(alpha: 0.9),
                                           ),
                                           textAlign: TextAlign.center,
                                         ),

@@ -6,7 +6,7 @@ import 'package:portugal_guide/features/home_content/screens/home_content_tab_sc
 import 'package:portugal_guide/features/user_promo_main_contents/screens/user_promo_main_contents_screen.dart';
 import 'package:portugal_guide/features/user_verified_content/screens/user_verified_content_wizard_screen.dart';
 import 'package:portugal_guide/features/main_contents/relation/screens/main_relation_welcome_screen.dart';
-import 'package:portugal_guide/features/user_relation_network/screens/user_relation_network_screen.dart';
+import 'package:portugal_guide/features/user_relation_network/user_relation_network_screen.dart';
 import 'package:portugal_guide/features/user_message_flow/user_message_bucket_screen.dart';
 import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_screen.dart';
 

@@ -246,7 +246,7 @@ class _UserPointsHistoryScreenState extends State<UserPointsHistoryScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: _getReasonColor(entry.reason).withOpacity(0.1),
+              color: _getReasonColor(entry.reason).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Center(
@@ -286,7 +286,7 @@ class _UserPointsHistoryScreenState extends State<UserPointsHistoryScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: CupertinoColors.systemGreen.withOpacity(0.1),
+              color: CupertinoColors.systemGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(

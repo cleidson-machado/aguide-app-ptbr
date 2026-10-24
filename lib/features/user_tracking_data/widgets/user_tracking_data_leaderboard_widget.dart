@@ -253,7 +253,7 @@ class _UserTrackingDataLeaderboardWidgetState
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isCurrentUser
-            ? CupertinoColors.systemBlue.withOpacity(0.1)
+            ? CupertinoColors.systemBlue.withValues(alpha: 0.1)
             : CupertinoColors.systemBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -318,7 +318,7 @@ class _UserTrackingDataLeaderboardWidgetState
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       CupertinoIcons.flame_fill,
                       size: 14,
                       color: CupertinoColors.systemOrange,
@@ -332,7 +332,7 @@ class _UserTrackingDataLeaderboardWidgetState
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Icon(
+                    const Icon(
                       CupertinoIcons.calendar,
                       size: 14,
                       color: CupertinoColors.systemGreen,
@@ -357,7 +357,7 @@ class _UserTrackingDataLeaderboardWidgetState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _getScoreColor(position).withOpacity(0.1),
+              color: _getScoreColor(position).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

@@ -24,10 +24,9 @@ class AuthGoogleViewModel extends ChangeNotifier {
   bool get isAuthenticated => _tokenManager.isAuthenticated();
 
   AuthGoogleViewModel({
-    required AuthGoogleService service,
-    required AuthTokenManager tokenManager,
-  })  : _service = service,
-        _tokenManager = tokenManager;
+    required this._service,
+    required this._tokenManager,
+  });
 
   /// Login com Google (inclui escopos YouTube)
   Future<void> signInWithGoogle() async {

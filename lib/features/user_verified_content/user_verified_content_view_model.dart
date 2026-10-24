@@ -11,8 +11,8 @@ class UserVerifiedContentViewModel extends ChangeNotifier {
   final logger = Logger();
 
   UserVerifiedContentViewModel({
-    required UserVerifiedContentRepositoryInterface repository,
-  }) : _repository = repository;
+    required this._repository,
+  });
 
   // Estado do wizard
   int _currentStep = 0;

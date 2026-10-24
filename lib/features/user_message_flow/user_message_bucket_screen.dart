@@ -451,8 +451,7 @@ class _UsersMessageBucketScreenState extends State<UsersMessageBucketScreen>
           if (canPop)
             CupertinoButton(
               padding: EdgeInsets.zero,
-              minSize: 44,
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(), minimumSize: const Size(44, 44),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

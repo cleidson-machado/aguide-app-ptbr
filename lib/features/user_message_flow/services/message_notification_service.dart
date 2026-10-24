@@ -34,10 +34,9 @@ class NewMessageEvent {
 /// foreground, and immediately re-polls on resume to catch missed updates.
 class MessageNotificationService with WidgetsBindingObserver {
   MessageNotificationService({
-    required UserMessageFlowRepositoryInterface repository,
-    required AuthTokenManager tokenManager,
-  })  : _repository = repository,
-        _tokenManager = tokenManager;
+    required this._repository,
+    required this._tokenManager,
+  });
 
   final UserMessageFlowRepositoryInterface _repository;
   final AuthTokenManager _tokenManager;

@@ -49,10 +49,9 @@ class UserChoiceNavigationGuard {
   RelationRouteDecision? _cachedDecision;
 
   UserChoiceNavigationGuard({
-    required UserChoiceRepositoryInterface repository,
-    required AuthTokenManager tokenManager,
-  })  : _repository = repository,
-        _tokenManager = tokenManager;
+    required this._repository,
+    required this._tokenManager,
+  });
 
   /// Verifica se usuário possui user-choice e retorna decisão de rota
   /// 

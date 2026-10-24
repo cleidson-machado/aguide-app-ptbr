@@ -7,6 +7,9 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_view_model.dart';
 import 'package:portugal_guide/features/main_contents/topic/main_content_topic_model.dart';
 
+/// 
+/// ### PAREI AQUI
+
 class TopicViewerViewModel extends ChangeNotifier {
   final UserRepositoryInterface _userRepository;
   final OwnershipRepositoryInterface _ownershipRepository;

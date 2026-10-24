@@ -140,9 +140,9 @@ class UserTrackingDataService {
     final created = await _repository.createUserTracking(initialTracking);
 
     if (created != null && kDebugMode) {
-      print('✅ [UserTrackingDataService] Ranking inicial criado!');
-      print('   - ID: ${created.id}');
-      print('   - Score inicial: ${created.totalScore}');
+      debugPrint('✅ [UserTrackingDataService] Ranking inicial criado!');
+      debugPrint('   - ID: ${created.id}');
+      debugPrint('   - Score inicial: ${created.totalScore}');
     }
 
     return created;
@@ -479,9 +479,9 @@ class UserTrackingDataService {
       final levelChanged = current.engagementLevel != previousLevel;
 
       if (levelChanged && kDebugMode) {
-        print('🆙 [UserTrackingDataService] LEVEL UP!');
-        print('   - De: $previousLevel');
-        print('   - Para: ${current.engagementLevel}');
+        debugPrint('🆙 [UserTrackingDataService] LEVEL UP!');
+        debugPrint('   - De: $previousLevel');
+        debugPrint('   - Para: ${current.engagementLevel}');
       }
 
       return levelChanged;
@@ -592,19 +592,19 @@ class UserTrackingDataService {
       final result = await _repository.updateUserTracking(existing.id!, updated);
 
       if (result != null && kDebugMode) {
-        print('✅ [UserTrackingDataService] Content view rastreado!');
-        print('   - Total views: ${result.totalContentViews}');
-        print('   - Unique views: ${result.uniqueContentViews}');
-        print('   - Backend adicionará +1 ponto automaticamente');
+        debugPrint('✅ [UserTrackingDataService] Content view rastreado!');
+        debugPrint('   - Total views: ${result.totalContentViews}');
+        debugPrint('   - Unique views: ${result.uniqueContentViews}');
+        debugPrint('   - Backend adicionará +1 ponto automaticamente');
         
         // Avisar sobre milestones próximos
         final totalViews = result.totalContentViews ?? 0;
         if (totalViews == 9) {
-          print('   🎯 Próximo milestone: 10 views (+2 pontos bônus!)');
+          debugPrint('   🎯 Próximo milestone: 10 views (+2 pontos bônus!)');
         } else if (totalViews == 49) {
-          print('   🎯 Próximo milestone: 50 views (+5 pontos bônus!)');
+          debugPrint('   🎯 Próximo milestone: 50 views (+5 pontos bônus!)');
         } else if (totalViews == 99) {
-          print('   🎯 Próximo milestone: 100 views (+10 pontos bônus!)');
+          debugPrint('   🎯 Próximo milestone: 100 views (+10 pontos bônus!)');
         }
       }
 
@@ -697,7 +697,7 @@ class UserTrackingDataService {
         print('   - JSON completo:');
         final jsonPayload = updated.toJson();
         jsonPayload.forEach((key, value) {
-          print('      "$key": $value');
+          debugPrint('      "$key": $value');
         });
         print('');
       }
@@ -706,20 +706,20 @@ class UserTrackingDataService {
       final result = await _repository.updateUserTracking(existing.id!, updated);
 
       if (result != null && kDebugMode) {
-        print('✅ [UserTrackingDataService] Profile completion atualizado!');
-        print('   - Percentual ENVIADO: $percentage%');
-        print('   - Percentual RETORNADO pelo backend: ${result.profileCompletionPercentage}%');
-        print('   - hasPhones ENVIADO: $hasPhones → RETORNADO: ${result.hasPhones}');
-        print('   - totalPhones ENVIADO: $totalPhones → RETORNADO: ${result.totalPhones}');
+        debugPrint('✅ [UserTrackingDataService] Profile completion atualizado!');
+        debugPrint('   - Percentual ENVIADO: $percentage%');
+        debugPrint('   - Percentual RETORNADO pelo backend: ${result.profileCompletionPercentage}%');
+        debugPrint('   - hasPhones ENVIADO: $hasPhones → RETORNADO: ${result.hasPhones}');
+        debugPrint('   - totalPhones ENVIADO: $totalPhones → RETORNADO: ${result.totalPhones}');
         
         // Avisar sobre milestones
         if (percentage == 50) {
-          print('   🎉 Milestone atingido: 50% (+3 pontos bônus!)');
+          debugPrint('   🎉 Milestone atingido: 50% (+3 pontos bônus!)');
         } else if (percentage == 100) {
-          print('   🏆 Milestone atingido: 100% (+10 pontos bônus!)');
+          debugPrint('   🏆 Milestone atingido: 100% (+10 pontos bônus!)');
         }
       } else if (result == null && kDebugMode) {
-        print('❌ [UserTrackingDataService] Backend retornou NULL - atualização FALHOU!');
+        debugPrint('❌ [UserTrackingDataService] Backend retornou NULL - atualização FALHOU!');
       }
 
       return result;
@@ -804,8 +804,8 @@ class UserTrackingDataService {
       final result = await _repository.updateUserTracking(existing.id!, updated);
 
       if (result != null && kDebugMode) {
-        print('✅ [UserTrackingDataService] Session duration atualizado!');
-        print('   - Média diária: ${result.avgDailyUsageMinutes} min');
+        debugPrint('✅ [UserTrackingDataService] Session duration atualizado!');
+        debugPrint('   - Média diária: ${result.avgDailyUsageMinutes} min');
       }
 
       return result;
@@ -878,9 +878,9 @@ class UserTrackingDataService {
       final result = await repository.addPoints(userId, points, reason: reasonString);
 
       if (result != null && kDebugMode) {
-        print('✅ [UserTrackingDataService] Pontos adicionados com sucesso!');
-        print('   - Score total: ${result.totalScore}');
-        print('   - Reason registrado em points_history para auditoria');
+        debugPrint('✅ [UserTrackingDataService] Pontos adicionados com sucesso!');
+        debugPrint('   - Score total: ${result.totalScore}');
+        debugPrint('   - Reason registrado em points_history para auditoria');
       }
 
       return result;

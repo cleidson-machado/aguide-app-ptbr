@@ -6,8 +6,8 @@ import 'package:portugal_guide/util/error_messages.dart';
 
 class UserMessageBucketViewModel extends ChangeNotifier {
   UserMessageBucketViewModel({
-    required UserMessageFlowRepositoryInterface repository,
-  }) : _repository = repository;
+    required this._repository,
+  });
 
   final UserMessageFlowRepositoryInterface _repository;
 

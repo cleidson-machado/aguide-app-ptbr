@@ -368,7 +368,7 @@ class _UserChatMessageViewScreenState extends State<UserChatMessageViewScreen>
                   horizontal: 12,
                   vertical: 8,
                 ),
-                color: CupertinoColors.systemRed.withOpacity(0.12),
+                color: CupertinoColors.systemRed.withValues(alpha: 0.12),
                 child: const Text(
                   'Voce bloqueou este usuario. O envio de mensagens esta desabilitado.',
                   style: TextStyle(

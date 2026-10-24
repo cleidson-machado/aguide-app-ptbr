@@ -12,6 +12,9 @@ import 'package:portugal_guide/features/topic_viewer_by_user/topic_viewer_metric
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+/// 
+/// ### PAREI AQUI
+
 class TopicViewerScreen extends StatefulWidget {
   const TopicViewerScreen({super.key});
 
@@ -301,7 +304,7 @@ class _TopicViewerScreenState extends State<TopicViewerScreen>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: CupertinoColors.systemGrey.withOpacity(0.50),
+              color: CupertinoColors.systemGrey.withValues(alpha: 0.50),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),

@@ -151,7 +151,7 @@ class OAuthDebugLogger {
     try {
       final content = await readLog();
       if (content != null) {
-        debugPrint('\n' + '=' * 80);
+        debugPrint('\n${'=' * 80}');
         debugPrint('📜 [OAuthDebugLogger] CONTEÚDO DO LOG:');
         debugPrint('=' * 80);
         debugPrint(content);
