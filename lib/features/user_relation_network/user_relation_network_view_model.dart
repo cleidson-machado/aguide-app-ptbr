@@ -7,17 +7,34 @@ import 'package:portugal_guide/features/user_message_flow/models/message_user_da
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'connection_profile_model.dart';
+import 'relation_suggestion_data.dart';
+import 'user_ranking_summary_model.dart';
+import 'user_relation_ranking_repository_interface.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
 class UserRelationNetworkViewModel extends ChangeNotifier {
+  /// Quantidade máxima de sugestões exibidas (+1 no fetch para compensar o
+  /// próprio usuário, que é removido da lista).
+  static const int _maxSuggestions = 20;
+
   final UserRepositoryInterface _userRepository;
   final OwnershipRepositoryInterface _ownershipRepository;
+  final UserRelationRankingRepositoryInterface _rankingRepository;
+  final String? Function() _currentUserIdProvider;
 
   UserRelationNetworkViewModel({
     UserRepositoryInterface? userRepository,
     OwnershipRepositoryInterface? ownershipRepository,
+    UserRelationRankingRepositoryInterface? rankingRepository,
+    String? Function()? currentUserIdProvider,
   })  : _userRepository = userRepository ?? injector<UserRepositoryInterface>(),
-        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>();
+        _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>(),
+        _rankingRepository =
+            rankingRepository ?? injector<UserRelationRankingRepositoryInterface>(),
+        _currentUserIdProvider =
+            currentUserIdProvider ?? (() => injector<AuthTokenManager>().getUserId());
+
+  bool _isDisposed = false;
 
   // Query de busca
   String _searchQuery = '';
@@ -37,6 +54,11 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   bool _isLoadingOwnership = false;
   String? _ownershipError;
 
+  // ===== Estado de Sugestões (ranking via /user-rankings/top) =====
+  List<RelationSuggestionData> _suggestions = [];
+  bool _isLoadingSuggestions = false;
+  String? _suggestionsError;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
@@ -52,6 +74,19 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   List<OwnershipContentModel> get ownershipContents => _ownershipContents;
   bool get isLoadingOwnership => _isLoadingOwnership;
   String? get ownershipError => _ownershipError;
+
+  // ===== Getters para Sugestões =====
+  bool get isLoadingSuggestions => _isLoadingSuggestions;
+  String? get suggestionsError => _suggestionsError;
+
+  /// Sugestões já filtradas pela busca, na ordem do leaderboard
+  List<RelationSuggestionData> get filteredSuggestions {
+    final String query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return _suggestions;
+    return _suggestions
+        .where((suggestion) => suggestion.fullName.toLowerCase().contains(query))
+        .toList();
+  }
 
   /// Determina se o usuário é CRIADOR (Produtor de Conteúdo)
   /// 
@@ -85,6 +120,7 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   /// Retorna o título dinâmico da primeira seção
   /// - CRIADOR: "Meus Vídeos - CRIADOS"
   /// - CONSUMIDOR: "Conteúdo Visualizado"
+  /// ### PAREI AQUI...
   String get dynamicTitlesByOwner {
     final title = isContentCreator
         ? 'Meus Vídeos - CRIADOS'
@@ -272,94 +308,6 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
           avatarUrl: 'https://i.pravatar.cc/150?img=45',
           isOnline: true,
           status: ConnectionStatus.connected,
-        ),
-      ];
-
-  /// Sugestões de conexão (horizontal scroll) - 12 itens
-  List<ConnectionProfileModel> get suggestions => [
-        const ConnectionProfileModel(
-          id: '7',
-          name: 'Amanda Silva',
-          avatarUrl: 'https://i.pravatar.cc/150?img=29',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '8',
-          name: 'Bruno Castro',
-          avatarUrl: 'https://i.pravatar.cc/150?img=33',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '9',
-          name: 'Carla Souza',
-          avatarUrl: 'https://i.pravatar.cc/150?img=68',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '200',
-          name: 'Diego Alves',
-          avatarUrl: 'https://i.pravatar.cc/150?img=3',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '201',
-          name: 'Elena Rodrigues',
-          avatarUrl: 'https://i.pravatar.cc/150?img=23',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '202',
-          name: 'Fernando Lima',
-          avatarUrl: 'https://i.pravatar.cc/150?img=43',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '203',
-          name: 'Gabriela Martins',
-          avatarUrl: 'https://i.pravatar.cc/150?img=53',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '204',
-          name: 'Henrique Dias',
-          avatarUrl: 'https://i.pravatar.cc/150?img=7',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '205',
-          name: 'Isabela Rocha',
-          avatarUrl: 'https://i.pravatar.cc/150?img=17',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '206',
-          name: 'Jorge Santos',
-          avatarUrl: 'https://i.pravatar.cc/150?img=27',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '207',
-          name: 'Karina Ferreira',
-          avatarUrl: 'https://i.pravatar.cc/150?img=37',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '208',
-          name: 'Leonardo Costa',
-          avatarUrl: 'https://i.pravatar.cc/150?img=67',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
         ),
       ];
 
@@ -554,6 +502,77 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
     }
   }
 
+  /// Carrega a seção "Sugestões" a partir do leaderboard real
+  ///
+  /// 1. GET /api/v1/user-rankings/top?limit=N (ordenado por totalScore DESC)
+  /// 2. GET /api/v1/users/{userId}/details para nome de exibição (em paralelo)
+  ///
+  /// A posição é derivada do índice no leaderboard (a API não envia
+  /// `rankPosition`). O próprio usuário é removido e itens sem detalhes
+  /// disponíveis são descartados, pois o ranking não traz nome.
+  Future<void> loadSuggestions() async {
+    if (_isLoadingSuggestions) return;
+
+    _isLoadingSuggestions = true;
+    _suggestionsError = null;
+    notifyListeners();
+
+    try {
+      final List<UserRankingSummaryModel> rankings =
+          await _rankingRepository.getTopRankings(limit: _maxSuggestions + 1);
+      final String? currentUserId = _currentUserIdProvider();
+
+      final List<RelationSuggestionData?> enriched = await Future.wait(
+        [
+          for (int index = 0; index < rankings.length; index++)
+            if (rankings[index].userId != currentUserId)
+              _buildSuggestion(rankings[index], rankPosition: index + 1),
+        ],
+      );
+
+      _suggestions = enriched
+          .whereType<RelationSuggestionData>()
+          .take(_maxSuggestions)
+          .toList();
+
+      if (kDebugMode) {
+        debugPrint(
+            '✅ [UserRelationNetworkVM] ${_suggestions.length} sugestão(ões) carregada(s) do ranking');
+      }
+    } catch (e) {
+      _suggestions = [];
+      _suggestionsError = 'Erro ao carregar sugestões';
+      if (kDebugMode) {
+        debugPrint('❌ [UserRelationNetworkVM] Erro ao carregar sugestões: $e');
+      }
+    } finally {
+      _isLoadingSuggestions = false;
+      notifyListeners();
+    }
+  }
+
+  Future<RelationSuggestionData?> _buildSuggestion(
+    UserRankingSummaryModel ranking, {
+    required int rankPosition,
+  }) async {
+    try {
+      final UserDetailsModel details =
+          await _userRepository.getUserDetails(ranking.userId);
+      if (!details.active) return null;
+      return RelationSuggestionData.fromRankingAndDetails(
+        ranking: ranking,
+        details: details,
+        rankPosition: rankPosition,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+            '⚠️  [UserRelationNetworkVM] Detalhes indisponíveis para userId=${ranking.userId}: $e');
+      }
+      return null;
+    }
+  }
+
   /// Carrega lista de usuários reais para "Minhas Conexões"
   /// 
   /// Similar ao MessageUserListViewModel: GET /users + GET /users/{id}/details
@@ -698,5 +717,18 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
     if (kDebugMode) {
       debugPrint('❌ [UserRelationNetwork] Desconectar de: ${profile.name}');
     }
+  }
+
+  // Os loads são assíncronos e a tela pode ser descartada antes de terminarem.
+  @override
+  void notifyListeners() {
+    if (_isDisposed) return;
+    super.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 }

@@ -11,6 +11,7 @@ import 'package:portugal_guide/features/user_message_flow/user_message_flow_repo
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'connection_profile_model.dart';
+import 'relation_suggestion_data.dart';
 import 'user_relation_network_view_model.dart';
 
 /// Tela de Rede de Conexões (Connections Network)
@@ -23,7 +24,7 @@ import 'user_relation_network_view_model.dart';
 /// 
 /// Dados mockados para desenvolvimento da UI
 /// 
-/// ### PAREI AQUI
+/// ### PAREI AQUI...
 class UserRelationNetworkScreen extends StatefulWidget {
   const UserRelationNetworkScreen({super.key});
 
@@ -50,6 +51,8 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     _viewModel.loadConnections();
     // 🆕 Carrega conteúdos verificados (ownership)
     _loadOwnershipContents();
+    // Sugestões a partir do leaderboard (/user-rankings/top)
+    _viewModel.loadSuggestions();
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -595,9 +598,61 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Sugestões" - Scroll horizontal
+  /// Seção "Sugestões" - Scroll horizontal com o leaderboard real da API
   Widget _buildSuggestionsSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.suggestions);
+    if (_viewModel.isLoadingSuggestions) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(child: CupertinoActivityIndicator()),
+        ),
+      );
+    }
+
+    final String? error = _viewModel.suggestionsError;
+    if (error != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  error,
+                  style: TextStyle(
+                    color: CupertinoColors.systemRed.resolveFrom(context),
+                  ),
+                ),
+                CupertinoButton(
+                  onPressed: _viewModel.loadSuggestions,
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final List<RelationSuggestionData> suggestions = _viewModel.filteredSuggestions;
+    if (suggestions.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              'Nenhuma sugestão no momento',
+              style: TextStyle(
+                color: CupertinoColors.systemGrey.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -606,13 +661,14 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: profiles.length,
+          itemCount: suggestions.length,
           itemBuilder: (context, index) {
-            final profile = profiles[index];
+            final RelationSuggestionData suggestion = suggestions[index];
             return Container(
+              key: ValueKey('suggestion_${suggestion.userId}'),
               width: 100,
               margin: const EdgeInsets.only(right: 12),
-              child: _buildSuggestionProfileCard(profile),
+              child: _buildSuggestionProfileCard(suggestion),
             );
           },
         ),
@@ -803,24 +859,53 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
   }
 
   /// Card de perfil circular (para "Sugestões")
-  Widget _buildSuggestionProfileCard(ConnectionProfileModel profile) {
+  /// A API de ranking não fornece foto: avatar com inicial + badge de posição.
+  Widget _buildSuggestionProfileCard(RelationSuggestionData suggestion) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar
-          ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                color: CupertinoColors.systemGrey5,
-                child: const Icon(CupertinoIcons.person_fill, size: 35),
-              ),
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipOval(
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    color: CupertinoColors.systemGrey5.resolveFrom(context),
+                    alignment: Alignment.center,
+                    child: Text(
+                      suggestion.initial,
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.systemGrey.resolveFrom(context),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -4,
+                  bottom: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.activeBlue.resolveFrom(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '#${suggestion.rankPosition}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: CupertinoColors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 6),
@@ -828,7 +913,7 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
-              profile.name,
+              suggestion.fullName,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

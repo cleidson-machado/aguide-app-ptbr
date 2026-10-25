@@ -13,7 +13,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// 
-/// ### PAREI AQUI
+/// ### PAREI AQUI...
 
 class TopicViewerScreen extends StatefulWidget {
   const TopicViewerScreen({super.key});
