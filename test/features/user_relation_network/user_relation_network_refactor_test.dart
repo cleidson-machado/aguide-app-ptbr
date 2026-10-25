@@ -5,9 +5,17 @@ import 'package:portugal_guide/features/main_contents/topic/ownership_repository
 import 'package:portugal_guide/features/user/user_repository_interface.dart';
 import 'package:portugal_guide/features/user_relation_network/connection_profile_model.dart';
 import 'package:portugal_guide/features/user_relation_network/user_relation_network_screen.dart';
+import 'package:portugal_guide/features/user_relation_network/user_relation_featured_content_repository_interface.dart';
 import 'package:portugal_guide/features/user_relation_network/user_relation_network_view_model.dart';
+import 'package:portugal_guide/features/user_relation_network/user_relation_ranking_repository_interface.dart';
 
 class _FakeUserRepository extends Fake implements UserRepositoryInterface {}
+
+class _FakeRankingRepository extends Fake
+    implements UserRelationRankingRepositoryInterface {}
+
+class _FakeFeaturedContentRepository extends Fake
+    implements UserRelationFeaturedContentRepositoryInterface {}
 
 class _FakeAuthTokenManager extends Fake implements AuthTokenManager {}
 
@@ -55,6 +63,9 @@ void main() {
       final viewModel = UserRelationNetworkViewModel(
         userRepository: _FakeUserRepository(),
         ownershipRepository: _FakeOwnershipRepository(),
+        rankingRepository: _FakeRankingRepository(),
+        featuredContentRepository: _FakeFeaturedContentRepository(),
+        currentUserIdProvider: () => null,
       );
       addTearDown(viewModel.dispose);
       var notifications = 0;

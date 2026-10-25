@@ -1,11 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:portugal_guide/app/core/auth/auth_http_interceptor.dart';
-import 'package:portugal_guide/app/core/auth/auth_token_manager.dart';
-import 'package:portugal_guide/app/core/config/correlation_id_interceptor.dart';
-import 'package:portugal_guide/app/core/config/injector.dart';
-import 'package:portugal_guide/app/helpers/env_key_helper_config.dart';
 import 'user_ranking_summary_model.dart';
+import 'user_relation_network_dio_factory.dart';
 import 'user_relation_ranking_repository_interface.dart';
 
 /// Leitor do leaderboard (`/user-rankings/top`) para a tela de relações.
@@ -20,29 +16,8 @@ class UserRelationRankingRepository
 
   final Dio _dio;
 
-  UserRelationRankingRepository({Dio? dio}) : _dio = dio ?? _setupDio();
-
-  static Dio _setupDio() {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: EnvKeyHelperConfig.apiBaseUrl,
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-      ),
-    );
-
-    dio.interceptors.addAll([
-      AuthHttpInterceptor(
-        injector<AuthTokenManager>(),
-        fallbackToken: EnvKeyHelperConfig.tokenKeyForMocApi2,
-      ),
-      CorrelationIdInterceptor(),
-      LatencyInterceptor(),
-    ]);
-
-    return dio;
-  }
+  UserRelationRankingRepository({Dio? dio})
+      : _dio = dio ?? buildUserRelationNetworkDio();
 
   String _buildTopRankingsEndpoint() => '/user-rankings/top';
 

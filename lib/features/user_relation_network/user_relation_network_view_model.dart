@@ -7,8 +7,12 @@ import 'package:portugal_guide/features/user_message_flow/models/message_user_da
 import 'package:portugal_guide/features/main_contents/topic/ownership_repository_interface.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
 import 'connection_profile_model.dart';
+import 'featured_content_models.dart';
+import 'featured_theme_data.dart';
+import 'featured_themes_composer.dart';
 import 'relation_suggestion_data.dart';
 import 'user_ranking_summary_model.dart';
+import 'user_relation_featured_content_repository_interface.dart';
 import 'user_relation_ranking_repository_interface.dart';
 
 /// ViewModel para gerenciar dados da tela UserRelationNetworkScreen
@@ -17,20 +21,31 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   /// próprio usuário, que é removido da lista).
   static const int _maxSuggestions = 20;
 
+  /// 4 linhas de 3 círculos na grid "Temas em Destaque".
+  static const int _maxFeaturedThemes = 12;
+  // NOTE: lote maior que os 30 do prompt: 30 itens recentes cobriam só 4 das 7
+  // categorias. Rever quando existir endpoint dedicado de temas no backend.
+  static const int _featuredCatalogSize = 100;
+
   final UserRepositoryInterface _userRepository;
   final OwnershipRepositoryInterface _ownershipRepository;
   final UserRelationRankingRepositoryInterface _rankingRepository;
+  final UserRelationFeaturedContentRepositoryInterface _featuredContentRepository;
+  static const FeaturedThemesComposer _featuredThemesComposer = FeaturedThemesComposer();
   final String? Function() _currentUserIdProvider;
 
   UserRelationNetworkViewModel({
     UserRepositoryInterface? userRepository,
     OwnershipRepositoryInterface? ownershipRepository,
     UserRelationRankingRepositoryInterface? rankingRepository,
+    UserRelationFeaturedContentRepositoryInterface? featuredContentRepository,
     String? Function()? currentUserIdProvider,
   })  : _userRepository = userRepository ?? injector<UserRepositoryInterface>(),
         _ownershipRepository = ownershipRepository ?? injector<OwnershipRepositoryInterface>(),
         _rankingRepository =
             rankingRepository ?? injector<UserRelationRankingRepositoryInterface>(),
+        _featuredContentRepository = featuredContentRepository ??
+            injector<UserRelationFeaturedContentRepositoryInterface>(),
         _currentUserIdProvider =
             currentUserIdProvider ?? (() => injector<AuthTokenManager>().getUserId());
 
@@ -59,6 +74,11 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
   bool _isLoadingSuggestions = false;
   String? _suggestionsError;
 
+  // ===== Estado de Temas em Destaque (catálogo + top-contents do usuário) =====
+  List<FeaturedThemeData> _featuredThemes = [];
+  bool _isLoadingFeaturedThemes = false;
+  String? _featuredThemesError;
+
   // ===== Getters para User Details =====
   UserDetailsModel? get userDetails => _userDetails;
   bool get isLoadingUserDetails => _isLoadingUserDetails;
@@ -85,6 +105,19 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
     if (query.isEmpty) return _suggestions;
     return _suggestions
         .where((suggestion) => suggestion.fullName.toLowerCase().contains(query))
+        .toList();
+  }
+
+  // ===== Getters para Temas em Destaque =====
+  bool get isLoadingFeaturedThemes => _isLoadingFeaturedThemes;
+  String? get featuredThemesError => _featuredThemesError;
+
+  /// Temas já filtrados pela busca (por rótulo)
+  List<FeaturedThemeData> get filteredFeaturedThemes {
+    final String query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return _featuredThemes;
+    return _featuredThemes
+        .where((theme) => theme.label.toLowerCase().contains(query))
         .toList();
   }
 
@@ -311,136 +344,6 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
         ),
       ];
 
-  /// Temas em Destaque (scroll vertical independente)
-  List<ConnectionProfileModel> get temasDestaque => [
-        const ConnectionProfileModel(
-          id: '20',
-          name: 'Tecnologia',
-          avatarUrl: 'https://i.pravatar.cc/150?img=11',
-          isOnline: true,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '21',
-          name: 'Design',
-          avatarUrl: 'https://i.pravatar.cc/150?img=22',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '22',
-          name: 'Marketing',
-          avatarUrl: 'https://i.pravatar.cc/150?img=31',
-          isOnline: true,
-          status: ConnectionStatus.following,
-        ),
-        const ConnectionProfileModel(
-          id: '23',
-          name: 'Negócios',
-          avatarUrl: 'https://i.pravatar.cc/150?img=41',
-          isOnline: false,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '24',
-          name: 'Educação',
-          avatarUrl: 'https://i.pravatar.cc/150?img=51',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '25',
-          name: 'Saúde',
-          avatarUrl: 'https://i.pravatar.cc/150?img=61',
-          isOnline: false,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '26',
-          name: 'Finanças',
-          avatarUrl: 'https://i.pravatar.cc/150?img=14',
-          isOnline: true,
-          status: ConnectionStatus.following,
-        ),
-        const ConnectionProfileModel(
-          id: '27',
-          name: 'Artes',
-          avatarUrl: 'https://i.pravatar.cc/150?img=24',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '28',
-          name: 'Música',
-          avatarUrl: 'https://i.pravatar.cc/150?img=34',
-          isOnline: true,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '29',
-          name: 'Esportes',
-          avatarUrl: 'https://i.pravatar.cc/150?img=44',
-          isOnline: false,
-          status: ConnectionStatus.following,
-        ),
-        const ConnectionProfileModel(
-          id: '30',
-          name: 'Viagens',
-          avatarUrl: 'https://i.pravatar.cc/150?img=54',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '31',
-          name: 'Fotografia',
-          avatarUrl: 'https://i.pravatar.cc/150?img=64',
-          isOnline: false,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '32',
-          name: 'Cinema',
-          avatarUrl: 'https://i.pravatar.cc/150?img=16',
-          isOnline: true,
-          status: ConnectionStatus.following,
-        ),
-        const ConnectionProfileModel(
-          id: '33',
-          name: 'Literatura',
-          avatarUrl: 'https://i.pravatar.cc/150?img=26',
-          isOnline: false,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '34',
-          name: 'Gastronomia',
-          avatarUrl: 'https://i.pravatar.cc/150?img=36',
-          isOnline: true,
-          status: ConnectionStatus.connected,
-        ),
-        const ConnectionProfileModel(
-          id: '35',
-          name: 'Moda',
-          avatarUrl: 'https://i.pravatar.cc/150?img=46',
-          isOnline: false,
-          status: ConnectionStatus.following,
-        ),
-        const ConnectionProfileModel(
-          id: '36',
-          name: 'Sustentabilidade',
-          avatarUrl: 'https://i.pravatar.cc/150?img=56',
-          isOnline: true,
-          status: ConnectionStatus.suggested,
-        ),
-        const ConnectionProfileModel(
-          id: '37',
-          name: 'Inovação',
-          avatarUrl: 'https://i.pravatar.cc/150?img=66',
-          isOnline: false,
-          status: ConnectionStatus.connected,
-        ),
-      ];
-
   /// Atualiza a query de busca
   void setSearchQuery(String query) {
     if (_searchQuery != query) {
@@ -548,6 +451,104 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
     } finally {
       _isLoadingSuggestions = false;
       notifyListeners();
+    }
+  }
+
+  /// Carrega a seção "Temas em Destaque".
+  ///
+  /// Não há endpoint de temas/trending global no backend; a grid é composta:
+  /// 1. GET /contents (0-based, mais recentes) — obrigatório; falha = erro na UI
+  /// 2. GET /engagements/user/{id}/top-contents — opcional; falha = só catálogo
+  /// 3. GET /contents/{id} para top-contents fora do lote do catálogo
+  ///    (top-contents não traz categoria)
+  Future<void> loadFeaturedThemes() async {
+    if (_isLoadingFeaturedThemes) return;
+
+    _isLoadingFeaturedThemes = true;
+    _featuredThemesError = null;
+    notifyListeners();
+
+    try {
+      final Future<List<UserTopContent>> personalizedFuture = _loadPersonalizedTopContents();
+      final List<FeaturedContentRecord> catalog =
+          await _featuredContentRepository.getLatestContents(size: _featuredCatalogSize);
+      final List<UserTopContent> personalized = await personalizedFuture;
+
+      final Map<String, FeaturedContentRecord> recordsById = {
+        for (final FeaturedContentRecord record in catalog)
+          if (record.id.isNotEmpty) record.id: record,
+      };
+      await _resolveMissingRecords(personalized, recordsById);
+
+      _featuredThemes = _featuredThemesComposer.compose(
+        personalized: personalized,
+        recordsById: recordsById,
+        catalog: catalog,
+        maxThemes: _maxFeaturedThemes,
+      );
+
+      if (kDebugMode) {
+        final int personalizedCount = _featuredThemes
+            .where((theme) => theme.source == FeaturedThemeSource.personalized)
+            .length;
+        debugPrint(
+            '✅ [UserRelationNetworkVM] ${_featuredThemes.length} tema(s) em destaque ($personalizedCount personalizado(s))');
+      }
+    } catch (e) {
+      _featuredThemes = [];
+      _featuredThemesError = 'Erro ao carregar temas em destaque';
+      if (kDebugMode) {
+        debugPrint('❌ [UserRelationNetworkVM] Erro ao carregar temas em destaque: $e');
+      }
+    } finally {
+      _isLoadingFeaturedThemes = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<UserTopContent>> _loadPersonalizedTopContents() async {
+    final String? userId = _currentUserIdProvider();
+    if (userId == null || userId.isEmpty) return const [];
+
+    try {
+      return await _featuredContentRepository.getUserTopContents(
+        userId: userId,
+        limit: _maxFeaturedThemes,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️  [UserRelationNetworkVM] Top-contents indisponível, usando só o catálogo: $e');
+      }
+      return const [];
+    }
+  }
+
+  Future<void> _resolveMissingRecords(
+    List<UserTopContent> personalized,
+    Map<String, FeaturedContentRecord> recordsById,
+  ) async {
+    final Set<String> missingIds = personalized
+        .map((top) => top.contentId)
+        .where((id) => !recordsById.containsKey(id))
+        .toSet();
+    if (missingIds.isEmpty) return;
+
+    final List<FeaturedContentRecord?> resolved = await Future.wait(
+      missingIds.map(_tryGetContentById),
+    );
+    for (final FeaturedContentRecord? record in resolved) {
+      if (record != null && record.id.isNotEmpty) recordsById[record.id] = record;
+    }
+  }
+
+  Future<FeaturedContentRecord?> _tryGetContentById(String contentId) async {
+    try {
+      return await _featuredContentRepository.getContentById(contentId);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️  [UserRelationNetworkVM] Conteúdo $contentId indisponível: $e');
+      }
+      return null;
     }
   }
 
@@ -680,18 +681,6 @@ class UserRelationNetworkViewModel extends ChangeNotifier {
       _isLoadingUserDetails = false;
       notifyListeners();
     }
-  }
-
-  /// Filtra perfis baseado na busca
-  List<ConnectionProfileModel> getFilteredProfiles(List<ConnectionProfileModel> profiles) {
-    if (_searchQuery.trim().isEmpty) {
-      return profiles;
-    }
-
-    final query = _searchQuery.toLowerCase();
-    return profiles.where((profile) {
-      return profile.name.toLowerCase().contains(query);
-    }).toList();
   }
 
   /// Ações mockadas (apenas prints para debug)

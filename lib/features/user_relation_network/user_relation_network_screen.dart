@@ -10,7 +10,7 @@ import 'package:portugal_guide/features/user_message_flow/models/user_message_co
 import 'package:portugal_guide/features/user_message_flow/user_message_flow_repository_interface.dart';
 import 'package:portugal_guide/features/user_message_flow/user_chat_message_view_screen.dart';
 import 'package:portugal_guide/features/main_contents/topic/ownership_model.dart';
-import 'connection_profile_model.dart';
+import 'featured_theme_data.dart';
 import 'relation_suggestion_data.dart';
 import 'user_relation_network_view_model.dart';
 
@@ -20,9 +20,7 @@ import 'user_relation_network_view_model.dart';
 /// - Seção "Meus Vídeos" (grid vertical)
 /// - Seção "Minhas Conexões" (grid vertical)
 /// - Seção "Sugestões" (grid vertical)
-/// - Seção "Temas em Destaque" (grid vertical)
-/// 
-/// Dados mockados para desenvolvimento da UI
+/// - Seção "Temas em Destaque" (grid vertical; catálogo + top-contents)
 /// 
 /// ### PAREI AQUI...
 class UserRelationNetworkScreen extends StatefulWidget {
@@ -53,6 +51,8 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     _loadOwnershipContents();
     // Sugestões a partir do leaderboard (/user-rankings/top)
     _viewModel.loadSuggestions();
+    // Temas em Destaque: catálogo + top-contents do usuário
+    _viewModel.loadFeaturedThemes();
   }
 
   /// 🆕 Carrega os detalhes do usuário via API para determinar se é CRIADOR ou CONSUMIDOR
@@ -676,9 +676,61 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
     );
   }
 
-  /// Seção "Temas em Destaque" - Scroll vertical independente
+  /// Seção "Temas em Destaque" - Scroll vertical independente (grid 3 colunas)
   Widget _buildTemasDestaqueSection() {
-    final profiles = _viewModel.getFilteredProfiles(_viewModel.temasDestaque);
+    if (_viewModel.isLoadingFeaturedThemes) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 120,
+          child: Center(child: CupertinoActivityIndicator()),
+        ),
+      );
+    }
+
+    final String? error = _viewModel.featuredThemesError;
+    if (error != null) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  error,
+                  style: TextStyle(
+                    color: CupertinoColors.systemRed.resolveFrom(context),
+                  ),
+                ),
+                CupertinoButton(
+                  onPressed: _viewModel.loadFeaturedThemes,
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final List<FeaturedThemeData> themes = _viewModel.filteredFeaturedThemes;
+    if (themes.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Container(
+          height: 120,
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Center(
+            child: Text(
+              'Nenhum tema em destaque no momento',
+              style: TextStyle(
+                color: CupertinoColors.systemGrey.resolveFrom(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -686,27 +738,24 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: (profiles.length / 3).ceil(),
+          itemCount: (themes.length / 3).ceil(),
           itemBuilder: (context, rowIndex) {
-            final startIndex = rowIndex * 3;
-            final rowProfiles = <ConnectionProfileModel>[];
-            
-            for (int i = 0; i < 3; i++) {
-              final profileIndex = startIndex + i;
-              if (profileIndex < profiles.length) {
-                rowProfiles.add(profiles[profileIndex]);
-              }
-            }
+            final int startIndex = rowIndex * 3;
+            final List<FeaturedThemeData> rowThemes =
+                themes.skip(startIndex).take(3).toList();
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
-                children: rowProfiles.map((profile) {
-                  return Expanded(
-                    child: _buildTemasDestaqueProfileCard(profile),
-                  );
-                }).toList(),
+                children: [
+                  for (int i = 0; i < 3; i++)
+                    Expanded(
+                      child: i < rowThemes.length
+                          ? _buildFeaturedThemeCard(rowThemes[i])
+                          : const SizedBox.shrink(),
+                    ),
+                ],
               ),
             );
           },
@@ -927,33 +976,42 @@ class _UserRelationNetworkScreenState extends State<UserRelationNetworkScreen> {
       );
   }
 
-  /// Card de perfil circular (para "Temas em Destaque")
-  Widget _buildTemasDestaqueProfileCard(ConnectionProfileModel profile) {
+  /// Card circular de "Temas em Destaque": thumbnail do conteúdo + categoria
+  Widget _buildFeaturedThemeCard(FeaturedThemeData theme) {
+    final Widget placeholder = Container(
+      width: 70,
+      height: 70,
+      color: CupertinoColors.systemGrey5.resolveFrom(context),
+      child: Icon(
+        CupertinoIcons.play_rectangle_fill,
+        size: 30,
+        color: CupertinoColors.systemGrey.resolveFrom(context),
+      ),
+    );
+
     return Column(
+      key: ValueKey('featured_theme_${theme.key}'),
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Avatar
           ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: profile.avatarUrl,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CupertinoActivityIndicator(),
-              errorWidget: (context, url, error) => Container(
-                width: 70,
-                height: 70,
-                color: CupertinoColors.systemGrey5,
-                child: const Icon(CupertinoIcons.person_fill, size: 35),
-              ),
-            ),
+            child: theme.imageUrl.isEmpty
+                ? placeholder
+                : CachedNetworkImage(
+                    imageUrl: theme.imageUrl,
+                    width: 70,
+                    height: 70,
+                    memCacheWidth: 210,
+                    memCacheHeight: 210,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const CupertinoActivityIndicator(),
+                    errorWidget: (context, url, error) => placeholder,
+                  ),
           ),
           const SizedBox(height: 6),
-          // Nome
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
-              profile.name,
+              theme.label,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

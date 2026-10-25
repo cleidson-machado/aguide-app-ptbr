@@ -35,6 +35,8 @@ import 'package:portugal_guide/features/user_choice/user_choice_view_model.dart'
 import 'package:portugal_guide/features/user_choice/user_choice_navigation_guard.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository.dart';
 import 'package:portugal_guide/features/user_engagement/user_engagement_repository_interface.dart';
+import 'package:portugal_guide/features/user_relation_network/user_relation_featured_content_repository.dart';
+import 'package:portugal_guide/features/user_relation_network/user_relation_featured_content_repository_interface.dart';
 import 'package:portugal_guide/features/user_relation_network/user_relation_ranking_repository.dart';
 import 'package:portugal_guide/features/user_relation_network/user_relation_ranking_repository_interface.dart';
 import 'package:portugal_guide/features/user_tracking_data/user_tracking_data_repository.dart';
@@ -177,6 +179,9 @@ Future<void> setupDependencies() async {
   //### For User Relation Network (Sugestões via leaderboard) ###
   injector.registerLazySingleton<UserRelationRankingRepositoryInterface>(
     () => UserRelationRankingRepository(),
+  );
+  injector.registerLazySingleton<UserRelationFeaturedContentRepositoryInterface>(
+    () => UserRelationFeaturedContentRepository(),
   );
 
   //### For User Message Flow (Inbox + Chat) ###
